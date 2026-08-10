@@ -1004,5 +1004,55 @@
   },
   "options_general_requirePlanApproval_desc": {
     "message": "在代理對頁面採取任何動作前，先顯示其計畫並等待你核准"
+  },
+  "act_declinedByUser": {
+    "message": "你拒絕了這個動作：$INTENT$。代理會尋找其他方式。",
+    "placeholders": {
+      "intent": {
+        "content": "$1"
+      }
+    }
+  },
+  "bg_cmd_actionConfirm_notPending": {
+    "message": "目前沒有等待確認的動作"
+  },
+  "actConfirm_title": {
+    "message": "請先確認，代理才會繼續"
+  },
+  "actConfirm_target": {
+    "message": "目標"
+  },
+  "actConfirm_onPage": {
+    "message": "所在頁面"
+  },
+  "actConfirm_allow": {
+    "message": "允許"
+  },
+  "actConfirm_decline": {
+    "message": "不允許"
+  },
+  "actConfirm_reason_purchase": {
+    "message": "這看起來會花錢或送出訂單。"
+  },
+  "actConfirm_reason_destructive": {
+    "message": "這看起來會永久刪除或取消某些內容。"
+  },
+  "actConfirm_reason_download": {
+    "message": "這會下載或安裝檔案。"
+  },
+  "actConfirm_reason_credentials": {
+    "message": "這會在密碼欄位中輸入內容。"
+  },
+  "actConfirm_reason_publish": {
+    "message": "這會以你的名義發布或送出內容。"
+  },
+  "actConfirm_reason_formSubmit": {
+    "message": "這會送出表單。"
+  },
+  "options_general_confirmSensitiveActions": {
+    "message": "確認敏感動作"
+  },
+  "options_general_confirmSensitiveActions_desc": {
+    "message": "在代理送出表單、購買、刪除資料、下載檔案或輸入密碼前先詢問你"
   }
 }

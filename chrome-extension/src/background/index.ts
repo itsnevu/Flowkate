@@ -150,6 +150,15 @@ chrome.runtime.onConnect.addListener(port => {
             return port.postMessage({ type: 'success' });
           }
 
+          case 'confirm_action':
+          case 'decline_action': {
+            if (!currentExecutor) return port.postMessage({ type: 'error', error: t('bg_errors_noRunningTask') });
+            if (!currentExecutor.isAwaitingActionConfirmation())
+              return port.postMessage({ type: 'error', error: t('bg_cmd_actionConfirm_notPending') });
+            await currentExecutor.respondToActionConfirmation(message.type === 'confirm_action');
+            return port.postMessage({ type: 'success' });
+          }
+
           case 'undo_last_step': {
             if (!currentExecutor) return port.postMessage({ type: 'error', error: t('bg_errors_noRunningTask') });
             try {
@@ -353,6 +362,7 @@ async function setupExecutor(taskId: string, task: string, browserContext: Brows
       useVision: generalSettings.useVision,
       useVisionForPlanner: true,
       planningInterval: generalSettings.planningInterval,
+      confirmSensitiveActions: generalSettings.confirmSensitiveActions,
     },
     generalSettings: generalSettings,
   });

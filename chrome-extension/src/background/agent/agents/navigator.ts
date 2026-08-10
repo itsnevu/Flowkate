@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { t } from '@extension/i18n';
 import { BaseAgent, type BaseAgentOptions, type ExtraAgentOptions } from './base';
 import { createLogger } from '@src/background/log';
 import { ActionResult, type AgentOutput } from '../types';
@@ -22,7 +23,8 @@ import {
   LLM_FORBIDDEN_ERROR_MESSAGE,
   RequestCancelledError,
 } from './errors';
-import { calcBranchPathHashSet } from '@src/background/browser/dom/views';
+import { calcBranchPathHashSet, type DOMElementNode } from '@src/background/browser/dom/views';
+import { classifySensitiveAction } from '../actions/sensitivity';
 import { type BrowserState, BrowserStateHistory, URLNotAllowedError } from '@src/background/browser/views';
 import { convertZodToJsonSchema, repairJsonString } from '@src/background/utils';
 import { HistoryTreeProcessor } from '@src/background/browser/dom/history/service';
@@ -363,6 +365,42 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
     return actions;
   }
 
+  /**
+   * Gate a single action behind the user's explicit approval when it looks consequential.
+   *
+   * The check reads the element the agent already picked rather than the model's own account of what
+   * it is doing, so a page that talks the model into a purchase still has to get past the user.
+   *
+   * @returns an ActionResult to record when the user declined, or null if the action may proceed
+   */
+  private async confirmIfSensitive(
+    actionName: string,
+    actionArgs: unknown,
+    element: DOMElementNode | undefined,
+  ): Promise<ActionResult | null> {
+    if (!this.context.options.confirmSensitiveActions) return null;
+
+    const verdict = classifySensitiveAction(actionName, actionArgs, element);
+    if (!verdict) return null;
+
+    const intent = (actionArgs as { intent?: string })?.intent ?? actionName;
+    const page = await this.context.browserContext.getCurrentPage();
+    const approved = await this.context.requestActionConfirmation({
+      kind: verdict.kind,
+      description: intent,
+      target: verdict.target,
+      url: page.url(),
+    });
+
+    if (approved) return null;
+
+    const msg = t('act_declinedByUser', [intent]);
+    logger.info(`🚫 ${msg}`);
+    this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_DECLINED, msg);
+    // fed back to the model so the planner routes around it instead of retrying the same click
+    return new ActionResult({ extractedContent: msg, includeInMemory: true });
+  }
+
   private async doMultiAction(actions: Record<string, unknown>[]): Promise<ActionResult[]> {
     const results: ActionResult[] = [];
     let errCount = 0;
@@ -404,6 +442,17 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
             );
             break;
           }
+        }
+
+        // Human-in-the-loop: money, data loss and credentials never move without an explicit yes
+        const declined = await this.confirmIfSensitive(
+          actionName,
+          actionArgs,
+          indexArg !== null ? browserState.selectorMap.get(indexArg) : undefined,
+        );
+        if (declined) {
+          results.push(declined);
+          break;
         }
 
         const result = await actionInstance.call(actionArgs);

@@ -279,6 +279,16 @@ export class Executor {
     return true;
   }
 
+  /** Resolve a pending sensitive-action gate. No-op if the agent is not waiting on one. */
+  async respondToActionConfirmation(approved: boolean): Promise<void> {
+    this.context.resolveActionConfirmation(approved);
+  }
+
+  /** Whether the agent is currently blocked waiting for the user to confirm an action. */
+  isAwaitingActionConfirmation(): boolean {
+    return this.context.isAwaitingActionConfirmation();
+  }
+
   /** Resolve a pending plan-approval gate. No-op if the agent is not waiting on one. */
   async respondToPlanReview(approved: boolean): Promise<void> {
     this.planApprovalResolver?.(approved);

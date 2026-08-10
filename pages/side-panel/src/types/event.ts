@@ -45,6 +45,9 @@ export enum ExecutionState {
   ACT_START = 'act.start',
   ACT_OK = 'act.ok',
   ACT_FAIL = 'act.fail',
+  /** The agent is blocked, waiting for the user to allow a sensitive action */
+  ACT_CONFIRM = 'act.confirm',
+  ACT_DECLINED = 'act.declined',
 }
 
 export interface EventData {
@@ -56,8 +59,25 @@ export interface EventData {
   maxSteps: number;
   /** details is the content of the event */
   details: string;
-  /** structured payload for events that carry more than a message, e.g. a plan under review */
-  payload?: PlanReviewPayload;
+  /**
+   * Structured payload for events that carry more than a message. Which shape it holds is
+   * determined by `state`: PLAN_REVIEW carries a plan, ACT_CONFIRM carries an action request.
+   */
+  payload?: EventPayload;
+}
+
+export type EventPayload = PlanReviewPayload | ActionConfirmationPayload;
+
+/** A sensitive action the agent wants to run, held for the user to allow or decline. */
+export interface ActionConfirmationPayload {
+  /** why it was flagged, e.g. `purchase` or `destructive` */
+  kind: string;
+  /** the agent's own description of what it is about to do */
+  description: string;
+  /** the element label, URL or field the action targets */
+  target: string;
+  /** the page the action would run on, so the user can see where this is happening */
+  url: string;
 }
 
 /** The plan shown to the user for approval before the navigator is allowed to act. */

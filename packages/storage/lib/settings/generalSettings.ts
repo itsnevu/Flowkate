@@ -15,6 +15,8 @@ export interface GeneralSettingsConfig {
   replayHistoricalTasks: boolean;
   /** Show the plan and wait for the user to approve it before the agent takes any action. */
   requirePlanApproval: boolean;
+  /** Ask for explicit confirmation before actions that spend money, delete data or submit forms. */
+  confirmSensitiveActions: boolean;
 }
 
 export type GeneralSettingsStorage = BaseStorage<GeneralSettingsConfig> & {
@@ -35,6 +37,7 @@ export const DEFAULT_GENERAL_SETTINGS: GeneralSettingsConfig = {
   minWaitPageLoad: 250,
   replayHistoricalTasks: false,
   requirePlanApproval: true,
+  confirmSensitiveActions: true,
 };
 
 const storage = createStorage<GeneralSettingsConfig>('general-settings', DEFAULT_GENERAL_SETTINGS, {

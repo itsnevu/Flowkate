@@ -1004,5 +1004,55 @@
   },
   "options_general_requirePlanApproval_desc": {
     "message": "Mostra o plano do agente e aguarda sua aprovação antes de qualquer ação na página"
+  },
+  "act_declinedByUser": {
+    "message": "Você recusou esta ação: $INTENT$. O agente vai procurar outro caminho.",
+    "placeholders": {
+      "intent": {
+        "content": "$1"
+      }
+    }
+  },
+  "bg_cmd_actionConfirm_notPending": {
+    "message": "Nenhuma ação aguardando confirmação"
+  },
+  "actConfirm_title": {
+    "message": "Confirme antes de o agente continuar"
+  },
+  "actConfirm_target": {
+    "message": "Alvo"
+  },
+  "actConfirm_onPage": {
+    "message": "Na página"
+  },
+  "actConfirm_allow": {
+    "message": "Permitir"
+  },
+  "actConfirm_decline": {
+    "message": "Não permitir"
+  },
+  "actConfirm_reason_purchase": {
+    "message": "Isto parece que vai gastar dinheiro ou fazer um pedido."
+  },
+  "actConfirm_reason_destructive": {
+    "message": "Isto parece que vai excluir ou cancelar algo permanentemente."
+  },
+  "actConfirm_reason_download": {
+    "message": "Isto vai baixar ou instalar um arquivo."
+  },
+  "actConfirm_reason_credentials": {
+    "message": "Isto vai digitar em um campo de senha."
+  },
+  "actConfirm_reason_publish": {
+    "message": "Isto vai publicar ou enviar algo em seu nome."
+  },
+  "actConfirm_reason_formSubmit": {
+    "message": "Isto vai enviar um formulário."
+  },
+  "options_general_confirmSensitiveActions": {
+    "message": "Confirmar ações sensíveis"
+  },
+  "options_general_confirmSensitiveActions_desc": {
+    "message": "Perguntar antes de o agente enviar um formulário, comprar algo, excluir dados, baixar um arquivo ou digitar uma senha"
   }
 }

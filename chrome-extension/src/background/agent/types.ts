@@ -4,7 +4,7 @@ import { DEFAULT_INCLUDE_ATTRIBUTES } from '../browser/dom/views';
 import type { DOMHistoryElement } from '../browser/dom/history/view';
 import type MessageManager from './messages/service';
 import type { EventManager } from './event/manager';
-import { type Actors, type ExecutionState, type PlanReviewPayload, AgentEvent } from './event/types';
+import { Actors, ExecutionState, type ActionConfirmationPayload, type EventPayload, AgentEvent } from './event/types';
 import { AgentStepHistory } from './history';
 
 export interface AgentOptions {
@@ -18,6 +18,8 @@ export interface AgentOptions {
   useVisionForPlanner: boolean;
   includeAttributes: string[];
   planningInterval: number;
+  /** Ask the user to confirm before running an action that spends money, deletes data, etc. */
+  confirmSensitiveActions: boolean;
 }
 
 export const DEFAULT_AGENT_OPTIONS: AgentOptions = {
@@ -31,6 +33,7 @@ export const DEFAULT_AGENT_OPTIONS: AgentOptions = {
   useVisionForPlanner: true,
   includeAttributes: DEFAULT_INCLUDE_ATTRIBUTES,
   planningInterval: 3,
+  confirmSensitiveActions: true,
 };
 
 export class AgentContext {
@@ -49,6 +52,8 @@ export class AgentContext {
   stateMessageAdded: boolean;
   history: AgentStepHistory;
   finalAnswer: string | null;
+  /** Resolver for the pending sensitive-action gate, set only while the user is being asked. */
+  private actionConfirmationResolver: ((approved: boolean) => void) | null = null;
 
   constructor(
     taskId: string,
@@ -75,7 +80,7 @@ export class AgentContext {
     this.finalAnswer = null;
   }
 
-  async emitEvent(actor: Actors, state: ExecutionState, eventDetails: string, payload?: PlanReviewPayload) {
+  async emitEvent(actor: Actors, state: ExecutionState, eventDetails: string, payload?: EventPayload) {
     const event = new AgentEvent(actor, state, {
       taskId: this.taskId,
       step: this.nSteps,
@@ -84,6 +89,31 @@ export class AgentContext {
       payload,
     });
     await this.eventManager.emit(event);
+  }
+
+  /**
+   * Block until the user explicitly allows a sensitive action, or declines it.
+   *
+   * The agent is genuinely parked here — nothing reaches the page until an answer comes back — so a
+   * page that manages to steer the model still cannot spend money or delete data on its own.
+   */
+  async requestActionConfirmation(request: ActionConfirmationPayload): Promise<boolean> {
+    await this.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_CONFIRM, request.description, request);
+    const approved = await new Promise<boolean>(resolve => {
+      this.actionConfirmationResolver = resolve;
+    });
+    this.actionConfirmationResolver = null;
+    return approved;
+  }
+
+  /** Resolve a pending sensitive-action gate. No-op if the agent is not waiting on one. */
+  resolveActionConfirmation(approved: boolean): void {
+    this.actionConfirmationResolver?.(approved);
+  }
+
+  /** Whether the agent is currently blocked waiting for the user to confirm an action. */
+  isAwaitingActionConfirmation(): boolean {
+    return this.actionConfirmationResolver !== null;
   }
 
   async pause() {
@@ -96,6 +126,8 @@ export class AgentContext {
 
   async stop() {
     this.stopped = true;
+    // release any pending confirmation gate, otherwise the navigator stays parked on it forever
+    this.actionConfirmationResolver?.(false);
     setTimeout(() => this.controller.abort(), 300);
   }
 }

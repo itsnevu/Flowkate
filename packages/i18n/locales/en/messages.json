@@ -1004,5 +1004,55 @@
   },
   "options_general_requirePlanApproval_desc": {
     "message": "Show the agent’s plan and wait for your approval before it takes any action on a page"
+  },
+  "act_declinedByUser": {
+    "message": "You declined this action: $INTENT$. The agent will look for another way.",
+    "placeholders": {
+      "intent": {
+        "content": "$1"
+      }
+    }
+  },
+  "bg_cmd_actionConfirm_notPending": {
+    "message": "No action is waiting for confirmation"
+  },
+  "actConfirm_title": {
+    "message": "Confirm before the agent continues"
+  },
+  "actConfirm_target": {
+    "message": "Target"
+  },
+  "actConfirm_onPage": {
+    "message": "On page"
+  },
+  "actConfirm_allow": {
+    "message": "Allow"
+  },
+  "actConfirm_decline": {
+    "message": "Don’t allow"
+  },
+  "actConfirm_reason_purchase": {
+    "message": "This looks like it will spend money or place an order."
+  },
+  "actConfirm_reason_destructive": {
+    "message": "This looks like it will delete or cancel something permanently."
+  },
+  "actConfirm_reason_download": {
+    "message": "This will download or install a file."
+  },
+  "actConfirm_reason_credentials": {
+    "message": "This will type into a password field."
+  },
+  "actConfirm_reason_publish": {
+    "message": "This will post or send something on your behalf."
+  },
+  "actConfirm_reason_formSubmit": {
+    "message": "This will submit a form."
+  },
+  "options_general_confirmSensitiveActions": {
+    "message": "Confirm sensitive actions"
+  },
+  "options_general_confirmSensitiveActions_desc": {
+    "message": "Ask before the agent submits a form, buys something, deletes data, downloads a file or types a password"
   }
 }

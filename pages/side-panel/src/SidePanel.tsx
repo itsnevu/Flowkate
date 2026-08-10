@@ -12,7 +12,14 @@ import ChatInput from './components/ChatInput';
 import ChatHistoryList from './components/ChatHistoryList';
 import BookmarkList from './components/BookmarkList';
 import PlanReviewCard from './components/PlanReviewCard';
-import { EventType, type AgentEvent, type PlanReviewPayload, ExecutionState } from './types/event';
+import ActionConfirmCard from './components/ActionConfirmCard';
+import {
+  EventType,
+  type AgentEvent,
+  type PlanReviewPayload,
+  type ActionConfirmationPayload,
+  ExecutionState,
+} from './types/event';
 import './SidePanel.css';
 
 // Declare chrome API types
@@ -39,6 +46,7 @@ const SidePanel = () => {
   const [isProcessingSpeech, setIsProcessingSpeech] = useState(false);
   const [isReplaying, setIsReplaying] = useState(false);
   const [pendingPlan, setPendingPlan] = useState<PlanReviewPayload | null>(null);
+  const [pendingAction, setPendingAction] = useState<ActionConfirmationPayload | null>(null);
   const [canUndo, setCanUndo] = useState(false);
   const [replayEnabled, setReplayEnabled] = useState(false);
   const sessionIdRef = useRef<string | null>(null);
@@ -171,7 +179,7 @@ const SidePanel = () => {
               break;
             case ExecutionState.PLAN_REVIEW:
               // the executor is blocked until the user answers, so take over the input area
-              setPendingPlan(data?.payload ?? null);
+              setPendingPlan((data?.payload as PlanReviewPayload) ?? null);
               setInputEnabled(false);
               return;
             case ExecutionState.PLAN_APPROVED:
@@ -180,12 +188,14 @@ const SidePanel = () => {
               break;
             case ExecutionState.PLAN_REJECTED:
               setPendingPlan(null);
+              setPendingAction(null);
               setInputEnabled(true);
               setShowStopButton(false);
               skip = false;
               break;
             case ExecutionState.TASK_OK:
               setPendingPlan(null);
+              setPendingAction(null);
               setIsFollowUpMode(true);
               setInputEnabled(true);
               setShowStopButton(false);
@@ -193,6 +203,7 @@ const SidePanel = () => {
               break;
             case ExecutionState.TASK_FAIL:
               setPendingPlan(null);
+              setPendingAction(null);
               setIsFollowUpMode(true);
               setInputEnabled(true);
               setShowStopButton(false);
@@ -201,6 +212,7 @@ const SidePanel = () => {
               break;
             case ExecutionState.TASK_CANCEL:
               setPendingPlan(null);
+              setPendingAction(null);
               setIsFollowUpMode(false);
               setInputEnabled(true);
               setShowStopButton(false);
@@ -263,6 +275,15 @@ const SidePanel = () => {
               skip = !isReplayingRef.current;
               break;
             case ExecutionState.ACT_FAIL:
+              skip = false;
+              break;
+            case ExecutionState.ACT_CONFIRM:
+              // the navigator is blocked until the user answers, so take over the input area
+              setPendingAction((data?.payload as ActionConfirmationPayload) ?? null);
+              setInputEnabled(false);
+              return;
+            case ExecutionState.ACT_DECLINED:
+              setPendingAction(null);
               skip = false;
               break;
             default:
@@ -726,6 +747,20 @@ const SidePanel = () => {
     }
   };
 
+  const handleActionDecision = (approved: boolean) => {
+    setPendingAction(null);
+    try {
+      portRef.current?.postMessage({ type: approved ? 'confirm_action' : 'decline_action' });
+      setInputEnabled(false);
+      setShowStopButton(true);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error('action confirmation error', errorMessage);
+      appendMessage({ actor: Actors.SYSTEM, content: errorMessage, timestamp: Date.now() });
+      setInputEnabled(true);
+    }
+  };
+
   const handleNewChat = () => {
     // Clear messages and start a new chat
     setMessages([]);
@@ -736,6 +771,7 @@ const SidePanel = () => {
     setIsFollowUpMode(false);
     setIsHistoricalSession(false);
     setPendingPlan(null);
+    setPendingAction(null);
     setCanUndo(false);
 
     // Disconnect any existing connection
@@ -1237,7 +1273,15 @@ const SidePanel = () => {
                     isDarkMode={isDarkMode}
                   />
                 )}
-                {canUndo && !pendingPlan && !isHistoricalSession && (
+                {pendingAction && (
+                  <ActionConfirmCard
+                    request={pendingAction}
+                    onConfirm={() => handleActionDecision(true)}
+                    onDecline={() => handleActionDecision(false)}
+                    isDarkMode={isDarkMode}
+                  />
+                )}
+                {canUndo && !pendingPlan && !pendingAction && !isHistoricalSession && (
                   <div className="px-4 pb-1">
                     <button
                       type="button"
