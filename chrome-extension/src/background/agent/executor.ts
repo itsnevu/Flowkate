@@ -26,11 +26,13 @@ import type { AgentStepHistory } from './history';
 import type { GeneralSettingsConfig } from '@extension/storage';
 import { analytics } from '../services/analytics';
 import { memoryStore } from '@extension/storage';
+import { routeStep, ModelTier } from './routing';
 
 const logger = createLogger('Executor');
 
 export interface ExecutorExtraArgs {
   plannerLLM?: BaseChatModel;
+  fastLLM?: BaseChatModel;
   extractorLLM?: BaseChatModel;
   agentOptions?: Partial<AgentOptions>;
   generalSettings?: GeneralSettingsConfig;
@@ -38,6 +40,12 @@ export interface ExecutorExtraArgs {
 
 export class Executor {
   private readonly navigator: NavigatorAgent;
+  /**
+   * A second navigator wired to the cheap model. Both share one AgentContext and one action
+   * registry, so routing a step to it changes which model thinks, not what the agent knows.
+   * Null when no Fast model is configured, which is also how hybrid routing stays opt-in.
+   */
+  private readonly fastNavigator: NavigatorAgent | null;
   private readonly planner: PlannerAgent;
   private readonly context: AgentContext;
   private readonly plannerPrompt: PlannerPrompt;
@@ -84,6 +92,14 @@ export class Executor {
       context: context,
       prompt: this.navigatorPrompt,
     });
+
+    this.fastNavigator = extraArgs?.fastLLM
+      ? new NavigatorAgent(navigatorActionRegistry, {
+          chatLLM: extraArgs.fastLLM,
+          context: context,
+          prompt: this.navigatorPrompt,
+        })
+      : null;
 
     this.planner = new PlannerAgent({
       chatLLM: plannerLLM,
@@ -153,6 +169,8 @@ export class Executor {
       let step = 0;
       let latestPlanOutput: AgentOutput<PlannerOutput> | null = null;
       let navigatorDone = false;
+      // the first step after planning carries the most ambiguity, so it is never routed to the cheap model
+      let justPlanned = false;
 
       for (step = 0; step < allowedMaxSteps; step++) {
         context.stepInfo = {
@@ -168,6 +186,7 @@ export class Executor {
         // Run planner periodically for guidance
         if (this.planner && (context.nSteps % context.options.planningInterval === 0 || navigatorDone)) {
           navigatorDone = false;
+          justPlanned = true;
           latestPlanOutput = await this.runPlanner();
 
           // Check if task is complete after planner run
@@ -182,7 +201,8 @@ export class Executor {
         }
 
         // Execute navigator
-        navigatorDone = await this.navigate();
+        navigatorDone = await this.navigate(justPlanned);
+        justPlanned = false;
 
         // If navigator indicates completion, the next periodic planner run will validate it
         if (navigatorDone) {
@@ -378,7 +398,40 @@ export class Executor {
     }
   }
 
-  private async navigate(): Promise<boolean> {
+  /**
+   * Choose which navigator runs this step. Falls back to the primary navigator whenever no cheap
+   * model is configured, so a missing Fast model degrades to the previous behaviour rather than an
+   * error.
+   */
+  private async pickNavigator(justPlanned: boolean): Promise<NavigatorAgent> {
+    if (!this.fastNavigator) return this.navigator;
+
+    const context = this.context;
+    let interactiveElementCount = 0;
+    let visionFallback = false;
+    try {
+      const cachedState = await context.browserContext.getCachedState();
+      interactiveElementCount = cachedState?.selectorMap.size ?? 0;
+      visionFallback = cachedState?.domGroundingFailed ?? false;
+    } catch (error) {
+      // without a readable state we cannot judge the page, so do not economise on this step
+      logger.debug(`Could not read cached state for routing: ${error}`);
+      return this.navigator;
+    }
+
+    const decision = routeStep({
+      consecutiveFailures: context.consecutiveFailures,
+      lastStepErrored: context.actionResults.some(result => Boolean(result.error)),
+      interactiveElementCount,
+      usesVision: context.options.useVision || visionFallback,
+      startingNewPlan: justPlanned,
+    });
+
+    logger.info(`🔀 Routed step to ${decision.tier} model: ${decision.reason}`);
+    return decision.tier === ModelTier.FAST ? this.fastNavigator : this.navigator;
+  }
+
+  private async navigate(justPlanned = false): Promise<boolean> {
     const context = this.context;
     try {
       // Get and execute navigation action
@@ -386,7 +439,8 @@ export class Executor {
       if (context.paused || context.stopped) {
         return false;
       }
-      const navOutput = await this.navigator.execute();
+      const navigator = await this.pickNavigator(justPlanned);
+      const navOutput = await navigator.execute();
       // check if the task is paused or stopped
       if (context.paused || context.stopped) {
         return false;

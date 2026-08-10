@@ -1109,5 +1109,8 @@
   },
   "options_memory_scope_global": {
     "message": "Em todos os sites"
+  },
+  "options_models_agents_fast": {
+    "message": "Modelo econômico usado em passos de navegação rotineiros (opcional)"
   }
 }

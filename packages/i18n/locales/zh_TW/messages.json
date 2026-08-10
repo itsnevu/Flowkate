@@ -1109,5 +1109,8 @@
   },
   "options_memory_scope_global": {
     "message": "所有網站"
+  },
+  "options_models_agents_fast": {
+    "message": "用於例行導覽步驟的低成本模型（選用）"
   }
 }

@@ -1109,5 +1109,8 @@
   },
   "options_memory_scope_global": {
     "message": "Everywhere"
+  },
+  "options_models_agents_fast": {
+    "message": "Cheap model used for routine navigation steps (optional)"
   }
 }

@@ -2,6 +2,11 @@
 export enum AgentNameEnum {
   Planner = 'planner',
   Navigator = 'navigator',
+  /**
+   * Optional cheap model used for routine navigation steps. Falls back to the Navigator model when
+   * not configured, so hybrid routing is opt-in and never silently downgrades an existing setup.
+   */
+  Fast = 'fast',
 }
 
 // Provider type, types before CustomOpenAI are built-in providers, CustomOpenAI is a custom provider
@@ -63,6 +68,10 @@ export const llmProviderParameters = {
       temperature: 0.3,
       topP: 0.85,
     },
+    [AgentNameEnum.Fast]: {
+      temperature: 0.3,
+      topP: 0.85,
+    },
   },
   [ProviderTypeEnum.Anthropic]: {
     [AgentNameEnum.Planner]: {
@@ -70,6 +79,10 @@ export const llmProviderParameters = {
       topP: 0.6,
     },
     [AgentNameEnum.Navigator]: {
+      temperature: 0.2,
+      topP: 0.5,
+    },
+    [AgentNameEnum.Fast]: {
       temperature: 0.2,
       topP: 0.5,
     },
@@ -83,6 +96,10 @@ export const llmProviderParameters = {
       temperature: 0.3,
       topP: 0.85,
     },
+    [AgentNameEnum.Fast]: {
+      temperature: 0.3,
+      topP: 0.85,
+    },
   },
   [ProviderTypeEnum.Grok]: {
     [AgentNameEnum.Planner]: {
@@ -90,6 +107,10 @@ export const llmProviderParameters = {
       topP: 0.9,
     },
     [AgentNameEnum.Navigator]: {
+      temperature: 0.3,
+      topP: 0.85,
+    },
+    [AgentNameEnum.Fast]: {
       temperature: 0.3,
       topP: 0.85,
     },
@@ -103,6 +124,10 @@ export const llmProviderParameters = {
       temperature: 0.1,
       topP: 0.85,
     },
+    [AgentNameEnum.Fast]: {
+      temperature: 0.1,
+      topP: 0.85,
+    },
   },
   [ProviderTypeEnum.AzureOpenAI]: {
     [AgentNameEnum.Planner]: {
@@ -110,6 +135,10 @@ export const llmProviderParameters = {
       topP: 0.9,
     },
     [AgentNameEnum.Navigator]: {
+      temperature: 0.3,
+      topP: 0.85,
+    },
+    [AgentNameEnum.Fast]: {
       temperature: 0.3,
       topP: 0.85,
     },
@@ -123,6 +152,10 @@ export const llmProviderParameters = {
       temperature: 0.3,
       topP: 0.85,
     },
+    [AgentNameEnum.Fast]: {
+      temperature: 0.3,
+      topP: 0.85,
+    },
   },
   [ProviderTypeEnum.Groq]: {
     [AgentNameEnum.Planner]: {
@@ -130,6 +163,10 @@ export const llmProviderParameters = {
       topP: 0.9,
     },
     [AgentNameEnum.Navigator]: {
+      temperature: 0.3,
+      topP: 0.85,
+    },
+    [AgentNameEnum.Fast]: {
       temperature: 0.3,
       topP: 0.85,
     },
@@ -143,6 +180,10 @@ export const llmProviderParameters = {
       temperature: 0.3,
       topP: 0.85,
     },
+    [AgentNameEnum.Fast]: {
+      temperature: 0.3,
+      topP: 0.85,
+    },
   },
   [ProviderTypeEnum.Llama]: {
     [AgentNameEnum.Planner]: {
@@ -150,6 +191,10 @@ export const llmProviderParameters = {
       topP: 0.9,
     },
     [AgentNameEnum.Navigator]: {
+      temperature: 0.3,
+      topP: 0.85,
+    },
+    [AgentNameEnum.Fast]: {
       temperature: 0.3,
       topP: 0.85,
     },

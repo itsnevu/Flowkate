@@ -353,8 +353,17 @@ async function setupExecutor(taskId: string, task: string, browserContext: Brows
     displayHighlights: generalSettings.displayHighlights,
   });
 
+  // Optional cheap model for routine steps. Absent config simply means no hybrid routing.
+  let fastLLM: BaseChatModel | null = null;
+  const fastModel = agentModels[AgentNameEnum.Fast];
+  if (fastModel) {
+    const fastProviderConfig = providers[fastModel.provider];
+    fastLLM = createChatModel(fastProviderConfig, fastModel);
+  }
+
   const executor = new Executor(task, taskId, browserContext, navigatorLLM, {
     plannerLLM: plannerLLM ?? navigatorLLM,
+    fastLLM: fastLLM ?? undefined,
     agentOptions: {
       maxSteps: generalSettings.maxSteps,
       maxFailures: generalSettings.maxFailures,
