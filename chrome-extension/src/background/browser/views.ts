@@ -97,6 +97,12 @@ export interface PageState extends DOMState {
   url: string;
   title: string;
   screenshot: string | null;
+  /**
+   * True when DOM parsing found no interactive elements even after retrying. Client-rendered apps,
+   * canvas UIs and cross-origin iframes all produce this, and it is the signal to fall back to the
+   * screenshot instead of telling the model the page is simply empty.
+   */
+  domGroundingFailed?: boolean;
   scrollY: number;
   scrollHeight: number;
   visualViewportHeight: number;

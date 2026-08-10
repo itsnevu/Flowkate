@@ -36,6 +36,14 @@ abstract class BasePrompt {
       logger.info(scrollInfo);
       const elementsText = wrapUntrustedContent(rawElementsText);
       formattedElementsText = `${scrollInfo}[Start of page]\n${elementsText}\n[End of page]\n`;
+    } else if (browserState.domGroundingFailed && browserState.screenshot) {
+      // Saying "empty page" here would be a lie the model acts on: it would conclude the task is
+      // impossible and give up, when in fact the page is rendered and simply not readable via the DOM.
+      formattedElementsText =
+        'No interactive elements could be read from the DOM of this page, even after waiting for it to ' +
+        'finish rendering. This usually means the page draws its UI in a way the DOM does not describe. ' +
+        'A screenshot of the page is attached below - use it to decide what to do, and prefer keyboard ' +
+        'navigation, scrolling or going back over clicking an element index you cannot see.';
     } else {
       formattedElementsText = 'empty page';
     }
@@ -80,7 +88,9 @@ ${stepInfoDescription}
 ${actionResultsDescription}
 `;
 
-    if (browserState.screenshot && context.options.useVision) {
+    // Attach the screenshot when vision is on, and also when DOM grounding failed - in that case the
+    // screenshot is the only description of the page the model has.
+    if (browserState.screenshot && (context.options.useVision || browserState.domGroundingFailed)) {
       return new HumanMessage({
         content: [
           { type: 'text', text: stateDescription },

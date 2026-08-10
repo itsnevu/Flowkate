@@ -191,6 +191,41 @@ export default class Page {
     );
   }
 
+  /**
+   * Delays between grounding attempts, in milliseconds. Client-rendered apps routinely report the
+   * document as loaded while React or Vue is still mounting, and cross-origin iframes settle later
+   * still, so an empty first parse is common on exactly the pages users care about.
+   *
+   * The escalating waits are what make this cheap: a page that was simply slow answers on the
+   * second try, and only genuinely element-free pages pay the full cost.
+   */
+  private static readonly GROUNDING_RETRY_DELAYS_MS = [300, 700, 1200];
+
+  /**
+   * Parse the page's interactive elements, retrying while the result comes back empty.
+   *
+   * An empty parse is ambiguous - it means either "this page has nothing to click" or "this page has
+   * not rendered yet" - and the two are indistinguishable at the moment of the first attempt. Retrying
+   * costs a few hundred milliseconds on a genuinely empty page and rescues the step entirely on a slow
+   * one, so it is worth doing before reporting the page as empty to the model.
+   */
+  async getClickableElementsWithRetry(showHighlightElements: boolean, focusElement: number): Promise<DOMState | null> {
+    let content = await this.getClickableElements(showHighlightElements, focusElement);
+    if (content && content.selectorMap.size > 0) return content;
+
+    for (const delay of Page.GROUNDING_RETRY_DELAYS_MS) {
+      logger.info(`No interactive elements found, retrying grounding in ${delay}ms`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      content = await this.getClickableElements(showHighlightElements, focusElement);
+      if (content && content.selectorMap.size > 0) {
+        logger.info(`Grounding recovered after ${delay}ms with ${content.selectorMap.size} element(s)`);
+        return content;
+      }
+    }
+
+    return content;
+  }
+
   // Get scroll position information for the current page.
   async getScrollInfo(): Promise<[number, number, number]> {
     if (!this._validWebPage) {
@@ -399,11 +434,19 @@ export default class Page {
       // This part would need to be implemented based on your DomService logic
       // showHighlightElements is true if either useVision or displayHighlights is true
       const displayHighlights = this._config.displayHighlights || useVision;
-      const content = await this.getClickableElements(displayHighlights, focusElement);
+      const content = await this.getClickableElementsWithRetry(displayHighlights, focusElement);
       if (!content) {
         logger.warning('Failed to get clickable elements');
         // Return last known good state if available
         return this._state;
+      }
+
+      // If the DOM yielded nothing even after retrying, the page is either genuinely empty or is one
+      // the DOM cannot describe (canvas, cross-origin iframe). Either way the screenshot is the only
+      // grounding left, so take one regardless of the vision setting.
+      const domGroundingFailed = content.selectorMap.size === 0;
+      if (domGroundingFailed) {
+        logger.warning('DOM grounding found no interactive elements, falling back to a screenshot');
       }
       // log the attributes of content object
       if ('selectorMap' in content) {
@@ -418,7 +461,7 @@ export default class Page {
       }
 
       // Take screenshot if needed
-      const screenshot = useVision ? await this.takeScreenshot() : null;
+      const screenshot = useVision || domGroundingFailed ? await this.takeScreenshot() : null;
       const [scrollY, visualViewportHeight, scrollHeight] = await this.getScrollInfo();
 
       // update the state
@@ -427,6 +470,7 @@ export default class Page {
       this._state.url = this._puppeteerPage?.url() || '';
       this._state.title = (await this._puppeteerPage?.title()) || '';
       this._state.screenshot = screenshot;
+      this._state.domGroundingFailed = domGroundingFailed;
       this._state.scrollY = scrollY;
       this._state.visualViewportHeight = visualViewportHeight;
       this._state.scrollHeight = scrollHeight;

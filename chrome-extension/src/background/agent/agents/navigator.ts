@@ -455,9 +455,21 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
           break;
         }
 
-        const result = await actionInstance.call(actionArgs);
+        let result = await actionInstance.call(actionArgs);
         if (result === undefined) {
           throw new Error(`Action ${actionName} returned undefined`);
+        }
+
+        // A dynamic page can re-render between reading the element list and acting on it, which
+        // invalidates the index the model chose. One retry after a short settle covers that race;
+        // more than one would just be a loop against a page that genuinely changed.
+        if (result.error && indexArg !== null) {
+          logger.info(`Action ${actionName} failed on a stale element, re-reading the page and retrying once`);
+          await new Promise(resolve => setTimeout(resolve, 500));
+          const retried = await actionInstance.call(actionArgs);
+          if (retried !== undefined && !retried.error) {
+            result = retried;
+          }
         }
 
         // if the action has an index argument, record the interacted element to the result
