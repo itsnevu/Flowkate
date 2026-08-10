@@ -51,6 +51,19 @@ Looking for a powerful AI browser agent without the $200/month price tag of Open
 - **Conversation History**: Easily access and manage your AI agent interaction history
 - **Multiple LLM Support**: Connect your preferred LLM providers and assign different models to different agents
 
+### 🛡️ You stay in control
+
+- **Plan preview**: The agent shows you what it intends to do and waits for your approval before it touches a page. Only the first plan of each task is gated, so re-planning doesn't keep interrupting you.
+- **Confirmation for sensitive actions**: Buying, deleting, submitting a form, downloading a file or typing into a password field all stop and ask first. The check reads the actual DOM element the agent picked — not the model's description of what it's doing — so a page that manages to steer the model still can't act on its own.
+- **Undo**: Roll back the last step. The page navigates back and the agent forgets the step, so it re-plans from the restored state instead of building on something you rejected.
+- **On-device memory**: The agent can remember your preferences between sessions. Everything is stored in `chrome.storage.local` — never sent to a server, never synced. The Memory tab in Options lists every stored fact with per-entry delete and a master switch.
+
+### ⚡ Reliability and cost
+
+- **Grounding that survives late-rendering pages**: An empty DOM parse is retried on escalating delays before the agent concludes a page is empty, and when the DOM still yields nothing a screenshot is attached automatically so the agent can work from what it can see.
+- **Hybrid model routing**: Configure an optional cheap **Fast** model and routine steps go to it, while failures, dense pages, screenshot reasoning and the first step of a new plan escalate to your main model.
+- **Parallel research**: Independent lookups run concurrently, each in its own tab, then merge. Those background tabs are read-only by construction — they cannot click, type or submit.
+
 
 ## 🌐 Browser Support
 
