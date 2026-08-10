@@ -3,6 +3,8 @@ export * from './settings';
 export * from './chat';
 export * from './profile';
 export * from './prompt/favorites';
+export * from './memory/memoryStore';
 
 // Re-export the favorites instance for direct use
 export { default as favoritesStorage } from './prompt/favorites';
+export { default as memoryStorage } from './memory/memoryStore';

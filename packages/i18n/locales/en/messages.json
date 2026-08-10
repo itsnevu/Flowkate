@@ -1054,5 +1054,60 @@
   },
   "options_general_confirmSensitiveActions_desc": {
     "message": "Ask before the agent submits a form, buys something, deletes data, downloads a file or types a password"
+  },
+  "act_remember_start": {
+    "message": "Remembering: $CONTENT$",
+    "placeholders": {
+      "content": {
+        "content": "$1"
+      }
+    }
+  },
+  "act_remember_ok": {
+    "message": "Remembered: $CONTENT$",
+    "placeholders": {
+      "content": {
+        "content": "$1"
+      }
+    }
+  },
+  "act_remember_disabled": {
+    "message": "Nothing was remembered — memory is turned off or the note was empty"
+  },
+  "options_tabs_memory": {
+    "message": "Memory"
+  },
+  "options_memory_header": {
+    "message": "Memory"
+  },
+  "options_memory_localOnly": {
+    "message": "Everything here is stored on this device only. It is never sent to a server or synced across devices."
+  },
+  "options_memory_enable": {
+    "message": "Remember preferences across sessions"
+  },
+  "options_memory_enable_desc": {
+    "message": "Let the agent save and reuse what you tell it about your preferences"
+  },
+  "options_memory_stored": {
+    "message": "Stored memories"
+  },
+  "options_memory_empty": {
+    "message": "Nothing remembered yet. The agent saves a preference only when you tell it to."
+  },
+  "options_memory_forget": {
+    "message": "Forget this"
+  },
+  "options_memory_forgetAll": {
+    "message": "Forget everything"
+  },
+  "options_memory_forgetAll_confirm": {
+    "message": "Yes, forget everything"
+  },
+  "options_memory_forgetAll_cancel": {
+    "message": "Cancel"
+  },
+  "options_memory_scope_global": {
+    "message": "Everywhere"
   }
 }

@@ -13,6 +13,7 @@ import {
   sendKeysActionSchema,
   scrollToTextActionSchema,
   cacheContentActionSchema,
+  rememberActionSchema,
   selectDropdownOptionActionSchema,
   getDropdownOptionsActionSchema,
   closeTabActionSchema,
@@ -28,6 +29,7 @@ import { createLogger } from '@src/background/log';
 import { ExecutionState, Actors } from '../event/types';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { wrapUntrustedContent } from '../messages/utils';
+import { memoryStore, MemoryScope } from '@extension/storage';
 
 const logger = createLogger('Action');
 
@@ -375,6 +377,35 @@ export class ActionBuilder {
       return new ActionResult({ extractedContent: msg, includeInMemory: true });
     }, cacheContentActionSchema);
     actions.push(cacheContent);
+
+    // remember a durable user preference across sessions
+    const remember = new Action(async (input: z.infer<typeof rememberActionSchema.schema>) => {
+      const intent = input.intent || t('act_remember_start', [input.content]);
+      this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
+
+      const scope = input.scope === 'site' ? MemoryScope.SITE : MemoryScope.GLOBAL;
+      let host = '';
+      if (scope === MemoryScope.SITE) {
+        const page = await this.context.browserContext.getCurrentPage();
+        try {
+          host = new URL(page.url()).host;
+        } catch {
+          // a page without a parseable URL cannot carry a site-scoped memory
+        }
+      }
+
+      const entry = await memoryStore.remember(input.content, scope, host);
+      if (!entry) {
+        const failMsg = t('act_remember_disabled');
+        this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, failMsg);
+        return new ActionResult({ extractedContent: failMsg, includeInMemory: true });
+      }
+
+      const msg = t('act_remember_ok', [entry.content]);
+      this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, msg);
+      return new ActionResult({ extractedContent: msg, includeInMemory: true });
+    }, rememberActionSchema);
+    actions.push(remember);
 
     // Scroll to percent
     const scrollToPercent = new Action(async (input: z.infer<typeof scrollToPercentActionSchema.schema>) => {

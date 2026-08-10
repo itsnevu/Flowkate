@@ -1054,5 +1054,60 @@
   },
   "options_general_confirmSensitiveActions_desc": {
     "message": "在代理送出表單、購買、刪除資料、下載檔案或輸入密碼前先詢問你"
+  },
+  "act_remember_start": {
+    "message": "正在記住：$CONTENT$",
+    "placeholders": {
+      "content": {
+        "content": "$1"
+      }
+    }
+  },
+  "act_remember_ok": {
+    "message": "已記住：$CONTENT$",
+    "placeholders": {
+      "content": {
+        "content": "$1"
+      }
+    }
+  },
+  "act_remember_disabled": {
+    "message": "沒有記住任何內容 — 記憶功能已關閉或內容為空"
+  },
+  "options_tabs_memory": {
+    "message": "記憶"
+  },
+  "options_memory_header": {
+    "message": "記憶"
+  },
+  "options_memory_localOnly": {
+    "message": "這裡的內容只會儲存在這台裝置上，絕不會傳送到伺服器或跨裝置同步。"
+  },
+  "options_memory_enable": {
+    "message": "跨工作階段記住偏好"
+  },
+  "options_memory_enable_desc": {
+    "message": "讓代理儲存並重複使用你告訴它的偏好設定"
+  },
+  "options_memory_stored": {
+    "message": "已儲存的記憶"
+  },
+  "options_memory_empty": {
+    "message": "尚未記住任何內容。只有在你要求時，代理才會儲存偏好。"
+  },
+  "options_memory_forget": {
+    "message": "忘記這一項"
+  },
+  "options_memory_forgetAll": {
+    "message": "全部忘記"
+  },
+  "options_memory_forgetAll_confirm": {
+    "message": "是的，全部忘記"
+  },
+  "options_memory_forgetAll_cancel": {
+    "message": "取消"
+  },
+  "options_memory_scope_global": {
+    "message": "所有網站"
   }
 }

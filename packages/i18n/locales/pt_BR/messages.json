@@ -1054,5 +1054,60 @@
   },
   "options_general_confirmSensitiveActions_desc": {
     "message": "Perguntar antes de o agente enviar um formulário, comprar algo, excluir dados, baixar um arquivo ou digitar uma senha"
+  },
+  "act_remember_start": {
+    "message": "Memorizando: $CONTENT$",
+    "placeholders": {
+      "content": {
+        "content": "$1"
+      }
+    }
+  },
+  "act_remember_ok": {
+    "message": "Memorizado: $CONTENT$",
+    "placeholders": {
+      "content": {
+        "content": "$1"
+      }
+    }
+  },
+  "act_remember_disabled": {
+    "message": "Nada foi memorizado — a memória está desativada ou a nota estava vazia"
+  },
+  "options_tabs_memory": {
+    "message": "Memória"
+  },
+  "options_memory_header": {
+    "message": "Memória"
+  },
+  "options_memory_localOnly": {
+    "message": "Tudo aqui fica salvo apenas neste dispositivo. Nunca é enviado a um servidor nem sincronizado entre dispositivos."
+  },
+  "options_memory_enable": {
+    "message": "Lembrar preferências entre sessões"
+  },
+  "options_memory_enable_desc": {
+    "message": "Permitir que o agente salve e reutilize o que você contar sobre suas preferências"
+  },
+  "options_memory_stored": {
+    "message": "Memórias salvas"
+  },
+  "options_memory_empty": {
+    "message": "Nada memorizado ainda. O agente só salva uma preferência quando você pede."
+  },
+  "options_memory_forget": {
+    "message": "Esquecer isto"
+  },
+  "options_memory_forgetAll": {
+    "message": "Esquecer tudo"
+  },
+  "options_memory_forgetAll_confirm": {
+    "message": "Sim, esquecer tudo"
+  },
+  "options_memory_forgetAll_cancel": {
+    "message": "Cancelar"
+  },
+  "options_memory_scope_global": {
+    "message": "Em todos os sites"
   }
 }

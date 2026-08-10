@@ -25,6 +25,7 @@ import { chatHistoryStore } from '@extension/storage/lib/chat';
 import type { AgentStepHistory } from './history';
 import type { GeneralSettingsConfig } from '@extension/storage';
 import { analytics } from '../services/analytics';
+import { memoryStore } from '@extension/storage';
 
 const logger = createLogger('Executor');
 
@@ -47,6 +48,8 @@ export class Executor {
   private planApprovalResolver: ((approved: boolean) => void) | null = null;
   /** Whether the user already approved a plan for the task currently being worked on. */
   private planApproved = false;
+  /** Whether remembered preferences were already loaded for the task currently being worked on. */
+  private memoriesInjected = false;
   constructor(
     task: string,
     taskId: string,
@@ -105,8 +108,9 @@ export class Executor {
   addFollowUpTask(task: string): void {
     this.tasks.push(task);
     this.context.messageManager.addNewTask(task);
-    // a follow-up is a new intent, so it needs its own approval
+    // a follow-up is a new intent, so it needs its own approval, and it may be on a different site
     this.planApproved = false;
+    this.memoriesInjected = false;
 
     // need to reset previous action results that are not included in memory
     this.context.actionResults = this.context.actionResults.filter(result => result.includeInMemory);
@@ -140,6 +144,8 @@ export class Executor {
 
     try {
       this.context.emitEvent(Actors.SYSTEM, ExecutionState.TASK_START, this.context.taskId);
+
+      await this.injectMemories();
 
       // Track task start
       void analytics.trackTaskStart(this.context.taskId);
@@ -237,6 +243,37 @@ export class Executor {
       } else {
         logger.info('Replay historical tasks is disabled, skipping history storage');
       }
+    }
+  }
+
+  /**
+   * Load what the agent remembers about this user into the task's context.
+   *
+   * Recall is scoped to the site the task starts on, so a store that grows over time does not keep
+   * inflating the prompt of every unrelated task. Failures here are never fatal: a task that cannot
+   * read memory should still run, just without personalisation.
+   */
+  private async injectMemories(): Promise<void> {
+    if (this.memoriesInjected) return;
+    this.memoriesInjected = true;
+
+    try {
+      let host = '';
+      try {
+        const page = await this.context.browserContext.getCurrentPage();
+        host = new URL(page.url()).host;
+      } catch {
+        // no parseable current page, so only global memories apply
+      }
+
+      const memories = await memoryStore.recall(host);
+      if (memories.length === 0) return;
+
+      this.context.messageManager.addMemories(memories.map(memory => memory.content));
+      await memoryStore.markUsed(memories.map(memory => memory.id));
+      logger.info(`🧠 Loaded ${memories.length} remembered preference(s)`);
+    } catch (error) {
+      logger.error(`Failed to load memories, continuing without them: ${error}`);
     }
   }
 
