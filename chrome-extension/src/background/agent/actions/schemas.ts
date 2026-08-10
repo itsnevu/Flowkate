@@ -127,6 +127,24 @@ export const rememberActionSchema: ActionSchema = {
   }),
 };
 
+// Parallel Actions
+export const runParallelSubtasksActionSchema: ActionSchema = {
+  name: 'run_parallel_subtasks',
+  description:
+    "Research several independent questions at the same time, each in its own tab, then read all the answers back at once. Use this when the task needs information from different places that do not depend on each other, e.g. comparing the same product across three shops. The subtasks can only read pages - they cannot click, type or submit anything - and they cannot see each other, so never split a task where one part needs another part's answer.",
+  schema: z.object({
+    intent: z.string().default('').describe('purpose of this action'),
+    subtasks: z
+      .array(
+        z.object({
+          task: z.string().describe('what to find out, phrased so the answer stands on its own'),
+          url: z.string().describe('the page to start from'),
+        }),
+      )
+      .describe('between 2 and 3 independent research subtasks'),
+  }),
+};
+
 export const scrollToPercentActionSchema: ActionSchema = {
   name: 'scroll_to_percent',
   description:

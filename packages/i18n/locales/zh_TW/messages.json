@@ -1112,5 +1112,27 @@
   },
   "options_models_agents_fast": {
     "message": "用於例行導覽步驟的低成本模型（選用）"
+  },
+  "act_parallel_start": {
+    "message": "同時研究 $COUNT$ 件事，各自使用獨立分頁",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "act_parallel_ok": {
+    "message": "已完成 $TOTAL$ 個平行子任務中的 $OK$ 個",
+    "placeholders": {
+      "ok": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "act_parallel_needsTwo": {
+    "message": "平行研究至少需要兩個彼此獨立的子任務"
   }
 }

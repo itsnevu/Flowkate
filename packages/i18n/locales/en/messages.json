@@ -1112,5 +1112,27 @@
   },
   "options_models_agents_fast": {
     "message": "Cheap model used for routine navigation steps (optional)"
+  },
+  "act_parallel_start": {
+    "message": "Researching $COUNT$ things at once, each in its own tab",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "act_parallel_ok": {
+    "message": "Finished $OK$ of $TOTAL$ parallel subtasks",
+    "placeholders": {
+      "ok": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "act_parallel_needsTwo": {
+    "message": "Parallel research needs at least two independent subtasks"
   }
 }

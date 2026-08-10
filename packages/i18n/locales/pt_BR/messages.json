@@ -1112,5 +1112,27 @@
   },
   "options_models_agents_fast": {
     "message": "Modelo econômico usado em passos de navegação rotineiros (opcional)"
+  },
+  "act_parallel_start": {
+    "message": "Pesquisando $COUNT$ coisas ao mesmo tempo, cada uma em sua aba",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "act_parallel_ok": {
+    "message": "Concluídas $OK$ de $TOTAL$ subtarefas paralelas",
+    "placeholders": {
+      "ok": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "act_parallel_needsTwo": {
+    "message": "A pesquisa paralela precisa de pelo menos duas subtarefas independentes"
   }
 }

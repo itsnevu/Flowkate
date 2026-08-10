@@ -14,6 +14,7 @@ import {
   scrollToTextActionSchema,
   cacheContentActionSchema,
   rememberActionSchema,
+  runParallelSubtasksActionSchema,
   selectDropdownOptionActionSchema,
   getDropdownOptionsActionSchema,
   closeTabActionSchema,
@@ -30,6 +31,13 @@ import { ExecutionState, Actors } from '../event/types';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { wrapUntrustedContent } from '../messages/utils';
 import { memoryStore, MemoryScope } from '@extension/storage';
+import { READ_ONLY_ACTION_NAMES } from './readOnlyActions';
+import {
+  runSubtasksInParallel,
+  summarizeSubtaskResults,
+  MAX_PARALLEL_SUBTASKS,
+  type SubtaskRunnerOptions,
+} from '../parallel/subtaskRunner';
 
 const logger = createLogger('Action');
 
@@ -146,9 +154,22 @@ export class ActionBuilder {
   private readonly context: AgentContext;
   private readonly extractorLLM: BaseChatModel;
 
-  constructor(context: AgentContext, extractorLLM: BaseChatModel) {
+  /**
+   * @param subtaskOptions - what parallel subtasks need to run on their own; omitted when the caller
+   *   is itself a subtask, which is what prevents a subtask from spawning further subtasks
+   */
+  constructor(
+    context: AgentContext,
+    extractorLLM: BaseChatModel,
+    private readonly subtaskOptions?: SubtaskRunnerOptions,
+  ) {
     this.context = context;
     this.extractorLLM = extractorLLM;
+  }
+
+  /** The read-only subset of the default actions, for agents that must not change anything. */
+  buildReadOnlyActions() {
+    return this.buildDefaultActions().filter(action => READ_ONLY_ACTION_NAMES.has(action.name()));
   }
 
   buildDefaultActions() {
@@ -406,6 +427,34 @@ export class ActionBuilder {
       return new ActionResult({ extractedContent: msg, includeInMemory: true });
     }, rememberActionSchema);
     actions.push(remember);
+
+    // research several independent questions at once, each in its own tab
+    if (this.subtaskOptions) {
+      const runParallelSubtasks = new Action(async (input: z.infer<typeof runParallelSubtasksActionSchema.schema>) => {
+        const intent = input.intent || t('act_parallel_start', [String(input.subtasks.length)]);
+        this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
+
+        if (input.subtasks.length < 2) {
+          const msg = t('act_parallel_needsTwo');
+          this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_FAIL, msg);
+          return new ActionResult({ error: msg, includeInMemory: true });
+        }
+
+        const results = await runSubtasksInParallel(input.subtasks, this.subtaskOptions as SubtaskRunnerOptions);
+        const succeeded = results.filter(result => result.succeeded).length;
+        this.context.emitEvent(
+          Actors.NAVIGATOR,
+          ExecutionState.ACT_OK,
+          t('act_parallel_ok', [String(succeeded), String(results.length)]),
+        );
+
+        // findings come from pages, so they are untrusted content, not instructions
+        const msg = wrapUntrustedContent(summarizeSubtaskResults(results));
+        return new ActionResult({ extractedContent: msg, includeInMemory: true });
+      }, runParallelSubtasksActionSchema);
+      actions.push(runParallelSubtasks);
+      logger.debug(`Parallel subtasks enabled, up to ${MAX_PARALLEL_SUBTASKS} at once`);
+    }
 
     // Scroll to percent
     const scrollToPercent = new Action(async (input: z.infer<typeof scrollToPercentActionSchema.schema>) => {

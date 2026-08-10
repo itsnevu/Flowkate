@@ -83,7 +83,13 @@ export class Executor {
     this.navigatorPrompt = new NavigatorPrompt(context.options.maxActionsPerStep);
     this.plannerPrompt = new PlannerPrompt();
 
-    const actionBuilder = new ActionBuilder(context, extractorLLM);
+    // Subtasks reuse the navigator's model and the parent's browser config, so they obey the same
+    // firewall and timing rules as the main agent rather than quietly getting their own.
+    const actionBuilder = new ActionBuilder(context, extractorLLM, {
+      navigatorLLM,
+      agentOptions: context.options,
+      getBrowserConfig: () => browserContext.getConfig(),
+    });
     const navigatorActionRegistry = new NavigatorActionRegistry(actionBuilder.buildDefaultActions());
 
     // Initialize agents with their respective prompts
