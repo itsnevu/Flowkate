@@ -88,6 +88,9 @@ importers:
       prettier:
         specifier: ^3.3.3
         version: 3.6.2
+      puppeteer-core:
+        specifier: ^24.31.0
+        version: 24.31.0
       rimraf:
         specifier: ^6.1.2
         version: 6.1.2
