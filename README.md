@@ -1,269 +1,159 @@
-<h1 align="center">
-    <img src="https://github.com/user-attachments/assets/ec60b0c4-87ba-48f4-981a-c55ed0e8497b" height="100" width="375" alt="banner" /><br>
-</h1>
+<h1 align="center">Flowkate</h1>
 
+<p align="center">
+  An open-source AI browser agent that runs entirely in your browser — and asks before it does anything that matters.
+</p>
 
 <div align="center">
 
-[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/itsnevu)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/itsnevu/Flowkate)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge)](LICENSE)
 
 </div>
 
-## 🌐 Flowkate
+> **Status:** Flowkate is not on the Chrome Web Store yet. Install it from a [release](https://github.com/itsnevu/Flowkate/releases) or [build it from source](#build-from-source).
 
-Flowkate is an open-source AI web automation tool that runs in your browser. A free alternative to OpenAI Operator with flexible LLM options and multi-agent system.
+---
 
-⬇️ Not on the Chrome Web Store yet — grab the latest [release](https://github.com/itsnevu/Flowkate/releases) or [build from source](#%EF%B8%8F-build-from-source)
+## What it is
 
-👏 Join the conversation in [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)
+You type a task in plain language — *"find the cheapest flight to Tokyo next month"* — and Flowkate carries it out in your browser. A **Planner** agent works out the approach, a **Navigator** agent clicks, types and scrolls, and you watch the whole thing happen in a side panel.
 
-🌟 Loving Flowkate? Give us a star  and help spread the word!
+Everything runs locally. You bring your own LLM API key, and page data goes straight from your browser to the provider you chose. There is no Flowkate server, no Flowkate account, and nothing to sign up for.
 
+## Why another browser agent
 
-<div align="center">
-<img src="https://github.com/user-attachments/assets/112c4385-7b03-4b81-a352-4f348093351b" width="600" alt="Flowkate Demo GIF" />
-<p><em>Flowkate's multi-agent system analyzing HuggingFace in real-time, with the Planner intelligently self-correcting when encountering obstacles and dynamically instructing the Navigator to adjust its approach—all running locally in your browser.</em></p>
-</div>
+Most browser agents ask you to trust them with your logged-in browser session and then act. Flowkate is built the other way round: **the interesting parts are the places it stops.**
 
-## 🔥Why Flowkate?
+### It asks before it acts
 
-Looking for a powerful AI browser agent without the $200/month price tag of OpenAI Operator? **Flowkate** , as a chrome extension, delivers premium web automation capabilities while keeping you in complete control:
+- **Plan preview** — before touching a page, the agent shows you its plan and waits. Approve it or reject it. Only the first plan of each task is gated, so re-planning doesn't nag you.
+- **Sensitive actions need a yes** — buying, deleting, submitting a form, downloading a file or typing into a password field all stop and ask. The check reads the **actual DOM element the agent picked** — its label, `type`, `aria-label` — not the model's description of what it thinks it's doing. That distinction matters: a page that manages to talk the model into clicking "Buy now" still has to get past you.
+- **Undo** — roll back the last step. The page navigates back *and* the agent forgets the step, so it re-plans from the restored state instead of building on something you rejected.
 
-- **100% Free** - No subscription fees or hidden costs. Just install and use your own API keys, and you only pay what you use with your own API keys.
-- **Privacy-Focused** - Everything runs in your local browser. Your credentials stay with you, never shared with any cloud service.
-- **Flexible LLM Options** - Connect to your preferred LLM providers with the freedom to choose different models for different agents.
-- **Fully Open Source** - Complete transparency in how your browser is automated. No black boxes or hidden processes.
+### It remembers, on your machine only
 
-> **Note:** We currently support OpenAI, Anthropic, Gemini, Ollama, Groq, Cerebras, Llama and custom OpenAI-Compatible providers, more providers will be supported.
+The agent can remember preferences you tell it, so they carry across sessions. Memories live in `chrome.storage.local` — never uploaded, never synced. **Options → Memory** lists every stored fact with a delete button next to each one, and a switch to turn the whole thing off.
 
+### It handles pages that fight back
 
-## 📊 Key Features
+- An empty DOM parse is ambiguous: it means either *"nothing here"* or *"React hasn't mounted yet"*. Flowkate retries on escalating delays before concluding a page is empty, and if the DOM still yields nothing it attaches a **screenshot** automatically — even with vision off — rather than telling the model the page is blank and watching it give up.
+- Cross-origin iframes are read too, so embedded checkout and login widgets aren't invisible.
+- If a page re-renders between reading the element list and clicking, the action is retried once against fresh state.
 
-- **Multi-agent System**: Specialized AI agents collaborate to accomplish complex web workflows
-- **Interactive Side Panel**: Intuitive chat interface with real-time status updates
-- **Task Automation**: Seamlessly automate repetitive web automation tasks across websites
-- **Follow-up Questions**: Ask contextual follow-up questions about completed tasks
-- **Conversation History**: Easily access and manage your AI agent interaction history
-- **Multiple LLM Support**: Connect your preferred LLM providers and assign different models to different agents
+### It doesn't waste your tokens
 
-### 🛡️ You stay in control
+Configure an optional cheap **Fast** model and routine steps go to it. Anything that isn't routine — a failure to recover from, a dense page, a step reasoning over a screenshot, the first step of a new plan — escalates to your main model. The bias is deliberately toward the good model: a wrong cheap step costs a retry *and* a wrong page state, which is worse than the tokens it saved.
 
-- **Plan preview**: The agent shows you what it intends to do and waits for your approval before it touches a page. Only the first plan of each task is gated, so re-planning doesn't keep interrupting you.
-- **Confirmation for sensitive actions**: Buying, deleting, submitting a form, downloading a file or typing into a password field all stop and ask first. The check reads the actual DOM element the agent picked — not the model's description of what it's doing — so a page that manages to steer the model still can't act on its own.
-- **Undo**: Roll back the last step. The page navigates back and the agent forgets the step, so it re-plans from the restored state instead of building on something you rejected.
-- **On-device memory**: The agent can remember your preferences between sessions. Everything is stored in `chrome.storage.local` — never sent to a server, never synced. The Memory tab in Options lists every stored fact with per-entry delete and a master switch.
+### It can research in parallel
 
-### ⚡ Reliability and cost
+Independent lookups — the same product across three shops — run concurrently, each in its own tab, then merge. Those background tabs are **read-only by construction**: they physically cannot click, type or submit, because the action registry they are given does not contain those actions. A background tab is the one place you could not intervene, so it is not allowed to act.
 
-- **Grounding that survives late-rendering pages**: An empty DOM parse is retried on escalating delays before the agent concludes a page is empty, and when the DOM still yields nothing a screenshot is attached automatically so the agent can work from what it can see.
-- **Hybrid model routing**: Configure an optional cheap **Fast** model and routine steps go to it, while failures, dense pages, screenshot reasoning and the first step of a new plan escalate to your main model.
-- **Parallel research**: Independent lookups run concurrently, each in its own tab, then merge. Those background tabs are read-only by construction — they cannot click, type or submit.
+## Browser support
 
+| Browser | Status |
+| --- | --- |
+| Chrome | Fully supported |
+| Edge | Fully supported |
+| Firefox, Safari | Not supported |
+| Other Chromium browsers (Opera, Arc, Brave…) | May work, not tested |
 
-## 🌐 Browser Support
+## Install
 
-**Officially Supported:**
-- **Chrome** - Full support with all features
-- **Edge** - Full support with all features
+### From a release
 
-**Not Supported:**
-- Firefox, Safari, and other Chromium variants (Opera, Arc, etc.)
+1. Download `flowkate.zip` from the [releases page](https://github.com/itsnevu/Flowkate/releases) and unzip it.
+2. Open `chrome://extensions/`, turn on **Developer mode** (top right).
+3. Click **Load unpacked** and select the unzipped folder.
 
-> **Note**: While Flowkate may function on other Chromium-based browsers, we recommend using Chrome or Edge for the best experience and guaranteed compatibility.
+To upgrade, download the new zip, replace the folder, then hit refresh on the Flowkate card in `chrome://extensions/`.
 
+### Build from source
 
-## 🚀 Quick Start
+**pnpm is required** — this is a pnpm workspace and 38 of its dependencies use the `workspace:*` protocol, which npm cannot resolve.
 
-1. **Install the extension**:
-   * Flowkate is not published on the Chrome Web Store yet, so install it from a [release](https://github.com/itsnevu/Flowkate/releases) by following ["Manually Install Latest Version"](#-manually-install-latest-version) below, or [build it from source](#%EF%B8%8F-build-from-source).
+```bash
+# Node.js >= 22.12.0 and pnpm >= 9.15.1
+git clone https://github.com/itsnevu/Flowkate.git
+cd Flowkate
+pnpm install
+pnpm build          # output lands in dist/
+```
 
-2. **Configure Agent Models**:
-   * Click the Flowkate icon in your toolbar to open the sidebar
-   * Click the `Settings` icon (top right)
-   * Add your LLM API keys
-   * Choose which model to use for different agents (Navigator, Planner)
+Then load `dist/` as an unpacked extension, as above.
 
-## 🔧 Manually Install Latest Version
+```bash
+pnpm dev            # development build with hot reload
+pnpm test           # run every workspace's test suite
+pnpm type-check     # typecheck every workspace
+pnpm zip            # build and package into a distributable zip
+```
 
-To get the most recent version with all the latest features:
+## Set up your models
 
-1. **Download**
-    * Download the latest `flowkate.zip` file from the official Github [release page](https://github.com/itsnevu/Flowkate/releases).
+Open the side panel, click the settings icon, add your API keys, then assign a model to each role.
 
-2. **Install**:
-    * Unzip `flowkate.zip`.
-    * Open `chrome://extensions/` in Chrome
-    * Enable `Developer mode` (top right)
-    * Click `Load unpacked` (top left)
-    * Select the unzipped `flowkate` folder.
+| Role | What it does | Required |
+| --- | --- | --- |
+| **Planner** | Works out the approach and decides when the task is done | Yes |
+| **Navigator** | Reads the page and performs the actions | Yes |
+| **Fast** | Handles routine navigation steps to cut cost | Optional |
 
-3. **Configure Agent Models**
-    * Click the Flowkate icon in your toolbar to open the sidebar
-    * Click the `Settings` icon (top right).
-    * Add your LLM API keys.
-    * Choose which model to use for different agents (Navigator, Planner)
+### Suggested configurations
 
-4. **Upgrading**:
-    * Download the latest `flowkate.zip` file from the release page.
-    * Unzip and replace your existing Flowkate files with the new ones.
-    * Go to `chrome://extensions/` in Chrome and click the refresh icon on the Flowkate card.
+**Best results**
 
-## 🛠️ Build from Source
+- Planner: Claude Sonnet 4.5 — stronger reasoning and recovery
+- Navigator: Claude Haiku 4.5 — good balance for navigation
+- Fast: Gemini 2.5 Flash or GPT-5 mini
 
-If you prefer to build Flowkate yourself, follow these steps:
+**Cheapest that still works**
 
-1. **Prerequisites**:
-   * [Node.js](https://nodejs.org/) (v22.12.0 or higher)
-   * [pnpm](https://pnpm.io/installation) (v9.15.1 or higher)
+- Planner: Claude Haiku 4.5 or GPT-4o
+- Navigator: Gemini 2.5 Flash or GPT-4o-mini
+- Fast: same as Navigator
 
-2. **Clone the Repository**:
-   ```bash
-   git clone https://github.com/itsnevu/Flowkate.git
-   cd flowkate
-   ```
+Expect more iterations on complex tasks with the cheaper setup.
 
-3. **Install Dependencies**:
-   ```bash
-   pnpm install
-   ```
+**Fully local** — run Ollama or any OpenAI-compatible endpoint. Zero API cost, nothing leaves your machine. Try Qwen3-30B-A3B-Instruct, Falcon3 10B, Qwen 2.5 Coder 14B or Mistral Small 24B. Local models need more specific prompts: break tasks into explicit steps and avoid high-level, ambiguous instructions.
 
-4. **Build the Extension**:
-   ```bash
-   pnpm build
-   ```
+Supported providers: OpenAI, Anthropic, Gemini, DeepSeek, Grok, Groq, Cerebras, Llama, Azure OpenAI, OpenRouter, Ollama, and any OpenAI-compatible endpoint.
 
-5. **Load the Extension**:
-   * The built extension will be in the `dist` directory
-   * Follow the installation steps from the Manually Install section to load the extension into your browser
+## Keeping it on a leash
 
-6. **Development Mode** (optional):
-   ```bash
-   pnpm dev
-   ```
+**Options → Firewall** takes an allow list and a deny list, enforced before every navigation — including inside parallel subtasks. If there is a site you never want an agent on, put it in the deny list.
 
-## 🤖 Choosing Your Models
+**Options → General** holds the two safety switches (plan approval, sensitive-action confirmation). Both default to on. Turning them off is your call to make, but that is what they are protecting you from.
 
-Flowkate allows you to configure different LLM models for each agent to balance performance and cost. Here are recommended configurations:
+## Privacy
 
-### Better Performance
-- **Planner**: Claude Sonnet 4
-  - Better reasoning and planning capabilities
-- **Navigator**: Claude Haiku 3.5
-  - Efficient for web navigation tasks
-  - Good balance of performance and cost
+No backend, no account, and no telemetry you cannot turn off. Your API keys, history, settings and memories are stored locally and disappear when you uninstall.
 
-### Cost-Effective Configuration
-- **Planner**: Claude Haiku or GPT-4o
-  - Reasonable performance at lower cost
-  - May require more iterations for complex tasks
-- **Navigator**: Gemini 2.5 Flash or GPT-4o-mini
-  - Lightweight and cost-efficient
-  - Suitable for basic navigation tasks
+Page structure and — when vision is on — screenshots go to the LLM provider **you** configured, using **your** key. Once data reaches your provider, their policy governs it. Full detail in [PRIVACY.md](PRIVACY.md); permission-by-permission justification in [PERMISSIONS.md](PERMISSIONS.md).
 
-### Local Models
-- **Setup Options**:
-  - Use Ollama or other custom OpenAI-compatible providers to run models locally
-  - Zero API costs and complete privacy with no data leaving your machine
+Page content is treated as untrusted input and wrapped in explicit delimiters before reaching the model, so text on a page cannot pose as an instruction to the agent.
 
-- **Recommended Models**:
-  - **Qwen3-30B-A3B-Instruct-2507**
-  - **Falcon3 10B**
-  - **Qwen 2.5 Coder 14B**
-  - **Mistral Small 24B**
-  - [Latest test results from community](https://gist.github.com/maximus2600/75d60bf3df62986e2254d5166e2524cb) 
-  - We welcome community experience sharing with other local models in our [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)
+## Contributing
 
-- **Prompt Engineering**:
-  - Local models require more specific and cleaner prompts
-  - Avoid high-level, ambiguous commands
-  - Break complex tasks into clear, detailed steps
-  - Provide explicit context and constraints
+Bug reports and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Please run `pnpm type-check && pnpm test` before opening a PR. Security issues: see [SECURITY.md](SECURITY.md).
 
-> **Note**: The cost-effective configuration may produce less stable outputs and require more iterations for complex tasks.
+Questions and ideas belong in [Discussions](https://github.com/itsnevu/Flowkate/discussions).
 
-> **Tip**: Feel free to experiment with your own model configurations! Found a great combination? Share it with the community in our [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) to help others optimize their setup.
+## Credits
 
-## 💡 See It In Action
+Flowkate is a fork of [Nanobrowser](https://github.com/nanobrowser/nanobrowser) by alexchenzl and contributors, licensed under Apache-2.0. The multi-agent architecture and browser automation layer come from that project; this fork adds the human-in-the-loop controls, on-device memory, grounding retries, hybrid model routing and parallel research described above.
 
-Here are some powerful tasks you can accomplish with just a sentence:
-
-1. **News Summary**:
-   > "Go to TechCrunch and extract top 10 headlines from the last 24 hours"
-
-2. **GitHub Research**:
-   > "Look for the trending Python repositories on GitHub with most stars"
-
-3. **Shopping Research**:
-   > "Find a portable Bluetooth speaker on Amazon with a water-resistant design, under $50. It should have a minimum battery life of 10 hours"
-
-## 🛠️ Roadmap
-
-We're actively developing Flowkate with exciting features on the horizon, welcome to join us! 
-
-Check out our detailed roadmap and upcoming features in our [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions/85). 
-
-## 🤝 Contributing
-
-**We need your help to make Flowkate even better!**  Contributions of all kinds are welcome:
-
-*  **Share Prompts & Use Cases** 
-   * Join our [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions).
-   * share how you're using Flowkate.  Help us build a library of useful prompts and real-world use cases.
-*  **Provide Feedback** 
-   * Try Flowkate and give us feedback on its performance or suggest improvements in our [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions).
-* **Contribute Code**
-   * Check out our [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute code to the project.
-   * Submit pull requests for bug fixes, features, or documentation improvements.
-
-
-We believe in the power of open source and community collaboration.  Join us in building the future of web automation!
-
-
-## 🔒 Security
-
-If you discover a security vulnerability, please **DO NOT** disclose it publicly through issues, pull requests, or discussions.
-
-Instead, please create a [GitHub Security Advisory](https://github.com/itsnevu/Flowkate/security/advisories/new) to report the vulnerability responsibly. This allows us to address the issue before it's publicly disclosed.
-
-We appreciate your help in keeping Flowkate and its users safe!
-
-## 💬 Community
-
-Join our growing community of developers and users:
-
-- [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) - Chat with team and community
-- [GitHub releases](https://github.com/itsnevu/Flowkate/releases) - Follow for updates and announcements
-- [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) - Share ideas and ask questions
-
-## 👏 Acknowledgments
-
-Flowkate builds on top of other awesome open-source projects:
+It also stands on:
 
 - [Browser Use](https://github.com/browser-use/browser-use)
-- [Puppeteer](https://github.com/EmergenceAI/Agent-E)
+- [Agent-E](https://github.com/EmergenceAI/Agent-E)
 - [Chrome Extension Boilerplate](https://github.com/Jonghakseo/chrome-extension-boilerplate-react-vite)
-- [LangChain](https://github.com/langchain-ai/langchainjs)
+- [LangChain.js](https://github.com/langchain-ai/langchainjs)
 
-Huge thanks to their creators and contributors!
+## License
 
-## 📄 License
+Apache License 2.0 — see [LICENSE](LICENSE).
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+## Other languages
 
-Made with ❤️ by the Flowkate Team. 
-
-Like Flowkate? Give us a star 🌟 and join us in [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)
-
-## ⚠️ DISCLAIMER ON DERIVATIVE PROJECTS
-
-**We explicitly *DO NOT* endorse, support, or participate in any** projects involving cryptocurrencies, tokens, NFTs, or other blockchain-related applications **based on this codebase.**
-
-**Any such derivative projects are NOT Affiliated with, or maintained by, or in any way connected to the official Flowkate project or its core team.**
-
-**We assume NO LIABILITY for any losses, damages, or issues arising from the use of third-party derivative projects. Users interact with these projects at their own risk.**
-
-**We reserve the right to publicly distance ourselves from any misuse or misleading use of our name, codebase, or brand.**
-
-We encourage open-source innovation but urge our community to be discerning and cautious. Please ensure you understand the risks before using any software or service built upon our codebase by independent developers.
-
-
+These translations predate this README and describe an older feature set: [Español](README-es.md) · [Türkçe](README-tr.md) · [繁體中文](README-zh-Hant.md)
