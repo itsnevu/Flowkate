@@ -6,9 +6,6 @@
 <div align="center">
 
 [![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/itsnevu)
-[![Twitter](https://img.shields.io/badge/Twitter-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/flowkate_ai)
-[![Discord](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/NN3ABHggMK)
-[<img src="https://deepwiki.com/badge.svg" height="28" alt="Ask DeepWiki">](https://deepwiki.com/flowkate/flowkate)
 
 </div>
 
@@ -16,9 +13,9 @@
 
 Flowkate 是一款在瀏覽器中執行的開放原始碼 AI 網頁自動化工具。作為 OpenAI Operator 的免費替代方案，提供彈性的 LLM 選項與多代理系統。
 
-⬇️ 從 [Chrome 線上應用程式商店](https://chromewebstore.google.com/detail/flowkate/imbddededgmcgfhfpcjmijokokekbkal) 免費取得 Flowkate
+⬇️ 尚未上架 Chrome 線上應用程式商店 — 請下載最新[版本](https://github.com/itsnevu/Flowkate/releases)或自行從原始碼建置
 
-👏 加入我們的 [Discord](https://discord.gg/NN3ABHggMK) | [X](https://x.com/flowkate_ai) 社群
+👏 加入我們的 [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) 社群
 
 ❤️ 喜歡 Flowkate 嗎？請給我們一顆星星 🌟 並協助分享！
 
@@ -63,12 +60,8 @@ Flowkate 是一款在瀏覽器中執行的開放原始碼 AI 網頁自動化工�
 
 ## 🚀 快速入門
 
-1. **從 Chrome 線上應用程式商店安裝** (穩定版)：
-   * 前往 [Flowkate 的 Chrome 線上應用程式商店頁面](https://chromewebstore.google.com/detail/flowkate/imbddededgmcgfhfpcjmijokokekbkal)
-   * 按一下 [新增至 Chrome] 按鈕
-   * 在提示出現時確認安裝
-
-> **重要提示**：若要體驗最新功能，請參考下方的 [「手動安裝最新版本」](#-手動安裝最新版本) 進行安裝，因為 Chrome 線上應用程式商店的版本可能會因審核流程而延遲。
+1. **安裝擴充功能**：
+   * Flowkate 尚未上架 Chrome 線上應用程式商店，請依照下方的 [「手動安裝最新版本」](#-手動安裝最新版本) 從[版本發布頁](https://github.com/itsnevu/Flowkate/releases)安裝，或自行從原始碼建置。
 
 2. **設定代理模型**：
    * 按一下工具列中的 Flowkate 圖示以開啟側邊面板
@@ -164,7 +157,7 @@ Flowkate 允許您為每個代理設定不同的 LLM 模型，以平衡效能與
   - **Qwen 2.5 Coder 14B**
   - **Mistral Small 24B**
   - [社群最新測試結果](https://gist.github.com/maximus2600/75d60bf3df62986e2254d5166e2524cb)
-  - 歡迎社群成員在我們的 [Discord](https://discord.gg/NN3ABHggMK) 分享其他本機模型的使用經驗
+  - 歡迎社群成員在我們的 [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) 分享其他本機模型的使用經驗
 
 - **提示詞工程**：
   - 本機模型通常需要更具體、清楚的提示詞
@@ -174,7 +167,7 @@ Flowkate 允許您為每個代理設定不同的 LLM 模型，以平衡效能與
 
 > **請注意**：講求成本效益的設定可能會產生較不穩定的輸出，且處理複雜任務時可能需要更多次的迭代。
 
-> **提示**：歡迎盡情嘗試自己的模型設定！找到絕佳組合了嗎？到我們的 [Discord](https://discord.gg/NN3ABHggMK) 與社群分享，幫助大家最佳化設定。
+> **提示**：歡迎盡情嘗試自己的模型設定！找到絕佳組合了嗎？到我們的 [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) 與社群分享，幫助大家最佳化設定。
 
 ## 💡 實際應用案例
 
@@ -200,10 +193,10 @@ Flowkate 允許您為每個代理設定不同的 LLM 模型，以平衡效能與
 **我們需要您的幫助，讓 Flowkate 變得更好！** 我們歡迎各種形式的貢獻：
 
 *  **分享提示詞與使用案例**
-   * 加入我們的 [Discord 伺服器](https://discord.gg/NN3ABHggMK)。
+   * 加入我們的 [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)。
    * 分享您如何使用 Flowkate，協助我們建立實用的提示詞與實際應用案例資料庫。
 *  **提供回饋意見**
-   * 試用 Flowkate，並在我們的 [Discord 伺服器](https://discord.gg/NN3ABHggMK) 上提供效能回饋或改進建議。
+   * 試用 Flowkate，並在我們的 [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) 上提供效能回饋或改進建議。
 * **貢獻程式碼**
    * 請參閱我們的 [CONTRIBUTING.md](CONTRIBUTING.md)，瞭解如何為本專案貢獻程式碼的指南。
    * 針對錯誤修復、新功能或文件改進，提出 Pull Request。
@@ -224,8 +217,8 @@ Flowkate 允許您為每個代理設定不同的 LLM 模型，以平衡效能與
 
 歡迎加入我們持續成長的開發者與使用者社群：
 
-- [Discord](https://discord.gg/NN3ABHggMK) - 與團隊及社群成員交流
-- [Twitter](https://x.com/flowkate_ai) - 追蹤最新的更新與公告
+- [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) - 與團隊及社群成員交流
+- [GitHub 版本發布](https://github.com/itsnevu/Flowkate/releases) - 追蹤最新的更新與公告
 - [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) - 分享您的想法並提出問題
 
 ## 👏 致謝
@@ -245,7 +238,7 @@ Flowkate 的開發建立在許多優秀的開放原始碼專案之上：
 
 由 Flowkate 團隊用 ❤️ 打造。
 
-喜歡 Flowkate 嗎？請給我們一顆星星 🌟 並加入我們的 [Discord](https://discord.gg/NN3ABHggMK) | [X](https://x.com/flowkate_ai)
+喜歡 Flowkate 嗎？請給我們一顆星星 🌟 並加入我們的 [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)
 
 ## ⚠️ 衍生專案免責聲明
 

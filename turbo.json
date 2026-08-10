@@ -49,6 +49,10 @@
     "clean": {
       "dependsOn": ["^clean"],
       "cache": false
+    },
+    "test": {
+      "dependsOn": ["^ready"],
+      "cache": false
     }
   }
 }

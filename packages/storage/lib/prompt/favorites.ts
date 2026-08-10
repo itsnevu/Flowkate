@@ -10,8 +10,9 @@ const defaultFavoritePrompts = [
       '- Go to https://huggingface.co/papers and click through each of the first 3 papers.\n- For each paper:\n  - Record the title, URL and upvotes\n  - Summarise the abstract section\n- Finally, compile together a summary of all 3 papers, ranked by upvotes',
   },
   {
-    title: '🐦 Follow us on X/Twitter!',
-    content: 'Follow us at https://x.com/flowkate_ai to stay updated on the latest news and features!',
+    title: '🛒 Compare prices across shops',
+    content:
+      'Compare the current price of the Logitech MX Master 3S across Amazon, Best Buy and Walmart. Research all three at the same time, then tell me which is cheapest and what each one charges for shipping.',
   },
   {
     title: '🌟 Star us on GitHub!',

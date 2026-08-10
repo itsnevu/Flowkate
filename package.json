@@ -19,6 +19,7 @@
     "dev": "turbo ready && cross-env __DEV__=true turbo watch dev --concurrency 20",
     "e2e": "pnpm build && pnpm zip && turbo e2e",
     "type-check": "turbo type-check",
+    "test": "turbo test",
     "lint": "turbo lint --continue -- --fix --cache --cache-location node_modules/.cache/.eslintcache",
     "lint:fix": "turbo lint:fix --continue -- --fix --cache --cache-location node_modules/.cache/.eslintcache",
     "prettier": "turbo prettier --continue -- --cache --cache-location node_modules/.cache/.prettiercache",

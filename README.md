@@ -6,10 +6,6 @@
 <div align="center">
 
 [![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/itsnevu)
-[![Twitter](https://img.shields.io/badge/Twitter-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/flowkate_ai)
-[![Discord](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/NN3ABHggMK)
-[<img src="https://deepwiki.com/badge.svg" height="28" alt="Ask DeepWiki">](https://deepwiki.com/flowkate/flowkate)
-[![Sponsor](https://img.shields.io/badge/Sponsor-ff69b4?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/alexchenzl)
 
 </div>
 
@@ -17,13 +13,12 @@
 
 Flowkate is an open-source AI web automation tool that runs in your browser. A free alternative to OpenAI Operator with flexible LLM options and multi-agent system.
 
-⬇️ Get [Flowkate from Chrome Web Store](https://chromewebstore.google.com/detail/flowkate/imbddededgmcgfhfpcjmijokokekbkal) for free
+⬇️ Not on the Chrome Web Store yet — grab the latest [release](https://github.com/itsnevu/Flowkate/releases) or [build from source](#%EF%B8%8F-build-from-source)
 
-👏 Join the community in [Discord](https://discord.gg/NN3ABHggMK) | [X](https://x.com/flowkate_ai)
+👏 Join the conversation in [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)
 
 🌟 Loving Flowkate? Give us a star  and help spread the word!
 
-❤️ Support the project by [sponsoring us](https://github.com/sponsors/alexchenzl) - every contribution helps keep Flowkate free and open source!
 
 <div align="center">
 <img src="https://github.com/user-attachments/assets/112c4385-7b03-4b81-a352-4f348093351b" width="600" alt="Flowkate Demo GIF" />
@@ -79,12 +74,8 @@ Looking for a powerful AI browser agent without the $200/month price tag of Open
 
 ## 🚀 Quick Start
 
-1. **Install from Chrome Web Store** (Stable Version):
-   * Visit the [Flowkate Chrome Web Store page](https://chromewebstore.google.com/detail/flowkate/imbddededgmcgfhfpcjmijokokekbkal)
-   * Click "Add to Chrome" button
-   * Confirm the installation when prompted
-
-> **Important Note**: For latest features, install from ["Manually Install Latest Version"](#-manually-install-latest-version) below, as Chrome Web Store version may be delayed due to review process.
+1. **Install the extension**:
+   * Flowkate is not published on the Chrome Web Store yet, so install it from a [release](https://github.com/itsnevu/Flowkate/releases) by following ["Manually Install Latest Version"](#-manually-install-latest-version) below, or [build it from source](#%EF%B8%8F-build-from-source).
 
 2. **Configure Agent Models**:
    * Click the Flowkate icon in your toolbar to open the sidebar
@@ -180,7 +171,7 @@ Flowkate allows you to configure different LLM models for each agent to balance 
   - **Qwen 2.5 Coder 14B**
   - **Mistral Small 24B**
   - [Latest test results from community](https://gist.github.com/maximus2600/75d60bf3df62986e2254d5166e2524cb) 
-  - We welcome community experience sharing with other local models in our [Discord](https://discord.gg/NN3ABHggMK)
+  - We welcome community experience sharing with other local models in our [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)
 
 - **Prompt Engineering**:
   - Local models require more specific and cleaner prompts
@@ -190,7 +181,7 @@ Flowkate allows you to configure different LLM models for each agent to balance 
 
 > **Note**: The cost-effective configuration may produce less stable outputs and require more iterations for complex tasks.
 
-> **Tip**: Feel free to experiment with your own model configurations! Found a great combination? Share it with the community in our [Discord](https://discord.gg/NN3ABHggMK) to help others optimize their setup.
+> **Tip**: Feel free to experiment with your own model configurations! Found a great combination? Share it with the community in our [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) to help others optimize their setup.
 
 ## 💡 See It In Action
 
@@ -216,10 +207,10 @@ Check out our detailed roadmap and upcoming features in our [GitHub Discussions]
 **We need your help to make Flowkate even better!**  Contributions of all kinds are welcome:
 
 *  **Share Prompts & Use Cases** 
-   * Join our [Discord server](https://discord.gg/NN3ABHggMK).
+   * Join our [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions).
    * share how you're using Flowkate.  Help us build a library of useful prompts and real-world use cases.
 *  **Provide Feedback** 
-   * Try Flowkate and give us feedback on its performance or suggest improvements in our [Discord server](https://discord.gg/NN3ABHggMK).
+   * Try Flowkate and give us feedback on its performance or suggest improvements in our [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions).
 * **Contribute Code**
    * Check out our [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute code to the project.
    * Submit pull requests for bug fixes, features, or documentation improvements.
@@ -240,8 +231,8 @@ We appreciate your help in keeping Flowkate and its users safe!
 
 Join our growing community of developers and users:
 
-- [Discord](https://discord.gg/NN3ABHggMK) - Chat with team and community
-- [Twitter](https://x.com/flowkate_ai) - Follow for updates and announcements
+- [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) - Chat with team and community
+- [GitHub releases](https://github.com/itsnevu/Flowkate/releases) - Follow for updates and announcements
 - [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) - Share ideas and ask questions
 
 ## 👏 Acknowledgments
@@ -261,7 +252,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 Made with ❤️ by the Flowkate Team. 
 
-Like Flowkate? Give us a star 🌟 and join us in [Discord](https://discord.gg/NN3ABHggMK) | [X](https://x.com/flowkate_ai)
+Like Flowkate? Give us a star 🌟 and join us in [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)
 
 ## ⚠️ DISCLAIMER ON DERIVATIVE PROJECTS
 

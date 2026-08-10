@@ -5,9 +5,6 @@
 <div align="center">
 
 [![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/itsnevu)
-[![Twitter](https://img.shields.io/badge/Twitter-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/flowkate_ai)
-[![Discord](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/NN3ABHggMK)
-[<img src="https://deepwiki.com/badge.svg" height="28" alt="Ask DeepWiki">](https://deepwiki.com/flowkate/flowkate)
 
 </div>
 
@@ -15,9 +12,9 @@
 
 Flowkate, tarayıcınızda çalışan açık kaynaklı bir yapay zeka tarayıcı otomasyon aracıdır. Esnek LLM seçenekleri ve çoklu ajan sistemiyle birlikte OpenAI Operator’a ücretsiz bir alternatiftir.
 
-⬇️ [Flowkate’ı Chrome Web Mağazası’ndan ücretsiz edinin](https://chromewebstore.google.com/detail/flowkate/imbddededgmcgfhfpcjmijokokekbkal)
+⬇️ Henüz Chrome Web Mağazası’nda değil — en son [sürümü](https://github.com/itsnevu/Flowkate/releases) indirin veya kaynaktan derleyin
 
-👏 Topluluğa katılın: [Discord](https://discord.gg/NN3ABHggMK) | [X](https://x.com/flowkate_ai)
+👏 Topluluğa katılın: [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)
 
 ❤️ Flowkate’ı sevdiniz mi? Bize bir yıldız ⭐ verin ve yayılmasına yardımcı olun!
 
@@ -59,12 +56,8 @@ OpenAI Operator'ın aylık 200 dolarlık ücretinden kurtulmak mı istiyorsunuz?
 
 ## 🚀 Hızlı Başlangıç
 
-1. **Chrome Web Mağazası’ndan Kurulum** (Kararlı Sürüm):
-   * [Flowkate Chrome Web Mağazası sayfasına](https://chromewebstore.google.com/detail/flowkate/imbddededgmcgfhfpcjmijokokekbkal) gidin
-   * "Chrome’a Ekle" butonuna tıklayın
-   * Kurulumu onaylayın
-
-> **Önemli Not**: En yeni özellikler için aşağıdaki ["En Son Sürümü Manuel Kur"](#-en-son-sürümü-manuel-kur) kısmından kurulum yapmanızı öneririz. Chrome Web Mağazası versiyonu inceleme süreci nedeniyle gecikebilir.
+1. **Eklentiyi kurun**:
+   * Flowkate henüz Chrome Web Mağazası’nda yayınlanmadı. Aşağıdaki ["En Son Sürümü Manuel Kur"](#-en-son-sürümü-manuel-kur) adımlarını izleyerek bir [sürümden](https://github.com/itsnevu/Flowkate/releases) kurun veya kaynaktan derleyin.
 
 2. **Ajan Modellerini Yapılandırın**:
    * Araç çubuğundaki Flowkate simgesine tıklayın
@@ -173,7 +166,7 @@ Flowkate, her ajan için farklı LLM modelleri ayarlamanıza olanak tanır. Böy
   * **Qwen 2.5 Coder 14B**
   * **Mistral Small 24B**
   * [Topluluktan en son test sonuçları](https://gist.github.com/maximus2600/75d60bf3df62986e2254d5166e2524cb)
-  * Diğer yerel modellerle deneyimlerinizi [Discord](https://discord.gg/NN3ABHggMK)'da paylaşabilirsiniz
+  * Diğer yerel modellerle deneyimlerinizi [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)'da paylaşabilirsiniz
 
 * **Prompt Mühendisliği**:
 
@@ -184,7 +177,7 @@ Flowkate, her ajan için farklı LLM modelleri ayarlamanıza olanak tanır. Böy
 
 > **Not**: Ucuz yapılandırmalar daha az kararlı çıktı verebilir ve karmaşık görevlerde daha fazla yineleme gerekebilir.
 
-> **İpucu**: Kendi model yapılandırmalarınızı denemekten çekinmeyin! Harika bir kombinasyon buldunuz mu? [Discord](https://discord.gg/NN3ABHggMK)'da toplulukla paylaşın.
+> **İpucu**: Kendi model yapılandırmalarınızı denemekten çekinmeyin! Harika bir kombinasyon buldunuz mu? [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)'da toplulukla paylaşın.
 
 ## 💡 Uygulamalı Örnekler
 
@@ -214,7 +207,7 @@ Detaylı yol haritamıza ve gelecek özelliklere [GitHub Discussions](https://gi
 
 * **Prompt & Kullanım Senaryoları Paylaşın**
 
-  * [Discord sunucumuza](https://discord.gg/NN3ABHggMK) katılın
+  * [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) katılın
   * Flowkate’ı nasıl kullandığınızı anlatın ve topluluk kütüphanemizi büyütün
 * **Geri Bildirim Verin**
 
@@ -238,8 +231,8 @@ Flowkate’ı ve kullanıcılarını güvende tutmaya yardım ettiğiniz için t
 
 Giderek büyüyen geliştirici ve kullanıcı topluluğumuza katılın:
 
-* [Discord](https://discord.gg/NN3ABHggMK) – Ekip ve toplulukla sohbet edin
-* [Twitter](https://x.com/flowkate_ai) – Güncellemeler ve duyurular
+* [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) – Ekip ve toplulukla sohbet edin
+* [GitHub sürümleri](https://github.com/itsnevu/Flowkate/releases) – Güncellemeler ve duyurular
 * [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) – Fikirlerinizi paylaşın ve sorular sorun
 
 ## 👏 Teşekkürler
@@ -259,7 +252,7 @@ Bu proje Apache License 2.0 ile lisanslanmıştır – detaylar için [LICENSE](
 
 Sevgiyle yapıldı ❤️ Flowkate Ekibi tarafından.
 
-Flowkate’ı sevdiniz mi? Bize bir yıldız 🌟 verin ve topluluğumuza katılın: [Discord](https://discord.gg/NN3ABHggMK) | [X](https://x.com/flowkate_ai)
+Flowkate’ı sevdiniz mi? Bize bir yıldız 🌟 verin ve topluluğumuza katılın: [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)
 
 ---
 

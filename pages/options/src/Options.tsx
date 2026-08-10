@@ -40,7 +40,7 @@ const Options = () => {
 
   const handleTabClick = (tabId: TabTypes) => {
     if (tabId === 'help') {
-      window.open('https://flowkate.ai/docs', '_blank');
+      window.open('https://github.com/itsnevu/Flowkate#readme', '_blank');
     } else {
       setActiveTab(tabId);
     }

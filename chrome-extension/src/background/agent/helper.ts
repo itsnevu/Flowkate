@@ -11,51 +11,61 @@ import { ChatDeepSeek } from '@langchain/deepseek';
 
 const maxTokens = 1024 * 4;
 
-// Custom ChatLlama class to handle Llama API response format
+/** Reshape a Llama API response into the OpenAI shape LangChain expects. */
+function toOpenAIChatCompletion(response: any, model: string): any {
+  const metric = (name: string) => response.metrics?.find((m: any) => m.metric === name)?.value || 0;
+  return {
+    id: response.id || 'llama-response',
+    object: 'chat.completion',
+    created: Date.now(),
+    model,
+    choices: [
+      {
+        index: 0,
+        message: {
+          role: 'assistant',
+          content: response.completion_message.content.text,
+        },
+        finish_reason: response.completion_message.stop_reason || 'stop',
+      },
+    ],
+    usage: {
+      prompt_tokens: metric('num_prompt_tokens'),
+      completion_tokens: metric('num_completion_tokens'),
+      total_tokens: metric('num_total_tokens'),
+    },
+  };
+}
+
+/**
+ * ChatOpenAI speaking to the Llama API, which answers with `completion_message` instead of `choices`.
+ *
+ * The transformation has to be installed on the internal completions client rather than overridden on
+ * this class: since @langchain/openai 0.6, ChatOpenAI delegates generation to `this.completions`, so a
+ * `completionWithRetry` method defined here is never called. Patching the delegate is what keeps the
+ * conversion on the path the request actually takes.
+ */
 class ChatLlama extends ChatOpenAI {
   constructor(args: any) {
     super(args);
-  }
 
-  // Override the completionWithRetry method to intercept and transform the response
-  async completionWithRetry(request: any, options?: any): Promise<any> {
-    try {
-      // Make the request using the parent's implementation
-      const response = await super.completionWithRetry(request, options);
-
-      // Check if this is a Llama API response format
-      if (response?.completion_message?.content?.text) {
-        // Transform Llama API response to OpenAI format
-        const transformedResponse = {
-          id: response.id || 'llama-response',
-          object: 'chat.completion',
-          created: Date.now(),
-          model: request.model,
-          choices: [
-            {
-              index: 0,
-              message: {
-                role: 'assistant',
-                content: response.completion_message.content.text,
-              },
-              finish_reason: response.completion_message.stop_reason || 'stop',
-            },
-          ],
-          usage: {
-            prompt_tokens: response.metrics?.find((m: any) => m.metric === 'num_prompt_tokens')?.value || 0,
-            completion_tokens: response.metrics?.find((m: any) => m.metric === 'num_completion_tokens')?.value || 0,
-            total_tokens: response.metrics?.find((m: any) => m.metric === 'num_total_tokens')?.value || 0,
-          },
-        };
-
-        return transformedResponse;
-      }
-
-      return response;
-    } catch (error: any) {
-      console.error(`[ChatLlama] Error during API call:`, error);
-      throw error;
+    // `completions` is the delegate ChatOpenAI routes every request through
+    const completions = (this as any).completions;
+    if (!completions || typeof completions.completionWithRetry !== 'function') {
+      console.error('[ChatLlama] Could not install the Llama response transform: no completions delegate found');
+      return;
     }
+
+    const original = completions.completionWithRetry.bind(completions);
+    completions.completionWithRetry = async (request: any, options?: any): Promise<any> => {
+      try {
+        const response = await original(request, options);
+        return response?.completion_message?.content?.text ? toOpenAIChatCompletion(response, request.model) : response;
+      } catch (error: any) {
+        console.error('[ChatLlama] Error during API call:', error);
+        throw error;
+      }
+    };
   }
 }
 
@@ -351,7 +361,7 @@ export function createChatModel(providerConfig: ProviderConfig, modelConfig: Mod
       console.log('[createChatModel] Calling createOpenAIChatModel for OpenRouter');
       return createOpenAIChatModel(providerConfig, modelConfig, {
         headers: {
-          'HTTP-Referer': 'https://flowkate.ai',
+          'HTTP-Referer': 'https://github.com/itsnevu/Flowkate',
           'X-Title': 'Flowkate',
         },
       });

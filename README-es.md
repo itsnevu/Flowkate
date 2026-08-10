@@ -6,8 +6,6 @@
 <div align="center">
 
 [![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/itsnevu)
-[![Twitter](https://img.shields.io/badge/Twitter-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/flowkate_ai)
-[![Discord](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/NN3ABHggMK)
 
 </div>
 
@@ -15,9 +13,9 @@
 
 Flowkate es una herramienta de automatización web con IA que se ejecuta en tu navegador. Es una alternativa gratuita a OpenAI Operator, con opciones flexibles de modelos de lenguaje (LLM) y un sistema multiagente.
 
-⬇️ Descarga [Flowkate desde Chrome Web Store](https://chromewebstore.google.com/detail/flowkate/imbddededgmcgfhfpcjmijokokekbkal) gratis
+⬇️ Todavía no está en Chrome Web Store — descarga la última [versión](https://github.com/itsnevu/Flowkate/releases) o compílalo desde el código fuente
 
-👏 Únete a la comunidad en [Discord](https://discord.gg/NN3ABHggMK) | [X](https://x.com/flowkate_ai)
+👏 Únete a la comunidad en [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)
 
 ❤️ ¿Te encanta Flowkate? ¡Danos una estrella 🌟 y ayúdanos a correr la voz!
 
@@ -50,12 +48,8 @@ Flowkate es una herramienta de automatización web con IA que se ejecuta en tu n
 
 ## 🚀 Inicio Rápido
 
-1. **Instala desde Chrome Web Store** (Versión Estable):
-   * Visita la [página de Flowkate en Chrome Web Store](https://chromewebstore.google.com/detail/flowkate/imbddededgmcgfhfpcjmijokokekbkal)
-   * Haz clic en el botón "Añadir a Chrome"
-   * Confirma la instalación cuando se te solicite
-
-> **Nota Importante**: Para acceder a las funciones más recientes, instala desde ["Instalar Última Versión Manualmente"](#-instalar-última-versión-manualmente) abajo, ya que la versión de Chrome Web Store puede tardar en actualizarse debido al proceso de revisión.
+1. **Instala la extensión**:
+   * Flowkate aún no está publicado en Chrome Web Store, así que instálalo desde una [versión](https://github.com/itsnevu/Flowkate/releases) siguiendo ["Instalar Última Versión Manualmente"](#-instalar-última-versión-manualmente) abajo, o compílalo desde el código fuente.
 
 2. **Configurar Modelos de Agente**:
    * Haz clic en el icono de Flowkate ubicado en la barra de herramientas para abrir el panel lateral
@@ -151,7 +145,7 @@ Flowkate te permite configurar distintos modelos LLM para cada agente para equil
   - **Qwen 2.5 Coder 14B**
   - **Mistral Small 24B**
   - [Últimos resultados de pruebas de la comunidad](https://gist.github.com/maximus2600/75d60bf3df62986e2254d5166e2524cb)
-  - Te invitamos a compartir tu experiencia con otros modelos locales en nuestro [Discord](https://discord.gg/NN3ABHggMK)
+  - Te invitamos a compartir tu experiencia con otros modelos locales en nuestro [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)
 
 - **Ingeniería de Prompts**:
   - Los modelos locales requieren prompts más específicos y claros
@@ -161,7 +155,7 @@ Flowkate te permite configurar distintos modelos LLM para cada agente para equil
 
 > **Nota**: La configuración económica puede producir resultados menos estables y requerir más iteraciones para tareas complejas.
 
-> **Consejo**: ¡Siéntete libre de experimentar con tus propias configuraciones de modelos! ¿Encontraste una combinación excelente? Compártela con la comunidad en nuestro [Discord](https://discord.gg/NN3ABHggMK) para ayudar a otros a optimizar sus configuraciones.
+> **Consejo**: ¡Siéntete libre de experimentar con tus propias configuraciones de modelos! ¿Encontraste una combinación excelente? Compártela con la comunidad en nuestro [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) para ayudar a otros a optimizar sus configuraciones.
 
 ## 💡 Velo en Acción
 
@@ -187,10 +181,10 @@ Consulta nuestra hoja de ruta detallada y las características próximas en nues
 **Necesitamos tu ayuda para hacer que Flowkate sea aún mejor!**  Se aceptan contribuciones de todo tipo:
 
 *  **Comparte Prompts y Casos de Uso** 
-   * Únete a nuestro [servidor de Discord](https://discord.gg/NN3ABHggMK).
+   * Únete a nuestro [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions).
    * Comparte cómo estás usando Flowkate. Ayúdanos a construir una biblioteca de prompts útiles y casos de uso reales.
 *  **Proporciona Retroalimentación** 
-   * Prueba Flowkate y danos tu opinión sobre su rendimiento o sugiere mejoras en nuestro [servidor de Discord](https://discord.gg/NN3ABHggMK).
+   * Prueba Flowkate y danos tu opinión sobre su rendimiento o sugiere mejoras en nuestro [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions).
 * **Contribuye con Código**
    * Consulta nuestro [CONTRIBUTING.md](CONTRIBUTING.md) para conocer las pautas sobre cómo contribuir con código al proyecto.
    * Envía pull requests para corrección de errores, funciones, o mejoras en la documentación.
@@ -211,8 +205,8 @@ En su lugar, por favor crea un [GitHub Security Advisory](https://github.com/its
 
 Únete a nuestra creciente comunidad de desarrolladores y usuarios:
 
-- [Discord](https://discord.gg/NN3ABHggMK) - Habla con el equipo y la comunidad
-- [Twitter](https://x.com/flowkate_ai) - Síguenos para actualizaciones y anuncios
+- [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) - Habla con el equipo y la comunidad
+- [Versiones de GitHub](https://github.com/itsnevu/Flowkate/releases) - Síguenos para actualizaciones y anuncios
 - [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) - Comparte ideas y realiza preguntas
 
 ## 👏 Agradecimientos
@@ -233,4 +227,4 @@ Este proyecto está bajo la Licencia Apache 2.0 - consulta el archivo [LICENSE](
 
 Hecho con ❤️ por el equipo de Flowkate.
 
-¿Te gusta Flowkate? ¡Danos una estrella 🌟 y únete a nosotros en [Discord](https://discord.gg/NN3ABHggMK) | [X](https://x.com/flowkate_ai)
+¿Te gusta Flowkate? ¡Danos una estrella 🌟 y únete a nosotros en [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)
