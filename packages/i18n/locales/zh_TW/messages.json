@@ -959,5 +959,50 @@
         "example": "Option not found"
       }
     }
+  },
+  "exec_plan_approved": {
+    "message": "計畫已核准 — 執行中"
+  },
+  "exec_plan_rejected": {
+    "message": "計畫已拒絕 — 任務已停止"
+  },
+  "exec_undo_ok": {
+    "message": "已復原上一個步驟。頁面已還原，代理將重新規劃。"
+  },
+  "bg_cmd_planReview_notPending": {
+    "message": "目前沒有等待審核的計畫"
+  },
+  "bg_cmd_undo_failed": {
+    "message": "無法復原上一個步驟"
+  },
+  "planReview_title": {
+    "message": "執行前請先審核計畫"
+  },
+  "planReview_steps": {
+    "message": "規劃的步驟"
+  },
+  "planReview_observation": {
+    "message": "代理看到的內容"
+  },
+  "planReview_challenges": {
+    "message": "風險"
+  },
+  "planReview_reasoning": {
+    "message": "為何採用此方式"
+  },
+  "planReview_approve": {
+    "message": "核准並執行"
+  },
+  "planReview_reject": {
+    "message": "拒絕"
+  },
+  "chat_undo": {
+    "message": "復原上一個步驟"
+  },
+  "options_general_requirePlanApproval": {
+    "message": "執行前先核准計畫"
+  },
+  "options_general_requirePlanApproval_desc": {
+    "message": "在代理對頁面採取任何動作前，先顯示其計畫並等待你核准"
   }
 }

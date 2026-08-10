@@ -289,7 +289,6 @@
   "options_models_providers_custom_name_placeholder": {
     "message": "Nome do provedor"
   },
-
   "options_models_providers_apiKey": {
     "message": "Chave de API"
   },
@@ -308,21 +307,18 @@
   "options_models_providers_apiKey_show": {
     "message": "Mostrar chave de API"
   },
-
   "options_models_selection_header": {
     "message": "Seleção de Modelo"
   },
   "options_models_speechToText_header": {
     "message": "Modelo de Fala para Texto"
   },
-
   "options_models_agents_navigator": {
     "message": "Navega em sites e executa ações"
   },
   "options_models_agents_planner": {
     "message": "Desenvolve e refina estratégias para completar tarefas"
   },
-
   "options_models_labels_model": {
     "message": "Modelo"
   },
@@ -410,7 +406,6 @@
       }
     }
   },
-
   "options_firewall_header": {
     "message": "Firewall"
   },
@@ -447,7 +442,6 @@
   "options_firewall_howItWorks": {
     "message": "O firewall contém uma lista de negações e uma lista de permissões.\nSe ambas as listas estiverem vazias, todos os URLs são permitidos\nA lista de negações tem prioridade - se um URL corresponder a qualquer entrada da lista de negações, ele será bloqueado\nQuando a lista de permissões está vazia, todos os URLs não negados são permitidos\nQuando a lista de permissões não está vazia, apenas os URLs correspondentes são permitidos\nCuringas ainda NÃO são suportados\nA lista de permissões é preferível à lista de negações"
   },
-
   "bg_errors_noTabId": {
     "message": "Nenhum ID de aba fornecido"
   },
@@ -547,7 +541,6 @@
   "exec_replay_historyEmpty": {
     "message": "O histórico está vazio"
   },
-
   "act_searchGoogle_start": {
     "message": "Procurando por \"$QUERY$\" no Google",
     "placeholders": {
@@ -966,5 +959,50 @@
         "example": "Opção não encontrada"
       }
     }
+  },
+  "exec_plan_approved": {
+    "message": "Plano aprovado — executando"
+  },
+  "exec_plan_rejected": {
+    "message": "Plano rejeitado — tarefa interrompida"
+  },
+  "exec_undo_ok": {
+    "message": "Última etapa desfeita. A página foi restaurada e o agente vai replanejar."
+  },
+  "bg_cmd_planReview_notPending": {
+    "message": "Nenhum plano aguardando revisão"
+  },
+  "bg_cmd_undo_failed": {
+    "message": "Falha ao desfazer a última etapa"
+  },
+  "planReview_title": {
+    "message": "Revise o plano antes de executar"
+  },
+  "planReview_steps": {
+    "message": "Etapas planejadas"
+  },
+  "planReview_observation": {
+    "message": "O que o agente vê"
+  },
+  "planReview_challenges": {
+    "message": "Riscos"
+  },
+  "planReview_reasoning": {
+    "message": "Por que esta abordagem"
+  },
+  "planReview_approve": {
+    "message": "Aprovar e executar"
+  },
+  "planReview_reject": {
+    "message": "Rejeitar"
+  },
+  "chat_undo": {
+    "message": "Desfazer última etapa"
+  },
+  "options_general_requirePlanApproval": {
+    "message": "Aprovar o plano antes de executar"
+  },
+  "options_general_requirePlanApproval_desc": {
+    "message": "Mostra o plano do agente e aguarda sua aprovação antes de qualquer ação na página"
   }
 }

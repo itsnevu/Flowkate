@@ -141,6 +141,31 @@ chrome.runtime.onConnect.addListener(port => {
             return port.postMessage({ type: 'success' });
           }
 
+          case 'approve_plan':
+          case 'reject_plan': {
+            if (!currentExecutor) return port.postMessage({ type: 'error', error: t('bg_errors_noRunningTask') });
+            if (!currentExecutor.isAwaitingPlanReview())
+              return port.postMessage({ type: 'error', error: t('bg_cmd_planReview_notPending') });
+            await currentExecutor.respondToPlanReview(message.type === 'approve_plan');
+            return port.postMessage({ type: 'success' });
+          }
+
+          case 'undo_last_step': {
+            if (!currentExecutor) return port.postMessage({ type: 'error', error: t('bg_errors_noRunningTask') });
+            try {
+              // pause first so the agent cannot act on the state we are about to roll back
+              await currentExecutor.pause();
+              await currentExecutor.undoLastStep();
+              return port.postMessage({ type: 'success' });
+            } catch (error) {
+              logger.error('Undo failed:', error);
+              return port.postMessage({
+                type: 'error',
+                error: error instanceof Error ? error.message : t('bg_cmd_undo_failed'),
+              });
+            }
+          }
+
           case 'pause_task': {
             if (!currentExecutor) return port.postMessage({ type: 'error', error: t('bg_errors_noRunningTask') });
             await currentExecutor.pause();

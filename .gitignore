@@ -9,3 +9,4 @@ dist-zip/
 !.env.example
 .DS_Store
 coverage/
+packages/hmr/build/injections/

@@ -43,6 +43,10 @@ export class Executor {
   private readonly navigatorPrompt: NavigatorPrompt;
   private readonly generalSettings: GeneralSettingsConfig | undefined;
   private tasks: string[] = [];
+  /** Resolver for the pending plan-approval gate, set only while the user is being asked. */
+  private planApprovalResolver: ((approved: boolean) => void) | null = null;
+  /** Whether the user already approved a plan for the task currently being worked on. */
+  private planApproved = false;
   constructor(
     task: string,
     taskId: string,
@@ -101,6 +105,8 @@ export class Executor {
   addFollowUpTask(task: string): void {
     this.tasks.push(task);
     this.context.messageManager.addNewTask(task);
+    // a follow-up is a new intent, so it needs its own approval
+    this.planApproved = false;
 
     // need to reset previous action results that are not included in memory
     this.context.actionResults = this.context.actionResults.filter(result => result.includeInMemory);
@@ -160,6 +166,11 @@ export class Executor {
 
           // Check if task is complete after planner run
           if (this.checkTaskCompletion(latestPlanOutput)) {
+            break;
+          }
+
+          // Human-in-the-loop: show the plan and wait for approval before any action runs
+          if (!(await this.ensurePlanApproved(latestPlanOutput))) {
             break;
           }
         }
@@ -227,6 +238,55 @@ export class Executor {
         logger.info('Replay historical tasks is disabled, skipping history storage');
       }
     }
+  }
+
+  /**
+   * Human-in-the-loop gate. Presents the plan to the user and blocks until they approve or
+   * reject it. Only the first plan of each user task is gated — once approved, the periodic
+   * re-planning that follows runs without interrupting the user again.
+   *
+   * @returns true if execution may continue, false if the user rejected the plan
+   */
+  private async ensurePlanApproved(planOutput: AgentOutput<PlannerOutput> | null): Promise<boolean> {
+    if (!this.generalSettings?.requirePlanApproval) return true;
+    if (this.planApproved) return true;
+    // nothing actionable to review
+    if (!planOutput?.result || planOutput.result.web_task === false) return true;
+
+    const plan = planOutput.result;
+    this.context.emitEvent(Actors.SYSTEM, ExecutionState.PLAN_REVIEW, plan.next_steps, {
+      observation: plan.observation,
+      nextSteps: plan.next_steps,
+      challenges: plan.challenges,
+      reasoning: plan.reasoning,
+    });
+
+    const approved = await new Promise<boolean>(resolve => {
+      this.planApprovalResolver = resolve;
+    });
+    this.planApprovalResolver = null;
+
+    if (!approved) {
+      logger.info('🚫 Plan rejected by user');
+      this.context.emitEvent(Actors.SYSTEM, ExecutionState.PLAN_REJECTED, t('exec_plan_rejected'));
+      await this.context.stop();
+      return false;
+    }
+
+    logger.info('👍 Plan approved by user');
+    this.planApproved = true;
+    this.context.emitEvent(Actors.SYSTEM, ExecutionState.PLAN_APPROVED, t('exec_plan_approved'));
+    return true;
+  }
+
+  /** Resolve a pending plan-approval gate. No-op if the agent is not waiting on one. */
+  async respondToPlanReview(approved: boolean): Promise<void> {
+    this.planApprovalResolver?.(approved);
+  }
+
+  /** Whether the agent is currently blocked waiting for the user to review a plan. */
+  isAwaitingPlanReview(): boolean {
+    return this.planApprovalResolver !== null;
   }
 
   /**
@@ -335,7 +395,34 @@ export class Executor {
   }
 
   async cancel(): Promise<void> {
+    // release the plan-approval gate first, otherwise execute() stays blocked on it forever
+    this.planApprovalResolver?.(false);
     this.context.stop();
+  }
+
+  /**
+   * Undo the most recent step: navigate the page back and forget the step ever happened, so the
+   * agent re-plans from the restored state instead of building on an action the user rejected.
+   * Only safe while the agent is paused or idle — the caller is responsible for that.
+   */
+  async undoLastStep(): Promise<void> {
+    const context = this.context;
+
+    const page = await context.browserContext.getCurrentPage();
+    await page.goBack();
+
+    // drop the step from the agent's memory so it does not treat it as done
+    context.messageManager.removeLastStateMessage();
+    context.history.history.pop();
+    context.actionResults = [];
+    context.stateMessageAdded = false;
+    if (context.nSteps > 0) context.nSteps--;
+
+    // the plan that produced the undone step is no longer trusted — re-plan and re-approve
+    this.planApproved = false;
+
+    context.emitEvent(Actors.SYSTEM, ExecutionState.TASK_PAUSE, t('exec_undo_ok'));
+    logger.info('↩️ Last step undone by user');
   }
 
   async resume(): Promise<void> {

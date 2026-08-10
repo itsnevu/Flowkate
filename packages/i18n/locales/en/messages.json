@@ -262,7 +262,6 @@
   "options_general_replayHistoricalTasks_desc": {
     "message": "Enable storing and replaying of agent step history (experimental, may have issues)"
   },
-
   "options_models_providers_header": {
     "message": "LLM Providers"
   },
@@ -290,7 +289,6 @@
   "options_models_providers_custom_name_placeholder": {
     "message": "Provider name"
   },
-
   "options_models_providers_apiKey": {
     "message": "API Key"
   },
@@ -309,21 +307,18 @@
   "options_models_providers_apiKey_show": {
     "message": "Show API key"
   },
-
   "options_models_selection_header": {
     "message": "Model Selection"
   },
   "options_models_speechToText_header": {
     "message": "Speech-to-Text Model"
   },
-
   "options_models_agents_navigator": {
     "message": "Navigates websites and performs actions"
   },
   "options_models_agents_planner": {
     "message": "Develops and refines strategies to complete tasks"
   },
-
   "options_models_labels_model": {
     "message": "Model"
   },
@@ -411,7 +406,6 @@
       }
     }
   },
-
   "options_firewall_header": {
     "message": "Firewall"
   },
@@ -448,7 +442,6 @@
   "options_firewall_howItWorks": {
     "message": "The firewall contains a deny list and an allow list.\nIf both lists are empty, all URLs are allowed\nDeny list takes priority - if a URL matches any deny list entry, it's blocked\nWhen allow list is empty, all non-denied URLs are allowed\nWhen allow list is not empty, only matching URLs are allowed\nWildcards are NOT supported yet\nAllow list is preferred over deny list"
   },
-
   "bg_errors_noTabId": {
     "message": "No tab ID provided"
   },
@@ -548,7 +541,6 @@
   "exec_replay_historyEmpty": {
     "message": "History is empty"
   },
-
   "act_searchGoogle_start": {
     "message": "Searching for \"$QUERY$\" in Google",
     "placeholders": {
@@ -967,5 +959,50 @@
         "example": "Option not found"
       }
     }
+  },
+  "exec_plan_approved": {
+    "message": "Plan approved — running"
+  },
+  "exec_plan_rejected": {
+    "message": "Plan rejected — task stopped"
+  },
+  "exec_undo_ok": {
+    "message": "Last step undone. The page was restored and the agent will re-plan."
+  },
+  "bg_cmd_planReview_notPending": {
+    "message": "No plan is waiting for review"
+  },
+  "bg_cmd_undo_failed": {
+    "message": "Failed to undo the last step"
+  },
+  "planReview_title": {
+    "message": "Review the plan before it runs"
+  },
+  "planReview_steps": {
+    "message": "Planned steps"
+  },
+  "planReview_observation": {
+    "message": "What the agent sees"
+  },
+  "planReview_challenges": {
+    "message": "Risks"
+  },
+  "planReview_reasoning": {
+    "message": "Why this approach"
+  },
+  "planReview_approve": {
+    "message": "Approve & run"
+  },
+  "planReview_reject": {
+    "message": "Reject"
+  },
+  "chat_undo": {
+    "message": "Undo last step"
+  },
+  "options_general_requirePlanApproval": {
+    "message": "Approve plan before running"
+  },
+  "options_general_requirePlanApproval_desc": {
+    "message": "Show the agent’s plan and wait for your approval before it takes any action on a page"
   }
 }

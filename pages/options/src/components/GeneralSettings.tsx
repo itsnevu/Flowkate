@@ -19,7 +19,9 @@ export const GeneralSettings = ({ isDarkMode = false }: GeneralSettingsProps) =>
     setSettings(prevSettings => ({ ...prevSettings, [key]: value }));
 
     // Call the store to update the setting
-    await generalSettingsStore.updateSettings({ [key]: value } as Partial<GeneralSettingsConfig>);
+    await generalSettingsStore.updateSettings({
+      [key]: value,
+    } as Partial<GeneralSettingsConfig>);
 
     // After the store update (which might have side effects, e.g., useVision affecting displayHighlights),
     // fetch the latest settings from the store and update the local state again to ensure UI consistency.
@@ -201,6 +203,31 @@ export const GeneralSettings = ({ isDarkMode = false }: GeneralSettingsProps) =>
                 onChange={e => updateSetting('minWaitPageLoad', Number.parseInt(e.target.value, 10))}
                 className={`w-20 rounded-md border ${isDarkMode ? 'border-slate-600 bg-slate-700 text-gray-200' : 'border-gray-300 bg-white text-gray-700'} px-3 py-2`}
               />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className={`text-base font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                {t('options_general_requirePlanApproval')}
+              </h3>
+              <p className={`text-sm font-normal ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                {t('options_general_requirePlanApproval_desc')}
+              </p>
+            </div>
+            <div className="relative inline-flex cursor-pointer items-center">
+              <input
+                id="requirePlanApproval"
+                type="checkbox"
+                checked={settings.requirePlanApproval}
+                onChange={e => updateSetting('requirePlanApproval', e.target.checked)}
+                className="peer sr-only"
+              />
+              <label
+                htmlFor="requirePlanApproval"
+                className={`peer h-6 w-11 rounded-full ${isDarkMode ? 'bg-slate-600' : 'bg-gray-200'} after:absolute after:left-[2px] after:top-[2px] after:size-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300`}>
+                <span className="sr-only">{t('options_general_requirePlanApproval')}</span>
+              </label>
             </div>
           </div>
 

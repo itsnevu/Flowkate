@@ -11,7 +11,8 @@ import MessageList from './components/MessageList';
 import ChatInput from './components/ChatInput';
 import ChatHistoryList from './components/ChatHistoryList';
 import BookmarkList from './components/BookmarkList';
-import { EventType, type AgentEvent, ExecutionState } from './types/event';
+import PlanReviewCard from './components/PlanReviewCard';
+import { EventType, type AgentEvent, type PlanReviewPayload, ExecutionState } from './types/event';
 import './SidePanel.css';
 
 // Declare chrome API types
@@ -37,6 +38,8 @@ const SidePanel = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessingSpeech, setIsProcessingSpeech] = useState(false);
   const [isReplaying, setIsReplaying] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<PlanReviewPayload | null>(null);
+  const [canUndo, setCanUndo] = useState(false);
   const [replayEnabled, setReplayEnabled] = useState(false);
   const sessionIdRef = useRef<string | null>(null);
   const isReplayingRef = useRef<boolean>(false);
@@ -151,6 +154,10 @@ const SidePanel = () => {
     (event: AgentEvent) => {
       const { actor, state, timestamp, data } = event;
       const content = data?.details;
+      // any step that reached the browser is a step the user may want to roll back
+      if (state === ExecutionState.ACT_OK) {
+        setCanUndo(true);
+      }
       let skip = true;
       let displayProgress = false;
 
@@ -160,14 +167,32 @@ const SidePanel = () => {
             case ExecutionState.TASK_START:
               // Reset historical session flag when a new task starts
               setIsHistoricalSession(false);
+              setCanUndo(false);
+              break;
+            case ExecutionState.PLAN_REVIEW:
+              // the executor is blocked until the user answers, so take over the input area
+              setPendingPlan(data?.payload ?? null);
+              setInputEnabled(false);
+              return;
+            case ExecutionState.PLAN_APPROVED:
+              setPendingPlan(null);
+              skip = false;
+              break;
+            case ExecutionState.PLAN_REJECTED:
+              setPendingPlan(null);
+              setInputEnabled(true);
+              setShowStopButton(false);
+              skip = false;
               break;
             case ExecutionState.TASK_OK:
+              setPendingPlan(null);
               setIsFollowUpMode(true);
               setInputEnabled(true);
               setShowStopButton(false);
               setIsReplaying(false);
               break;
             case ExecutionState.TASK_FAIL:
+              setPendingPlan(null);
               setIsFollowUpMode(true);
               setInputEnabled(true);
               setShowStopButton(false);
@@ -175,6 +200,7 @@ const SidePanel = () => {
               skip = false;
               break;
             case ExecutionState.TASK_CANCEL:
+              setPendingPlan(null);
               setIsFollowUpMode(false);
               setInputEnabled(true);
               setShowStopButton(false);
@@ -182,6 +208,8 @@ const SidePanel = () => {
               skip = false;
               break;
             case ExecutionState.TASK_PAUSE:
+              // carries the pause reason, e.g. the confirmation that a step was undone
+              skip = !content;
               break;
             case ExecutionState.TASK_RESUME:
               break;
@@ -661,6 +689,43 @@ const SidePanel = () => {
     setShowStopButton(false);
   };
 
+  const handlePlanDecision = (approved: boolean) => {
+    setPendingPlan(null);
+    try {
+      portRef.current?.postMessage({
+        type: approved ? 'approve_plan' : 'reject_plan',
+      });
+      if (approved) {
+        setInputEnabled(false);
+        setShowStopButton(true);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error('plan review error', errorMessage);
+      appendMessage({
+        actor: Actors.SYSTEM,
+        content: errorMessage,
+        timestamp: Date.now(),
+      });
+      setInputEnabled(true);
+    }
+  };
+
+  const handleUndo = () => {
+    setCanUndo(false);
+    try {
+      portRef.current?.postMessage({ type: 'undo_last_step' });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error('undo_last_step error', errorMessage);
+      appendMessage({
+        actor: Actors.SYSTEM,
+        content: errorMessage,
+        timestamp: Date.now(),
+      });
+    }
+  };
+
   const handleNewChat = () => {
     // Clear messages and start a new chat
     setMessages([]);
@@ -670,6 +735,8 @@ const SidePanel = () => {
     setShowStopButton(false);
     setIsFollowUpMode(false);
     setIsHistoricalSession(false);
+    setPendingPlan(null);
+    setCanUndo(false);
 
     // Disconnect any existing connection
     stopConnection();
@@ -1160,6 +1227,28 @@ const SidePanel = () => {
                     className={`scrollbar-gutter-stable flex-1 overflow-x-hidden overflow-y-scroll scroll-smooth p-2 ${isDarkMode ? 'bg-slate-900/80' : ''}`}>
                     <MessageList messages={messages} isDarkMode={isDarkMode} />
                     <div ref={messagesEndRef} />
+                  </div>
+                )}
+                {pendingPlan && (
+                  <PlanReviewCard
+                    plan={pendingPlan}
+                    onApprove={() => handlePlanDecision(true)}
+                    onReject={() => handlePlanDecision(false)}
+                    isDarkMode={isDarkMode}
+                  />
+                )}
+                {canUndo && !pendingPlan && !isHistoricalSession && (
+                  <div className="px-4 pb-1">
+                    <button
+                      type="button"
+                      onClick={handleUndo}
+                      className={`w-full rounded border px-3 py-1.5 text-xs font-medium ${
+                        isDarkMode
+                          ? 'border-slate-600 text-slate-300 hover:bg-slate-700'
+                          : 'border-slate-300 text-slate-600 hover:bg-slate-100'
+                      }`}>
+                      ↩ {t('chat_undo')}
+                    </button>
                   </div>
                 )}
                 {messages.length > 0 && (

@@ -30,6 +30,11 @@ export enum ExecutionState {
   TASK_RESUME = 'task.resume',
   TASK_CANCEL = 'task.cancel',
 
+  // Plan review states (human-in-the-loop gate before any action runs)
+  PLAN_REVIEW = 'plan.review',
+  PLAN_APPROVED = 'plan.approved',
+  PLAN_REJECTED = 'plan.rejected',
+
   // Step level states
   STEP_START = 'step.start',
   STEP_OK = 'step.ok',
@@ -51,6 +56,20 @@ export interface EventData {
   maxSteps: number;
   /** details is the content of the event */
   details: string;
+  /** structured payload for events that carry more than a message, e.g. a plan under review */
+  payload?: PlanReviewPayload;
+}
+
+/** The plan shown to the user for approval before the navigator is allowed to act. */
+export interface PlanReviewPayload {
+  /** what the planner observed about the current page */
+  observation: string;
+  /** the steps the agent intends to take */
+  nextSteps: string;
+  /** risks or blockers the planner flagged */
+  challenges: string;
+  /** why the planner chose this approach */
+  reasoning: string;
 }
 
 export class AgentEvent {
