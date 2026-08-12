@@ -34,6 +34,8 @@ export enum ExecutionState {
   TASK_PAUSE = 'task.pause',
   TASK_RESUME = 'task.resume',
   TASK_CANCEL = 'task.cancel',
+  /** Cumulative token usage for the task so far; payload is a TokenUsagePayload. */
+  TASK_USAGE = 'task.usage',
 
   // Plan review states (human-in-the-loop gate before any action runs)
   PLAN_REVIEW = 'plan.review',
@@ -45,6 +47,8 @@ export enum ExecutionState {
   STEP_OK = 'step.ok',
   STEP_FAIL = 'step.fail',
   STEP_CANCEL = 'step.cancel',
+  /** A model call failed transiently and is about to be tried again after a backoff. */
+  STEP_RETRY = 'step.retry',
 
   // Action/Tool level states
   ACT_START = 'act.start',
@@ -71,7 +75,7 @@ export interface EventData {
   payload?: EventPayload;
 }
 
-export type EventPayload = PlanReviewPayload | ActionConfirmationPayload;
+export type EventPayload = PlanReviewPayload | ActionConfirmationPayload | TokenUsagePayload;
 
 /** A sensitive action the agent wants to run, held for the user to allow or decline. */
 export interface ActionConfirmationPayload {
@@ -95,6 +99,32 @@ export interface PlanReviewPayload {
   challenges: string;
   /** why the planner chose this approach */
   reasoning: string;
+}
+
+/** Token counts as reported by the provider. Cached/reasoning stay 0 when a provider omits them. */
+export interface TokenUsageTotals {
+  inputTokens: number;
+  outputTokens: number;
+  /** the provider's own total, which for thinking models can exceed input + output */
+  totalTokens: number;
+  cachedInputTokens: number;
+  reasoningOutputTokens: number;
+}
+
+/** One agent/model pair's share of the task's spend. */
+export interface TokenUsageEntry extends TokenUsageTotals {
+  /** 'navigator' or 'planner' - the agent id set in the subclass constructor */
+  agent: string;
+  model: string;
+  calls: number;
+}
+
+/** What the task has cost so far, in tokens. Cumulative and authoritative: the last one wins. */
+export interface TokenUsagePayload {
+  total: TokenUsageTotals;
+  byModel: TokenUsageEntry[];
+  /** calls whose provider reported nothing, which makes `total` a floor rather than the truth */
+  unreportedCalls: number;
 }
 
 export class AgentEvent {

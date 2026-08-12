@@ -7,11 +7,17 @@ export interface GeneralSettingsConfig {
   maxSteps: number;
   maxActionsPerStep: number;
   maxFailures: number;
+  /** Ceiling on the prompt the agent may build, in estimated tokens. Keep it under the model's context window. */
+  maxInputTokens: number;
   useVision: boolean;
   useVisionForPlanner: boolean;
   planningInterval: number;
   displayHighlights: boolean;
   minWaitPageLoad: number;
+  /** Extra fixed pause after the adaptive load wait between actions in one step, in milliseconds. */
+  waitBetweenActions: number;
+  /** Ceiling on one retry backoff after a transient model failure, in seconds. */
+  retryDelay: number;
   replayHistoricalTasks: boolean;
   /** Show the plan and wait for the user to approve it before the agent takes any action. */
   requirePlanApproval: boolean;
@@ -30,11 +36,14 @@ export const DEFAULT_GENERAL_SETTINGS: GeneralSettingsConfig = {
   maxSteps: 100,
   maxActionsPerStep: 5,
   maxFailures: 3,
+  maxInputTokens: 128000,
   useVision: false,
   useVisionForPlanner: false,
   planningInterval: 3,
   displayHighlights: true,
   minWaitPageLoad: 250,
+  waitBetweenActions: 0,
+  retryDelay: 10,
   replayHistoricalTasks: false,
   requirePlanApproval: true,
   confirmSensitiveActions: true,

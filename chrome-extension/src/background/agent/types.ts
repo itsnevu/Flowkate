@@ -1,8 +1,11 @@
 import { z } from 'zod';
-import { DEFAULT_INCLUDE_ATTRIBUTES } from '../browser/dom/views';
+import { DEFAULT_INCLUDE_ATTRIBUTES, type DOMElementNode } from '../browser/dom/views';
 import { Actors, ExecutionState, type ActionConfirmationPayload, type EventPayload, AgentEvent } from './event/types';
 import { AgentStepHistory } from './history';
+import { TokenUsageTracker } from './usage';
 import type BrowserContext from '../browser/context';
+import type { BrowserState } from '../browser/views';
+import type Page from '../browser/page';
 import type { DOMHistoryElement } from '../browser/dom/history/view';
 import type MessageManager from './messages/service';
 import type { EventManager } from './event/manager';
@@ -11,6 +14,13 @@ export interface AgentOptions {
   maxSteps: number;
   maxActionsPerStep: number;
   maxFailures: number;
+  /**
+   * Ceiling on a single retry backoff, in SECONDS. The wait grows exponentially from
+   * LLM_BASE_DELAY_MS and stops here, so 10 means "never sit longer than ten seconds before trying
+   * the model again". It is a cap rather than a base on purpose: as a base, the default 10 would
+   * mean a first retry 10-20 seconds after a hiccup, which is far too long for an agent the user is
+   * watching work.
+   */
   retryDelay: number;
   maxInputTokens: number;
   maxErrorLength: number;
@@ -49,8 +59,18 @@ export class AgentContext {
   nSteps: number;
   stepInfo: AgentStepInfo | null;
   actionResults: ActionResult[];
+  /**
+   * The page state the model reasoned over this step, or null between steps.
+   *
+   * Recorded where the state message is built, so it is by construction the same parse whose element
+   * indices appear in the model's output. Actions resolve those indices against this instead of
+   * re-reading the DOM - one parse cheaper, and one renumbering safer.
+   */
+  stepState: BrowserState | null;
   stateMessageAdded: boolean;
   history: AgentStepHistory;
+  /** What this task has spent, as reported by the providers themselves. */
+  tokenUsage: TokenUsageTracker;
   finalAnswer: string | null;
   /** Resolver for the pending sensitive-action gate, set only while the user is being asked. */
   private actionConfirmationResolver: ((approved: boolean) => void) | null = null;
@@ -75,9 +95,23 @@ export class AgentContext {
     this.consecutiveFailures = 0;
     this.stepInfo = null;
     this.actionResults = [];
+    this.stepState = null;
     this.stateMessageAdded = false;
     this.history = new AgentStepHistory();
+    this.tokenUsage = new TokenUsageTracker();
     this.finalAnswer = null;
+  }
+
+  /**
+   * The element the model meant by `index`, or null when the step's state no longer describes the
+   * page in front of us - a mid-step navigation or tab switch. Callers read null as "re-read the page".
+   */
+  resolveStepElement(index: number, page: Page): DOMElementNode | null {
+    const state = this.stepState;
+    if (!state || state.tabId !== page.tabId || state.url !== page.url()) {
+      return null;
+    }
+    return state.selectorMap.get(index) ?? null;
   }
 
   async emitEvent(actor: Actors, state: ExecutionState, eventDetails: string, payload?: EventPayload) {

@@ -50,6 +50,10 @@ export class PlannerAgent extends BaseAgent<typeof plannerOutputSchema, PlannerO
     super(plannerOutputSchema, options, { ...extraOptions, id: 'planner' });
   }
 
+  protected override get eventActor(): Actors {
+    return Actors.PLANNER;
+  }
+
   async execute(): Promise<AgentOutput<PlannerOutput>> {
     try {
       this.context.emitEvent(Actors.PLANNER, ExecutionState.STEP_START, 'Planning...');

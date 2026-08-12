@@ -38,6 +38,8 @@ import {
   scrollToBottomActionSchema,
 } from './schemas';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
+import type Page from '@src/background/browser/page';
+import type { DOMElementNode } from '@src/background/browser/dom/views';
 
 const logger = createLogger('Action');
 
@@ -167,6 +169,22 @@ export class ActionBuilder {
     this.extractorLLM = extractorLLM;
   }
 
+  /**
+   * The element the model meant by `index`.
+   *
+   * Element indices are numbered by the DOM parse the model was shown, so the step's state is the only
+   * place they mean anything. Re-parsing here renumbers the page and silently retargets the action at
+   * whatever now sits at that index; the fresh parse is only the fallback for when the step's state no
+   * longer describes the page in front of us.
+   */
+  private async resolveElement(page: Page, index: number): Promise<DOMElementNode | undefined> {
+    const fromStep = this.context.resolveStepElement(index, page);
+    if (fromStep) return fromStep;
+    logger.debug(`Step state does not cover index ${index}, re-reading the page`);
+    const state = await page.getState();
+    return state?.selectorMap.get(index);
+  }
+
   /** The read-only subset of the default actions, for agents that must not change anything. */
   buildReadOnlyActions() {
     return this.buildDefaultActions().filter(action => READ_ONLY_ACTION_NAMES.has(action.name()));
@@ -249,9 +267,7 @@ export class ActionBuilder {
         this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
 
         const page = await this.context.browserContext.getCurrentPage();
-        const state = await page.getState();
-
-        const elementNode = state?.selectorMap.get(input.index);
+        const elementNode = await this.resolveElement(page, input.index);
         if (!elementNode) {
           throw new Error(t('act_errors_elementNotExist', [input.index.toString()]));
         }
@@ -305,15 +321,18 @@ export class ActionBuilder {
         this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
 
         const page = await this.context.browserContext.getCurrentPage();
-        const state = await page.getState();
-
-        const elementNode = state?.selectorMap.get(input.index);
+        const elementNode = await this.resolveElement(page, input.index);
         if (!elementNode) {
           throw new Error(t('act_errors_elementNotExist', [input.index.toString()]));
         }
 
         await page.inputTextElementNode(this.context.options.useVision, elementNode, input.text);
-        const msg = t('act_inputText_ok', [input.text, input.index.toString()]);
+        // What goes into a password field is echoed nowhere: not to the side panel, not into the
+        // chat history it is persisted to, and not back to the model in the next state message.
+        const isSecretField = (elementNode.attributes.type ?? '').toLowerCase() === 'password';
+        const msg = isSecretField
+          ? t('act_inputText_okRedacted', [input.index.toString()])
+          : t('act_inputText_ok', [input.text, input.index.toString()]);
         this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, msg);
         return new ActionResult({ extractedContent: msg, includeInMemory: true });
       },
@@ -462,9 +481,8 @@ export class ActionBuilder {
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
       const page = await this.context.browserContext.getCurrentPage();
 
-      if (input.index) {
-        const state = await page.getCachedState();
-        const elementNode = state?.selectorMap.get(input.index);
+      if (input.index != null) {
+        const elementNode = await this.resolveElement(page, input.index);
         if (!elementNode) {
           const errorMsg = t('act_errors_elementNotExist', [input.index.toString()]);
           this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_FAIL, errorMsg);
@@ -486,9 +504,8 @@ export class ActionBuilder {
       const intent = input.intent || t('act_scrollToTop_start');
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
       const page = await this.context.browserContext.getCurrentPage();
-      if (input.index) {
-        const state = await page.getCachedState();
-        const elementNode = state?.selectorMap.get(input.index);
+      if (input.index != null) {
+        const elementNode = await this.resolveElement(page, input.index);
         if (!elementNode) {
           const errorMsg = t('act_errors_elementNotExist', [input.index.toString()]);
           this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_FAIL, errorMsg);
@@ -509,9 +526,8 @@ export class ActionBuilder {
       const intent = input.intent || t('act_scrollToBottom_start');
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
       const page = await this.context.browserContext.getCurrentPage();
-      if (input.index) {
-        const state = await page.getCachedState();
-        const elementNode = state?.selectorMap.get(input.index);
+      if (input.index != null) {
+        const elementNode = await this.resolveElement(page, input.index);
         if (!elementNode) {
           const errorMsg = t('act_errors_elementNotExist', [input.index.toString()]);
           this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_FAIL, errorMsg);
@@ -533,9 +549,8 @@ export class ActionBuilder {
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
       const page = await this.context.browserContext.getCurrentPage();
 
-      if (input.index) {
-        const state = await page.getCachedState();
-        const elementNode = state?.selectorMap.get(input.index);
+      if (input.index != null) {
+        const elementNode = await this.resolveElement(page, input.index);
         if (!elementNode) {
           const errorMsg = t('act_errors_elementNotExist', [input.index.toString()]);
           this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_FAIL, errorMsg);
@@ -581,9 +596,8 @@ export class ActionBuilder {
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
       const page = await this.context.browserContext.getCurrentPage();
 
-      if (input.index) {
-        const state = await page.getCachedState();
-        const elementNode = state?.selectorMap.get(input.index);
+      if (input.index != null) {
+        const elementNode = await this.resolveElement(page, input.index);
         if (!elementNode) {
           const errorMsg = t('act_errors_elementNotExist', [input.index.toString()]);
           this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_FAIL, errorMsg);
@@ -665,9 +679,7 @@ export class ActionBuilder {
         this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
 
         const page = await this.context.browserContext.getCurrentPage();
-        const state = await page.getState();
-
-        const elementNode = state?.selectorMap.get(input.index);
+        const elementNode = await this.resolveElement(page, input.index);
         if (!elementNode) {
           const errorMsg = t('act_errors_elementNotExist', [input.index.toString()]);
           this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_FAIL, errorMsg);
@@ -679,7 +691,7 @@ export class ActionBuilder {
 
         try {
           // Use the existing getDropdownOptions method
-          const options = await page.getDropdownOptions(input.index);
+          const options = await page.getDropdownOptions(elementNode);
 
           if (options && options.length > 0) {
             // Format options for display
@@ -731,9 +743,7 @@ export class ActionBuilder {
         this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
 
         const page = await this.context.browserContext.getCurrentPage();
-        const state = await page.getState();
-
-        const elementNode = state?.selectorMap.get(input.index);
+        const elementNode = await this.resolveElement(page, input.index);
         if (!elementNode) {
           const errorMsg = t('act_errors_elementNotExist', [input.index.toString()]);
           this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_FAIL, errorMsg);
@@ -759,7 +769,7 @@ export class ActionBuilder {
         logger.debug(`Attempting to select '${input.text}' using xpath: ${elementNode.xpath}`);
 
         try {
-          const result = await page.selectDropdownOption(input.index, input.text);
+          const result = await page.selectDropdownOption(elementNode, input.text);
           const msg = t('act_selectDropdownOption_ok', [input.text, input.index.toString()]);
           this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, msg);
           return new ActionResult({

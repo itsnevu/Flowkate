@@ -235,6 +235,12 @@
   "options_general_maxFailures_desc": {
     "message": "How many consecutive failures before stopping"
   },
+  "options_general_maxInputTokens": {
+    "message": "Max Input Tokens"
+  },
+  "options_general_maxInputTokens_desc": {
+    "message": "Prompt size ceiling - keep it below your model's context window"
+  },
   "options_general_enableVision": {
     "message": "Enable Vision"
   },
@@ -258,6 +264,18 @@
   },
   "options_general_minWaitPageLoad_desc": {
     "message": "Minimum wait time after page loads (250-5000ms)"
+  },
+  "options_general_waitBetweenActions": {
+    "message": "Pause Between Actions"
+  },
+  "options_general_waitBetweenActions_desc": {
+    "message": "Extra wait after each action, in ms. 0 uses only the adaptive page-load wait"
+  },
+  "options_general_retryDelay": {
+    "message": "Retry Backoff Cap"
+  },
+  "options_general_retryDelay_desc": {
+    "message": "Longest wait before retrying a failed model call, in seconds"
   },
   "options_general_replayHistoricalTasks": {
     "message": "Replay Historical Tasks( experimental )"
@@ -508,6 +526,26 @@
   "exec_errors_maxFailuresReached": {
     "message": "Max failures reached"
   },
+  "exec_llm_retry": {
+    "message": "The model call failed, retrying ($ATTEMPT$ of $RETRIES$) in $SECONDS$s",
+    "placeholders": {
+      "attempt": {
+        "content": "$1",
+        "example": "1"
+      },
+      "retries": {
+        "content": "$2",
+        "example": "2"
+      },
+      "seconds": {
+        "content": "$3",
+        "example": "2"
+      }
+    }
+  },
+  "exec_errors_contextTooLarge": {
+    "message": "The task and page no longer fit in the token budget. Raise Max Input Tokens in the settings, or use a model with a larger context window."
+  },
   "exec_task_cancel": {
     "message": "Task cancelled"
   },
@@ -674,6 +712,15 @@
       },
       "index": {
         "content": "$2",
+        "example": "5"
+      }
+    }
+  },
+  "act_inputText_okRedacted": {
+    "message": "Input hidden text into index $INDEX$",
+    "placeholders": {
+      "index": {
+        "content": "$1",
         "example": "5"
       }
     }
@@ -1137,5 +1184,57 @@
   },
   "act_parallel_needsTwo": {
     "message": "Parallel research needs at least two independent subtasks"
+  },
+  "chat_usage_label": {
+    "message": "Tokens"
+  },
+  "chat_usage_inOut": {
+    "message": "$IN$ in · $OUT$ out",
+    "placeholders": {
+      "in": {
+        "content": "$1",
+        "example": "12.4k"
+      },
+      "out": {
+        "content": "$2",
+        "example": "830"
+      }
+    }
+  },
+  "chat_usage_calls": {
+    "message": "$COUNT$ calls",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "7"
+      }
+    }
+  },
+  "chat_usage_cached": {
+    "message": "$COUNT$ cached",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "9.1k"
+      }
+    }
+  },
+  "chat_usage_reasoning": {
+    "message": "$COUNT$ reasoning",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "512"
+      }
+    }
+  },
+  "chat_usage_partial": {
+    "message": "Some models reported no usage, so this is a minimum."
+  },
+  "chat_usage_noPrice": {
+    "message": "Tokens only. Check your provider's dashboard for the bill."
+  },
+  "chat_usage_details_a11y": {
+    "message": "Show token usage per model"
   }
 }

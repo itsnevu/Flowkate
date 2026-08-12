@@ -1,3 +1,8 @@
+// A value import, for `instanceof`. browser/views.ts has only `import type` statements, so this adds
+// no runtime edge and cannot form a cycle. Matching on constructor.name instead would be fragile:
+// names are not guaranteed to survive minification in a production Vite build.
+import { URLNotAllowedError } from '../../browser/views';
+
 export const LLM_FORBIDDEN_ERROR_MESSAGE =
   'Access denied (403 Forbidden). Please check:\n\n1. Your API key has the required permissions\n\n2. For Ollama: Set OLLAMA_ORIGINS=chrome-extension://* \nsee https://github.com/ollama/ollama/blob/main/docs/faq.md';
 
@@ -190,6 +195,94 @@ export function isExtensionConflictError(error: unknown): boolean {
   return errorMessage.includes('cannot access a chrome-extension') && errorMessage.includes('of different extension');
 }
 
+/**
+ * 4xx codes worth trying again. Everything else in 4xx is a statement about the request itself, and
+ * an identical second request gets an identical answer.
+ */
+const RETRYABLE_STATUS_CODES = new Set([408, 425, 429]);
+
+/** Error names that mean the request never reached the model. */
+const RETRYABLE_ERROR_NAMES = new Set(['APIConnectionError', 'APIConnectionTimeoutError', 'TimeoutError']);
+
+/** Socket-level failures that surface on `code` rather than as an HTTP status. */
+const RETRYABLE_ERROR_CODES = new Set(['ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT', 'EPIPE', 'ENOTFOUND', 'EAI_AGAIN']);
+
+/**
+ * Pull the HTTP status out of a provider error, whichever shape it arrived in.
+ *
+ * LangChain hands the provider SDK's own error object straight through - `wrapOpenAIClientError`
+ * and `wrapAnthropicClientError` both return the original for anything that is not a timeout or an
+ * abort - so the status is still on it, under a different property per SDK: `status` for the
+ * OpenAI, Anthropic, xAI, Groq, DeepSeek and Gemini clients, `status_code` for the Ollama client's
+ * ResponseError. The message is deliberately never scraped for digits: OpenAI's own 429 body reads
+ * "Limit 500, Used 500", which any such regex would classify as a 500.
+ */
+export function extractStatusCode(error: unknown): number | undefined {
+  if (typeof error !== 'object' || error === null) return undefined;
+  const candidate = error as { status?: unknown; status_code?: unknown; response?: { status?: unknown } };
+  for (const value of [candidate.status, candidate.status_code, candidate.response?.status]) {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+  }
+  return undefined;
+}
+
+/**
+ * Whether calling the model again could plausibly succeed.
+ *
+ * Terminal is checked first and the default is terminal. A wrong "retryable" spends the user's rate
+ * limit and delays the real error by the whole backoff budget; a wrong "terminal" costs one step,
+ * which the executor's consecutive-failure handling already absorbs.
+ */
+export function isRetryableLLMError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+
+  // Cancellation, in every spelling it reaches us in. AsyncCaller.callWithOptions rejects with a
+  // plain `new Error('AbortError')`, which isAbortedError does NOT catch: its name is 'Error' and
+  // the string 'AbortError' does not contain 'Aborted'. That path is what Anthropic and Gemini use.
+  if (isAbortedError(error) || error.message.startsWith('AbortError') || error.message.startsWith('Cancel')) {
+    return false;
+  }
+
+  // A parse failure, a blocked URL or an exhausted quota all reproduce exactly on a second call.
+  if (
+    error instanceof RequestCancelledError ||
+    error instanceof URLNotAllowedError ||
+    error instanceof ResponseParseError ||
+    isExtensionConflictError(error)
+  ) {
+    return false;
+  }
+
+  const status = extractStatusCode(error);
+  if (status !== undefined) {
+    // The status is authoritative whenever we have one. 529 is Anthropic's "overloaded", covered by
+    // the 5xx arm. The message-shaped predicates below only exist for providers that give us none.
+    return status >= 500 || RETRYABLE_STATUS_CODES.has(status);
+  }
+
+  if (isAuthenticationError(error) || isBadRequestError(error) || isForbiddenError(error)) {
+    return false;
+  }
+
+  const constructorName = error.constructor?.name;
+  const errorName = constructorName && constructorName !== 'Error' ? constructorName : error.name || '';
+  if (RETRYABLE_ERROR_NAMES.has(errorName)) return true;
+
+  const code = (error as { code?: unknown }).code ?? (error.cause as { code?: unknown } | undefined)?.code;
+  if (typeof code === 'string' && RETRYABLE_ERROR_CODES.has(code)) return true;
+
+  // What a service worker actually sees when a connection drops mid-request: fetch rejects with
+  // `TypeError: Failed to fetch` and there is nothing else to go on.
+  const message = error.message.toLowerCase();
+  return (
+    message.includes('failed to fetch') ||
+    message.includes('fetch failed') ||
+    message.includes('network error') ||
+    message.includes('socket hang up') ||
+    message.includes('overloaded')
+  );
+}
+
 export class RequestCancelledError extends Error {
   constructor(message: string) {
     super(message);
@@ -276,6 +369,37 @@ export class MaxFailuresReachedError extends Error {
     // Maintains proper stack trace for where our error was thrown
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, MaxFailuresReachedError);
+    }
+  }
+
+  /**
+   * Returns a string representation of the error
+   */
+  toString(): string {
+    return `${this.name}: ${this.message}${this.cause ? ` (Caused by: ${this.cause})` : ''}`;
+  }
+}
+
+/**
+ * Custom error class for when the history cannot be trimmed under the input token budget
+ */
+export class MaxTokensExceededError extends Error {
+  /**
+   * Creates a new MaxTokensExceededError
+   *
+   * @param message - The localized error message (should use t('exec_errors_contextTooLarge'))
+   * @param cause - The original error that caused this error
+   */
+  constructor(
+    message: string,
+    public readonly cause?: unknown,
+  ) {
+    super(message);
+    this.name = 'MaxTokensExceededError';
+
+    // Maintains proper stack trace for where our error was thrown
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, MaxTokensExceededError);
     }
   }
 

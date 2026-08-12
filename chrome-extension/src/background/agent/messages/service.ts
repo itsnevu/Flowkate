@@ -1,4 +1,12 @@
-import { type BaseMessage, AIMessage, HumanMessage, type SystemMessage, ToolMessage } from '@langchain/core/messages';
+import { t } from '@extension/i18n';
+import {
+  type BaseMessage,
+  type MessageContent,
+  AIMessage,
+  HumanMessage,
+  SystemMessage,
+  ToolMessage,
+} from '@langchain/core/messages';
 import { MessageHistory, MessageMetadata } from '@src/background/agent/messages/views';
 import { createLogger } from '@src/background/log';
 import {
@@ -6,7 +14,10 @@ import {
   wrapUserRequest,
   splitUserTextAndAttachments,
   wrapAttachments,
+  redactSecrets,
+  redactSecretsDeep,
 } from '@src/background/agent/messages/utils';
+import { MaxTokensExceededError } from '../agents/errors';
 
 const logger = createLogger('MessageManager');
 
@@ -14,30 +25,35 @@ export class MessageManagerSettings {
   maxInputTokens = 128000;
   estimatedCharactersPerToken = 3;
   imageTokens = 800;
-  includeAttributes: string[] = [];
-  messageContext?: string;
+  /**
+   * Secret values to replace with `<secret>name</secret>` placeholders before anything reaches a
+   * model. Nothing populates this yet: there is no credentials store and no resolver that turns a
+   * placeholder back into the real value at input_text time, so setting it would make the agent type
+   * the placeholder literally into the page.
+   */
   sensitiveData?: Record<string, string>;
-  availableFilePaths?: string[];
+
+  // `includeAttributes`, `messageContext` and `availableFilePaths` used to sit here as ports of
+  // browser-use's settings. Nothing ever set them, and the live `includeAttributes` is the one on
+  // AgentOptions that prompts/base.ts actually reads - two fields of the same name meaning different
+  // things is worse than none. Removed rather than left as configuration that looks wired and is not.
 
   constructor(
     options: {
       maxInputTokens?: number;
       estimatedCharactersPerToken?: number;
       imageTokens?: number;
-      includeAttributes?: string[];
-      messageContext?: string;
       sensitiveData?: Record<string, string>;
-      availableFilePaths?: string[];
     } = {},
   ) {
-    if (options.maxInputTokens !== undefined) this.maxInputTokens = options.maxInputTokens;
+    // A cleared number field in the options page yields NaN. A NaN budget makes every comparison in
+    // cutMessages false, so trimming would run unbounded - clamp once, here, for every caller.
+    if (options.maxInputTokens !== undefined && Number.isFinite(options.maxInputTokens) && options.maxInputTokens > 0)
+      this.maxInputTokens = options.maxInputTokens;
     if (options.estimatedCharactersPerToken !== undefined)
       this.estimatedCharactersPerToken = options.estimatedCharactersPerToken;
     if (options.imageTokens !== undefined) this.imageTokens = options.imageTokens;
-    if (options.includeAttributes !== undefined) this.includeAttributes = options.includeAttributes;
-    if (options.messageContext !== undefined) this.messageContext = options.messageContext;
     if (options.sensitiveData !== undefined) this.sensitiveData = options.sensitiveData;
-    if (options.availableFilePaths !== undefined) this.availableFilePaths = options.availableFilePaths;
   }
 }
 
@@ -122,14 +138,6 @@ export default class MessageManager {
       content: '[Your task history memory starts here]',
     });
     this.addMessageWithTokens(historyStartMessage);
-
-    // Add available file paths if provided
-    if (this.settings.availableFilePaths && this.settings.availableFilePaths.length > 0) {
-      const filepathsMsg = new HumanMessage({
-        content: `Here are file paths you can use: ${this.settings.availableFilePaths}`,
-      });
-      this.addMessageWithTokens(filepathsMsg, 'init');
-    }
   }
 
   public nextToolId(): number {
@@ -308,36 +316,76 @@ export default class MessageManager {
   }
 
   /**
-   * Filters out sensitive data from the message
+   * Returns a redacted copy of the message: every occurrence of every configured secret is replaced
+   * by its placeholder, in the text content and in tool call arguments alike.
+   *
+   * The input message is never modified. The caller keeps its own object and the copy is what enters
+   * the history, so there is no window in which the history and the object the caller still holds
+   * disagree about what was redacted.
+   *
    * @param message - The BaseMessage object to filter
-   * @returns The filtered BaseMessage object
+   * @returns A redacted copy of the message
    */
   private _filterSensitiveData(message: BaseMessage): BaseMessage {
-    const replaceSensitive = (value: string): string => {
-      let filteredValue = value;
-      if (!this.settings.sensitiveData) return filteredValue;
+    const secrets = this.settings.sensitiveData;
+    if (!secrets) return message;
 
-      for (const [key, val] of Object.entries(this.settings.sensitiveData)) {
-        // Skip empty values to match Python behavior
-        if (!val) continue;
-        filteredValue = filteredValue.replace(val, `<secret>${key}</secret>`);
-      }
-      return filteredValue;
+    const content: MessageContent =
+      typeof message.content === 'string'
+        ? redactSecrets(message.content, secrets)
+        : message.content.map(item =>
+            typeof item === 'object' && item !== null && 'text' in item && typeof item.text === 'string'
+              ? { ...item, text: redactSecrets(item.text, secrets) }
+              : item,
+          );
+
+    // Fields that carry no secrets but must survive the rebuild.
+    const carried = {
+      additional_kwargs: message.additional_kwargs,
+      response_metadata: message.response_metadata,
+      id: message.id,
+      name: message.name,
     };
 
-    if (typeof message.content === 'string') {
-      message.content = replaceSensitive(message.content);
-    } else if (Array.isArray(message.content)) {
-      message.content = message.content.map(item => {
-        // Add null check to match Python's isinstance() behavior
-        if (typeof item === 'object' && item !== null && 'text' in item) {
-          return { ...item, text: replaceSensitive(item.text) };
-        }
-        return item;
+    if (message instanceof AIMessage) {
+      return new AIMessage({
+        ...carried,
+        content,
+        // addModelOutput puts the whole model output here, so a password the model decided to type
+        // lives in args, not in content.
+        tool_calls: (message.tool_calls ?? []).map(call => ({
+          ...call,
+          args: redactSecretsDeep(call.args, secrets) as Record<string, unknown>,
+        })),
+        invalid_tool_calls: message.invalid_tool_calls,
+        usage_metadata: message.usage_metadata,
       });
     }
+    if (message instanceof ToolMessage) {
+      return new ToolMessage({
+        ...carried,
+        content,
+        tool_call_id: message.tool_call_id,
+        status: message.status,
+        artifact: message.artifact,
+        metadata: message.metadata,
+      });
+    }
+    if (message instanceof SystemMessage) {
+      return new SystemMessage({ ...carried, content });
+    }
+    if (message instanceof HumanMessage) {
+      return new HumanMessage({ ...carried, content });
+    }
 
-    return message;
+    // Not a class this manager creates. Copy through the prototype so the `instanceof` checks in
+    // MessageHistory and convertInputMessages keep working, and so the caller's object is still
+    // never handed back.
+    logger.warning(`Redacting unknown message type ${message.constructor.name} via a generic copy`);
+    const copy = Object.assign(Object.create(Object.getPrototypeOf(message)) as BaseMessage, message);
+    copy.content = content;
+    copy.lc_kwargs = { ...message.lc_kwargs, content };
+    return copy;
   }
 
   /**
@@ -379,66 +427,58 @@ export default class MessageManager {
   }
 
   /**
-   * Cuts the last message if the total tokens exceed the max input tokens
+   * Bring the history back under the token budget before it is handed to a model.
    *
-   * Get current message list, potentially trimmed to max tokens
+   * Three escalating stages, cheapest loss first: forget the oldest exchanges, then drop the
+   * screenshot from the newest message, then truncate the newest message's text. The newest message
+   * describes the page the next decision is made about, so it is the last thing to be damaged.
    */
   public cutMessages(): void {
-    let diff = this.history.totalTokens - this.settings.maxInputTokens;
-    if (diff <= 0) return;
+    if (this.history.messages.length === 0) return;
+    if (this.history.totalTokens <= this.settings.maxInputTokens) return;
+
+    // 1. forget the oldest exchanges - the model's own `memory` field already summarises them
+    while (this.history.totalTokens > this.settings.maxInputTokens) {
+      if (this.history.removeOldestExchange() === 0) break;
+    }
+    if (this.history.totalTokens <= this.settings.maxInputTokens) return;
 
     const lastMsg = this.history.messages[this.history.messages.length - 1];
 
-    // if list with image remove image
+    // 2. drop the screenshot from the newest message
     if (Array.isArray(lastMsg.message.content)) {
       let text = '';
-      lastMsg.message.content = lastMsg.message.content.filter(item => {
+      lastMsg.message.content.forEach(item => {
         if ('image_url' in item) {
-          diff -= this.settings.imageTokens;
           lastMsg.metadata.tokens -= this.settings.imageTokens;
           this.history.totalTokens -= this.settings.imageTokens;
-          logger.debug(
-            `Removed image with ${this.settings.imageTokens} tokens - total tokens now: ${this.history.totalTokens}/${this.settings.maxInputTokens}`,
-          );
-          return false;
-        }
-        if ('text' in item) {
+        } else if (typeof item === 'object' && 'text' in item) {
           text += item.text;
         }
-        return true;
       });
       lastMsg.message.content = text;
-      this.history.messages[this.history.messages.length - 1] = lastMsg;
-    }
-
-    if (diff <= 0) return;
-
-    // if still over, remove text from state message proportionally to the number of tokens needed with buffer
-    // Calculate the proportion of content to remove
-    const proportionToRemove = diff / lastMsg.metadata.tokens;
-    if (proportionToRemove > 0.99) {
-      throw new Error(
-        `Max token limit reached - history is too long - reduce the system prompt or task. proportion_to_remove: ${proportionToRemove}`,
+      logger.debug(
+        `Dropped images from the newest message - ${this.history.totalTokens}/${this.settings.maxInputTokens}`,
       );
     }
+    if (this.history.totalTokens <= this.settings.maxInputTokens) return;
+
+    // 3. truncate the newest message, in place so its class and tool_call_id survive
+    if (typeof lastMsg.message.content !== 'string') return;
+    const diff = this.history.totalTokens - this.settings.maxInputTokens;
+    const proportionToRemove = diff / lastMsg.metadata.tokens;
+    if (proportionToRemove > 0.99) {
+      throw new MaxTokensExceededError(t('exec_errors_contextTooLarge'));
+    }
+    const content = lastMsg.message.content;
+    const charactersToRemove = Math.min(content.length, Math.max(1, Math.ceil(content.length * proportionToRemove)));
+    const newContent = content.slice(0, content.length - charactersToRemove);
+    const newTokens = this._countTextTokens(newContent);
+    this.history.totalTokens -= lastMsg.metadata.tokens - newTokens;
+    lastMsg.metadata.tokens = newTokens;
+    lastMsg.message.content = newContent;
     logger.debug(
-      `Removing ${(proportionToRemove * 100).toFixed(2)}% of the last message (${(proportionToRemove * lastMsg.metadata.tokens).toFixed(2)} / ${lastMsg.metadata.tokens.toFixed(2)} tokens)`,
-    );
-
-    const content = lastMsg.message.content as string;
-    const charactersToRemove = Math.floor(content.length * proportionToRemove);
-    const newContent = content.slice(0, -charactersToRemove);
-
-    // remove tokens and old long message
-    this.history.removeLastStateMessage();
-
-    // new message with updated content
-    const msg = new HumanMessage({ content: newContent });
-    this.addMessageWithTokens(msg);
-
-    const finalMsg = this.history.messages[this.history.messages.length - 1];
-    logger.debug(
-      `Added message with ${finalMsg.metadata.tokens} tokens - total tokens now: ${this.history.totalTokens}/${this.settings.maxInputTokens} - total messages: ${this.history.messages.length}`,
+      `Truncated the newest message by ${(proportionToRemove * 100).toFixed(1)}% - ${this.history.totalTokens}/${this.settings.maxInputTokens}`,
     );
   }
 

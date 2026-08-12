@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { ACTOR_PROFILES } from '../types/message';
+import { PROGRESS_MESSAGE } from '../constants';
 import type { Message } from '@extension/storage';
 
 interface MessageListProps {
@@ -31,7 +32,7 @@ function MessageBlock({ message, isSameActor }: MessageBlockProps) {
     return <div />;
   }
   const actor = ACTOR_PROFILES[message.actor as keyof typeof ACTOR_PROFILES];
-  const isProgress = message.content === 'Showing progress...';
+  const isProgress = message.content === PROGRESS_MESSAGE;
   const isUser = message.actor === 'user';
   // The user speaks in graphite keys; every agent answers on a raised pale card.
   const bubble = isUser

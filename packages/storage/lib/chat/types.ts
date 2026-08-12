@@ -36,6 +36,34 @@ export interface ChatAgentStepHistory {
   timestamp: number; // Unix timestamp in milliseconds
 }
 
+/**
+ * Token spend for one session, as reported by the providers themselves.
+ *
+ * Structurally mirrors the side panel's TokenUsagePayload so a snapshot can be stored and read back
+ * without a conversion; storage deliberately does not import from the extension workspace.
+ */
+export interface ChatTokenUsage {
+  total: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    cachedInputTokens: number;
+    reasoningOutputTokens: number;
+  };
+  byModel: Array<{
+    agent: string;
+    model: string;
+    calls: number;
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    cachedInputTokens: number;
+    reasoningOutputTokens: number;
+  }>;
+  /** calls whose provider reported nothing, which makes `total` a floor rather than the truth */
+  unreportedCalls: number;
+}
+
 export interface ChatHistoryStorage {
   // Get all chat sessions (with empty message arrays for listing)
   getAllSessions: () => Promise<ChatSession[]>;
@@ -63,6 +91,12 @@ export interface ChatHistoryStorage {
 
   // Delete a message from a chat session
   deleteMessage: (sessionId: string, messageId: string) => Promise<void>;
+
+  // Store what a session spent, so reopening it can still show the number
+  storeTokenUsage: (sessionId: string, usage: ChatTokenUsage) => Promise<void>;
+
+  // Read back a session's spend, or null when it was never recorded
+  loadTokenUsage: (sessionId: string) => Promise<ChatTokenUsage | null>;
 
   // Store the history of the agent's state
   storeAgentStepHistory: (sessionId: string, task: string, history: string) => Promise<void>;

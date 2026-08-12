@@ -954,12 +954,14 @@ export default class Page {
     }
   }
 
-  async getDropdownOptions(index: number): Promise<Array<{ index: number; text: string; value: string }>> {
-    const selectorMap = this.getSelectorMap();
-    const element = selectorMap?.get(index);
-
-    if (!element || !this._puppeteerPage) {
-      throw new Error('Element not found or puppeteer is not connected');
+  /**
+   * Takes the node rather than an index: an index is only meaningful against the parse it came from,
+   * and this method used to look it up in `_cachedState`, which the caller's step may already have
+   * overwritten with a differently-numbered parse.
+   */
+  async getDropdownOptions(element: DOMElementNode): Promise<Array<{ index: number; text: string; value: string }>> {
+    if (!this._puppeteerPage) {
+      throw new Error('Puppeteer is not connected');
     }
 
     try {
@@ -992,13 +994,13 @@ export default class Page {
     }
   }
 
-  async selectDropdownOption(index: number, text: string): Promise<string> {
-    const selectorMap = this.getSelectorMap();
-    const element = selectorMap?.get(index);
-
-    if (!element || !this._puppeteerPage) {
-      throw new Error('Element not found or puppeteer is not connected');
+  /** Takes the node for the same reason as {@link getDropdownOptions}. */
+  async selectDropdownOption(element: DOMElementNode, text: string): Promise<string> {
+    if (!this._puppeteerPage) {
+      throw new Error('Puppeteer is not connected');
     }
+    // recovered from the node so the log lines and error messages below cannot disagree with the target
+    const index = element.highlightIndex ?? -1;
 
     logger.debug(`Attempting to select '${text}' from dropdown`);
     logger.debug(`Element attributes: ${JSON.stringify(element.attributes)}`);
@@ -1378,26 +1380,11 @@ export default class Page {
     }
   }
 
-  getSelectorMap(): Map<number, DOMElementNode> {
-    // If there is no cached state, return an empty map
-    if (this._cachedState === null) {
-      return new Map();
-    }
-    // Otherwise return the cached state's selector map
-    return this._cachedState.selectorMap;
-  }
-
-  async getElementByIndex(index: number): Promise<ElementHandle | null> {
-    const selectorMap = this.getSelectorMap();
-    const element = selectorMap.get(index);
-    if (!element) return null;
-    return await this.locateElement(element);
-  }
-
-  getDomElementByIndex(index: number): DOMElementNode | null {
-    const selectorMap = this.getSelectorMap();
-    return selectorMap.get(index) || null;
-  }
+  // getSelectorMap / getElementByIndex / getDomElementByIndex used to live here. They resolved a
+  // model-chosen index against `_cachedState`, i.e. against whichever parse happened to have run
+  // last rather than the one the model was shown - which is how an action could silently retarget
+  // itself at a different element. Every caller now resolves through AgentContext.stepState instead,
+  // so they are removed rather than left as a tempting shortcut back to the old pattern.
 
   isFileUploader(elementNode: DOMElementNode, maxDepth = 3, currentDepth = 0): boolean {
     if (currentDepth > maxDepth) {

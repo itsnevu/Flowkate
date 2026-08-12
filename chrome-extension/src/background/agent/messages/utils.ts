@@ -249,6 +249,60 @@ export function filterExternalContentWithReport(rawContent: string | undefined, 
   return guardrails.sanitize(rawContent, { strict });
 }
 
+/** Secrets the user asked us never to send to a model, keyed by the placeholder the model sees. */
+export type SecretMap = Record<string, string>;
+
+/**
+ * Longest value first: with {pin: '1234', card: '1234567890'}, replacing `pin` first would leave
+ * `<secret>pin</secret>567890` and `card` would never match. Empty values are dropped - an empty
+ * needle matches everywhere.
+ */
+function orderedSecrets(secrets: SecretMap): Array<[string, string]> {
+  return Object.entries(secrets)
+    .filter(([, value]) => Boolean(value))
+    .sort(([, a], [, b]) => b.length - a.length);
+}
+
+function applySecrets(value: string, ordered: Array<[string, string]>): string {
+  let result = value;
+  for (const [name, secret] of ordered) {
+    if (!result.includes(secret)) continue;
+    // The replacement is a function so a `$&` or `$1` in a placeholder name is inserted literally
+    // rather than expanded as a replacement pattern.
+    result = result.replaceAll(secret, () => `<secret>${name}</secret>`);
+  }
+  return result;
+}
+
+function applySecretsDeep(value: unknown, ordered: Array<[string, string]>): unknown {
+  if (typeof value === 'string') return applySecrets(value, ordered);
+  if (Array.isArray(value)) return value.map(item => applySecretsDeep(item, ordered));
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, applySecretsDeep(item, ordered)]),
+    );
+  }
+  return value;
+}
+
+/**
+ * Replace every occurrence of every secret value with its `<secret>name</secret>` placeholder.
+ *
+ * Secret values are arbitrary user text, so they are never compiled into a RegExp: a password of
+ * `.*` or `a+b` would otherwise match far more than itself, and a value containing `(` would throw.
+ */
+export function redactSecrets(value: string, secrets: SecretMap): string {
+  return applySecrets(value, orderedSecrets(secrets));
+}
+
+/**
+ * Apply {@link redactSecrets} to every string inside a JSON-shaped value, rebuilding the containers
+ * rather than mutating them. Used for tool call arguments, which is where a typed password lands.
+ */
+export function redactSecretsDeep(value: unknown, secrets: SecretMap): unknown {
+  return applySecretsDeep(value, orderedSecrets(secrets));
+}
+
 /**
  * Wrap untrusted content (e.g., web page content) with security tags and warnings
  * @param rawContent - The untrusted content to wrap

@@ -1,12 +1,13 @@
 import { createLogger } from '@src/background/log';
 import BrowserContext from '../../browser/context';
-import { AgentContext, type AgentOptions } from '../types';
-import MessageManager from '../messages/service';
+import { AgentContext, type AgentOptions, DEFAULT_AGENT_OPTIONS } from '../types';
+import MessageManager, { MessageManagerSettings } from '../messages/service';
 import { EventManager } from '../event/manager';
 import { ActionBuilder } from '../actions/builder';
 import { NavigatorAgent, NavigatorActionRegistry } from '../agents/navigator';
 import { NavigatorPrompt } from '../prompts/navigator';
 import { MAX_PARALLEL_SUBTASKS, MAX_SUBTASK_STEPS, type Subtask, type SubtaskResult } from './subtaskTypes';
+import type { TokenUsageTracker } from '../usage';
 import type { BrowserContextConfig } from '../../browser/views';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 
@@ -22,6 +23,11 @@ export interface SubtaskRunnerOptions {
    * deny lists — a firewall change between task start and subtask launch must not be missed.
    */
   getBrowserConfig: () => BrowserContextConfig;
+  /**
+   * The parent task's tracker. Subtasks build their own AgentContext, so without sharing this their
+   * spend - potentially several parallel navigators - would be invisible in the headline number.
+   */
+  usage?: TokenUsageTracker;
 }
 
 /**
@@ -39,7 +45,11 @@ async function runOne(subtask: Subtask, options: SubtaskRunnerOptions): Promise<
     const page = await browserContext.openTab(subtask.url);
     tabId = page.tabId;
 
-    const messageManager = new MessageManager();
+    const messageManager = new MessageManager(
+      new MessageManagerSettings({
+        maxInputTokens: options.agentOptions.maxInputTokens ?? DEFAULT_AGENT_OPTIONS.maxInputTokens,
+      }),
+    );
     const navigatorPrompt = new NavigatorPrompt(options.agentOptions.maxActionsPerStep ?? 5);
     const context = new AgentContext(`subtask-${tabId}`, browserContext, messageManager, new EventManager(), {
       ...options.agentOptions,
@@ -47,6 +57,7 @@ async function runOne(subtask: Subtask, options: SubtaskRunnerOptions): Promise<
       // a background tab has no way to reach the user, so it must not be able to raise a prompt
       confirmSensitiveActions: false,
     });
+    if (options.usage) context.tokenUsage = options.usage;
 
     const actionBuilder = new ActionBuilder(context, options.navigatorLLM);
     const navigator = new NavigatorAgent(new NavigatorActionRegistry(actionBuilder.buildReadOnlyActions()), {

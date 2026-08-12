@@ -28,6 +28,9 @@ abstract class BasePrompt {
    */
   async buildBrowserStateUserMessage(context: AgentContext): Promise<HumanMessage> {
     const browserState = await context.browserContext.getState(context.options.useVision);
+    // This is the parse the model's element indices are numbered against; actions resolve them here
+    // rather than re-reading the DOM, which would renumber the page under the model's feet.
+    context.stepState = browserState;
     const rawElementsText = browserState.elementTree.clickableElementsToString(context.options.includeAttributes);
 
     let formattedElementsText = '';

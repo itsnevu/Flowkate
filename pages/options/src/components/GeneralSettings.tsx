@@ -86,6 +86,24 @@ export const GeneralSettings = () => {
 
         <Divider />
 
+        <SettingRow title={t('options_general_maxInputTokens')} description={t('options_general_maxInputTokens_desc')}>
+          <label htmlFor="maxInputTokens" className="sr-only">
+            {t('options_general_maxInputTokens')}
+          </label>
+          <input
+            id="maxInputTokens"
+            type="number"
+            min={8000}
+            max={1000000}
+            step={1000}
+            value={settings.maxInputTokens}
+            onChange={e => updateSetting('maxInputTokens', Number.parseInt(e.target.value, 10))}
+            className={numberFieldClass}
+          />
+        </SettingRow>
+
+        <Divider />
+
         <SettingRow title={t('options_general_enableVision')} description={t('options_general_enableVision_desc')}>
           <Toggle
             id="useVision"
@@ -143,6 +161,43 @@ export const GeneralSettings = () => {
             step={50}
             value={settings.minWaitPageLoad}
             onChange={e => updateSetting('minWaitPageLoad', Number.parseInt(e.target.value, 10))}
+            className={numberFieldClass}
+          />
+        </SettingRow>
+
+        <Divider />
+
+        <SettingRow
+          title={t('options_general_waitBetweenActions')}
+          description={t('options_general_waitBetweenActions_desc')}>
+          <label htmlFor="waitBetweenActions" className="sr-only">
+            {t('options_general_waitBetweenActions')}
+          </label>
+          <input
+            id="waitBetweenActions"
+            type="number"
+            min={0}
+            max={5000}
+            step={50}
+            value={settings.waitBetweenActions}
+            onChange={e => updateSetting('waitBetweenActions', Number.parseInt(e.target.value, 10))}
+            className={numberFieldClass}
+          />
+        </SettingRow>
+
+        <Divider />
+
+        <SettingRow title={t('options_general_retryDelay')} description={t('options_general_retryDelay_desc')}>
+          <label htmlFor="retryDelay" className="sr-only">
+            {t('options_general_retryDelay')}
+          </label>
+          <input
+            id="retryDelay"
+            type="number"
+            min={1}
+            max={60}
+            value={settings.retryDelay}
+            onChange={e => updateSetting('retryDelay', Number.parseInt(e.target.value, 10))}
             className={numberFieldClass}
           />
         </SettingRow>

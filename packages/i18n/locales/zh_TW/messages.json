@@ -235,6 +235,12 @@
   "options_general_maxFailures_desc": {
     "message": "在停止執行前，可容許的連續失敗次數"
   },
+  "options_general_maxInputTokens": {
+    "message": "最大輸入 Token 數"
+  },
+  "options_general_maxInputTokens_desc": {
+    "message": "提示長度上限 — 請設定在模型的脈絡視窗以下"
+  },
   "options_general_enableVision": {
     "message": "啟用視覺能力"
   },
@@ -258,6 +264,18 @@
   },
   "options_general_minWaitPageLoad_desc": {
     "message": "頁面載入後的最短等候時間 (250-5000 毫秒)"
+  },
+  "options_general_waitBetweenActions": {
+    "message": "動作之間的暫停"
+  },
+  "options_general_waitBetweenActions_desc": {
+    "message": "每個動作後的額外等待（毫秒）。0 表示僅使用自適應的頁面載入等待"
+  },
+  "options_general_retryDelay": {
+    "message": "重試等待上限"
+  },
+  "options_general_retryDelay_desc": {
+    "message": "模型呼叫失敗後重試前的最長等待時間（秒）"
   },
   "options_general_replayHistoricalTasks": {
     "message": "重播歷史任務（實驗性功能）"
@@ -508,6 +526,26 @@
   "exec_errors_maxFailuresReached": {
     "message": "已達失敗次數上限。"
   },
+  "exec_llm_retry": {
+    "message": "模型呼叫失敗，將在 $SECONDS$ 秒後重試（第 $ATTEMPT$ 次，共 $RETRIES$ 次）",
+    "placeholders": {
+      "attempt": {
+        "content": "$1",
+        "example": "1"
+      },
+      "retries": {
+        "content": "$2",
+        "example": "2"
+      },
+      "seconds": {
+        "content": "$3",
+        "example": "2"
+      }
+    }
+  },
+  "exec_errors_contextTooLarge": {
+    "message": "任務與頁面內容已超出 Token 上限。請在設定中調高最大輸入 Token 數，或改用脈絡視窗更大的模型。"
+  },
   "exec_task_cancel": {
     "message": "任務已取消"
   },
@@ -674,6 +712,15 @@
       },
       "index": {
         "content": "$2",
+        "example": "5"
+      }
+    }
+  },
+  "act_inputText_okRedacted": {
+    "message": "已將隱藏內容輸入至索引為 $INDEX$ 的欄位",
+    "placeholders": {
+      "index": {
+        "content": "$1",
         "example": "5"
       }
     }
@@ -1137,5 +1184,57 @@
   },
   "act_parallel_needsTwo": {
     "message": "平行研究至少需要兩個彼此獨立的子任務"
+  },
+  "chat_usage_label": {
+    "message": "Token"
+  },
+  "chat_usage_inOut": {
+    "message": "輸入 $IN$ · 輸出 $OUT$",
+    "placeholders": {
+      "in": {
+        "content": "$1",
+        "example": "12.4k"
+      },
+      "out": {
+        "content": "$2",
+        "example": "830"
+      }
+    }
+  },
+  "chat_usage_calls": {
+    "message": "$COUNT$ 次呼叫",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "7"
+      }
+    }
+  },
+  "chat_usage_cached": {
+    "message": "快取 $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "9.1k"
+      }
+    }
+  },
+  "chat_usage_reasoning": {
+    "message": "推理 $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "512"
+      }
+    }
+  },
+  "chat_usage_partial": {
+    "message": "部分模型未回報使用量，此為最低估計。"
+  },
+  "chat_usage_noPrice": {
+    "message": "僅顯示 Token。費用請查看您的供應商後台。"
+  },
+  "chat_usage_details_a11y": {
+    "message": "顯示各模型的 Token 使用量"
   }
 }

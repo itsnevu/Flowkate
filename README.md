@@ -125,6 +125,20 @@ Supported providers: OpenAI, Anthropic, Gemini, DeepSeek, Grok, Groq, Cerebras, 
 
 **Options → General** holds the two safety switches (plan approval, sensitive-action confirmation). Both default to on. Turning them off is your call to make, but that is what they are protecting you from.
 
+It also holds the knobs that decide how hard the agent works before it gives up:
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| Max Input Tokens | 128000 | Ceiling on the prompt the agent may build. Keep it under your model's context window — Ollama in particular is pinned to a 64k window. Once the history passes this, the oldest exchanges are dropped before anything is sent. |
+| Pause Between Actions | 0 | Extra fixed wait after each action within a step. The agent already waits for the page to settle on its own; raise this only for pages that keep re-rendering after they finish loading. |
+| Retry Backoff Cap | 10s | Longest the agent will wait before trying a failed model call again. A rate limit or a dropped connection is retried up to twice with an exponential, jittered backoff; anything the provider says is wrong with the request itself is not retried at all. |
+
+## What a task costs
+
+The side panel shows a **Tokens** strip above the input once a task starts, and expands to a per-model breakdown. The numbers come from the providers themselves, not from an estimate — a call whose provider reported nothing is counted separately and marks the total as a floor (`≥`). Totals are saved with the session, so reopening it from history still shows what it cost.
+
+There are deliberately no prices. This extension talks to OpenRouter's open catalogue, Azure deployments you named yourself, arbitrary OpenAI-compatible endpoints and locally-free Ollama, so any built-in price table would be wrong for some of them and stale for the rest. Check your provider's dashboard for the bill.
+
 ## Privacy
 
 No backend, no account, and no telemetry you cannot turn off. Your API keys, history, settings and memories are stored locally and disappear when you uninstall.

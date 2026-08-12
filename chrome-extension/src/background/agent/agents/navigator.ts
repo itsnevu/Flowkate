@@ -27,6 +27,7 @@ import {
   ResponseParseError,
   LLM_FORBIDDEN_ERROR_MESSAGE,
   RequestCancelledError,
+  MaxTokensExceededError,
 } from './errors';
 import { BaseAgent, type BaseAgentOptions, type ExtraAgentOptions } from './base';
 import type { Action } from '../actions/builder';
@@ -74,6 +75,20 @@ export interface NavigatorResult {
   done: boolean;
 }
 
+/**
+ * Whether every member of `subset` is in `superset`.
+ *
+ * Hand-rolled rather than `Set.prototype.isSubsetOf`: that method only landed in Chrome 122 and
+ * Node 22, and this repo's .nvmrc pins 22.12.0 with no .npmrc to enforce it, so a contributor on
+ * Node 20 hits a TypeError here the moment anything exercises this path under Vitest.
+ */
+function isSubsetOf<T>(subset: Set<T>, superset: Set<T>): boolean {
+  for (const value of subset) {
+    if (!superset.has(value)) return false;
+  }
+  return true;
+}
+
 export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
   private actionRegistry: NavigatorActionRegistry;
   private jsonSchema: Record<string, unknown>;
@@ -92,6 +107,10 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
     this.jsonSchema = convertZodToJsonSchema(this.modelOutputSchema, 'NavigatorAgentOutput', true);
   }
 
+  protected override get eventActor(): Actors {
+    return Actors.NAVIGATOR;
+  }
+
   async invoke(inputMessages: BaseMessage[]): Promise<this['ModelOutput']> {
     // Use structured output
     if (this.withStructuredOutput) {
@@ -102,10 +121,15 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
 
       let response = undefined;
       try {
-        response = await structuredLlm.invoke(inputMessages, {
-          signal: this.context.controller.signal,
-          ...this.callOptions,
-        });
+        response = await this.callModelWithRetry(() =>
+          structuredLlm.invoke(inputMessages, {
+            signal: this.context.controller.signal,
+            ...this.callOptions,
+          }),
+        );
+        // the navigator burns most of the tokens and never reaches the base class's structured
+        // branch, so without this the headline number would miss almost all of the spend
+        this.recordUsage(response.raw);
 
         if (response.parsed) {
           return response.parsed;
@@ -142,7 +166,7 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
 
       // sometimes LLM returns an empty content, but with one or more tool calls, so we need to check the tool calls
       if (rawResponse.tool_calls && rawResponse.tool_calls.length > 0) {
-        logger.info('Navigator structuredLlm tool call with empty content', rawResponse.tool_calls);
+        logger.debug('Navigator structuredLlm tool call with empty content', rawResponse.tool_calls);
         // only use the first tool call
         const toolCall = rawResponse.tool_calls[0];
         return {
@@ -235,7 +259,9 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
         throw new ExtensionConflictError(EXTENSION_CONFLICT_ERROR_MESSAGE, error);
       } else if (isForbiddenError(error)) {
         throw new ChatModelForbiddenError(LLM_FORBIDDEN_ERROR_MESSAGE, error);
-      } else if (error instanceof URLNotAllowedError) {
+      } else if (error instanceof MaxTokensExceededError || error instanceof URLNotAllowedError) {
+        // trimming that cannot converge is a configuration problem, not a step that will succeed on
+        // retry, so it propagates instead of burning the failure budget
         throw error;
       }
 
@@ -245,6 +271,8 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
       agentOutput.error = errorMessage;
       return agentOutput;
     } finally {
+      // the step's state describes a page that is now one step old; nothing outside the step may use it
+      this.context.stepState = null;
       // if the task is cancelled, remove the last state message from memory and emit event
       if (cancelled) {
         this.removeLastStateMessageFromMemory();
@@ -311,6 +339,9 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
 
     const state = await this.prompt.getUserMessage(this.context);
     messageManager.addStateMessage(state);
+    // the page description is the largest thing the history ever holds, so bound the history here,
+    // at the moment it peaks, rather than inside getMessages() where a debug read would mutate it
+    messageManager.cutMessages();
     this.context.stateMessageAdded = true;
   }
 
@@ -404,10 +435,17 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
   private async doMultiAction(actions: Record<string, unknown>[]): Promise<ActionResult[]> {
     const results: ActionResult[] = [];
     let errCount = 0;
-    logger.info('Actions', actions);
+    // debug, not info: the action array carries input_text.text, which is where a typed password is.
+    // log.ts gates only debug behind import.meta.env.DEV, so info would print it in production.
+    logger.debug('Actions', actions);
 
     const browserContext = this.context.browserContext;
-    const browserState = await browserContext.getState(this.context.options.useVision);
+    // The state the model chose these actions from. Re-parsing here would produce a different
+    // highlightIndex numbering than the one the model wrote its indices against.
+    const browserState = this.context.stepState ?? (await browserContext.getState(this.context.options.useVision));
+    // The parse is gone but its load wait is not: the page may have kept loading during the LLM call,
+    // and this is also where a click-driven navigation gets its URL allow/deny check.
+    await (await browserContext.getCurrentPage()).waitForPageAndFramesLoad();
     const cachedPathHashes = await calcBranchPathHashSet(browserState);
 
     await browserContext.removeHighlight();
@@ -428,10 +466,11 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
 
         const indexArg = actionInstance.getIndexArg(actionArgs);
         if (i > 0 && indexArg !== null) {
-          const newState = await browserContext.getState(this.context.options.useVision);
+          // Only the selector map is read below, so never pay for a screenshot here.
+          const newState = await browserContext.getState(false);
           const newPathHashes = await calcBranchPathHashSet(newState);
           // next action requires index but there are new elements on the page
-          if (!newPathHashes.isSubsetOf(cachedPathHashes)) {
+          if (!isSubsetOf(newPathHashes, cachedPathHashes)) {
             const msg = `Something new appeared after action ${i} / ${actions.length}`;
             logger.info(msg);
             results.push(
@@ -466,6 +505,10 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
         if (result.error && indexArg !== null) {
           logger.info(`Action ${actionName} failed on a stale element, re-reading the page and retrying once`);
           await new Promise(resolve => setTimeout(resolve, 500));
+          // The first attempt resolved this index against the state the model saw, and that state is
+          // now demonstrably wrong about this element. Drop it so the retry re-reads the page -
+          // otherwise it would resolve the same index to the same missing element and fail identically.
+          this.context.stepState = null;
           const retried = await actionInstance.call(actionArgs);
           if (retried !== undefined && !retried.error) {
             result = retried;
@@ -478,8 +521,8 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
           if (domElement) {
             const interactedElement = HistoryTreeProcessor.convertDomElementToHistoryElement(domElement);
             result.interactedElement = interactedElement;
-            logger.info('Interacted element', interactedElement);
-            logger.info('Result', result);
+            logger.debug('Interacted element', interactedElement);
+            logger.debug('Result', result);
           }
         }
         results.push(result);
@@ -488,8 +531,20 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
         if (this.context.paused || this.context.stopped) {
           return results;
         }
-        // TODO: wait for 1 second for now, need to optimize this to avoid unnecessary waiting
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Let the page settle before the next action resolves its element, and re-check the URL:
+        // a click that navigated via the evaluate() fallback has not been through an allow/deny
+        // check yet. There is no next action to settle for after the last one.
+        //
+        // This replaces a flat 1000ms sleep. The load wait is adaptive (~0.6s typically, capped at
+        // maximumWaitPageLoadTime), so the extra fixed pad defaults to 0 rather than re-adding a
+        // second of latency on top of it - users on pages that need more can raise it.
+        if (i < actions.length - 1) {
+          await (await browserContext.getCurrentPage()).waitForPageAndFramesLoad();
+          const padMs = browserContext.getConfig().waitBetweenActions * 1000;
+          if (padMs > 0) {
+            await new Promise(resolve => setTimeout(resolve, padMs));
+          }
+        }
       } catch (error) {
         if (error instanceof URLNotAllowedError) {
           throw error;
@@ -568,6 +623,8 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
     if (!state) {
       throw new Error('Invalid browser state');
     }
+    // replay resolves its own indices against this parse, so hand it to the actions too
+    this.context.stepState = state;
 
     const updatedActions: (Record<string, unknown> | null)[] = [];
     for (let i = 0; i < parsedOutput.action!.length; i++) {

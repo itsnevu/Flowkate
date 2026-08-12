@@ -11,6 +11,21 @@ import type { BaseChatModel } from '@langchain/core/language_models/chat_models'
 
 const maxTokens = 1024 * 4;
 
+/**
+ * Retries are owned by the agent's own `callWithRetry`, not by LangChain.
+ *
+ * `AsyncCaller` in @langchain/core 0.3.79 defaults to six retries with its own 1s exponential
+ * backoff (`factor: 2`, `minTimeout: 1000`, `randomize: true`), and every model built below except
+ * ChatOllama routes its request through it - the provider SDKs' own retry is already off
+ * (`maxRetries: 0` inside @langchain/openai and @langchain/anthropic). Left alone, one rate-limited
+ * step means six invisible retries and up to two minutes of silence, and stacking our own on top
+ * would make it twenty-one requests. Turning it off here makes our retry the only one, so the
+ * budget, the jitter and the abort behaviour all live in one readable place - and it gives
+ * ChatOllama the retries it never had, since `ChatOllama._generate` talks to the Ollama client
+ * directly and never touches AsyncCaller at all.
+ */
+const RETRY_OWNED_BY_AGENT = { maxRetries: 0 } as const;
+
 /** The subset of the Llama API response this module reads. */
 type LlamaCompletionResponse = {
   id?: string;
@@ -136,7 +151,9 @@ function createOpenAIChatModel(
     topP?: number;
     temperature?: number;
     maxTokens?: number;
+    maxRetries: number;
   } = {
+    ...RETRY_OWNED_BY_AGENT,
     model: modelConfig.modelName,
     apiKey: providerConfig.apiKey,
   };
@@ -241,6 +258,7 @@ function createAzureChatModel(providerConfig: ProviderConfig, modelConfig: Model
 
   // Use AzureChatOpenAI with specific parameters
   const args = {
+    ...RETRY_OWNED_BY_AGENT,
     azureOpenAIApiInstanceName: instanceName, // Derived from endpoint
     azureOpenAIApiDeploymentName: deploymentName,
     azureOpenAIApiKey: providerConfig.apiKey,
@@ -289,6 +307,7 @@ export function createChatModel(providerConfig: ProviderConfig, modelConfig: Mod
       // For Opus models, only support temperature, not topP
       // For 4.5 models, only support either temperature or topP, not both, so we only use temperature to align with Opus
       const args = {
+        ...RETRY_OWNED_BY_AGENT,
         model: modelConfig.modelName,
         apiKey: providerConfig.apiKey,
         maxTokens,
@@ -299,6 +318,7 @@ export function createChatModel(providerConfig: ProviderConfig, modelConfig: Mod
     }
     case ProviderTypeEnum.DeepSeek: {
       const args = {
+        ...RETRY_OWNED_BY_AGENT,
         model: modelConfig.modelName,
         apiKey: providerConfig.apiKey,
         temperature,
@@ -308,6 +328,7 @@ export function createChatModel(providerConfig: ProviderConfig, modelConfig: Mod
     }
     case ProviderTypeEnum.Gemini: {
       const args = {
+        ...RETRY_OWNED_BY_AGENT,
         model: modelConfig.modelName,
         apiKey: providerConfig.apiKey,
         temperature,
@@ -317,6 +338,7 @@ export function createChatModel(providerConfig: ProviderConfig, modelConfig: Mod
     }
     case ProviderTypeEnum.Grok: {
       const args = {
+        ...RETRY_OWNED_BY_AGENT,
         model: modelConfig.modelName,
         apiKey: providerConfig.apiKey,
         temperature,
@@ -328,6 +350,7 @@ export function createChatModel(providerConfig: ProviderConfig, modelConfig: Mod
     }
     case ProviderTypeEnum.Groq: {
       const args = {
+        ...RETRY_OWNED_BY_AGENT,
         model: modelConfig.modelName,
         apiKey: providerConfig.apiKey,
         temperature,
@@ -338,6 +361,7 @@ export function createChatModel(providerConfig: ProviderConfig, modelConfig: Mod
     }
     case ProviderTypeEnum.Cerebras: {
       const args = {
+        ...RETRY_OWNED_BY_AGENT,
         model: modelConfig.modelName,
         apiKey: providerConfig.apiKey,
         temperature,
@@ -356,7 +380,9 @@ export function createChatModel(providerConfig: ProviderConfig, modelConfig: Mod
         temperature?: number;
         maxTokens?: number;
         numCtx: number;
+        maxRetries: number;
       } = {
+        ...RETRY_OWNED_BY_AGENT,
         model: modelConfig.modelName,
         // required but ignored by ollama
         apiKey: providerConfig.apiKey === '' ? 'ollama' : providerConfig.apiKey,
@@ -390,7 +416,9 @@ export function createChatModel(providerConfig: ProviderConfig, modelConfig: Mod
         topP?: number;
         temperature?: number;
         maxTokens?: number;
+        maxRetries: number;
       } = {
+        ...RETRY_OWNED_BY_AGENT,
         model: modelConfig.modelName,
         apiKey: providerConfig.apiKey,
         topP: (modelConfig.parameters?.topP ?? 0.1) as number,

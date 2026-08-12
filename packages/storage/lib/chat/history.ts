@@ -7,6 +7,7 @@ import type {
   Message,
   ChatSessionMetadata,
   ChatAgentStepHistory,
+  ChatTokenUsage,
 } from './types';
 
 // Key for storing chat session metadata
@@ -24,6 +25,18 @@ const getSessionMessagesKey = (sessionId: string) => `chat_messages_${sessionId}
 // Helper function to create storage for a specific session's messages
 const getSessionMessagesStorage = (sessionId: string) => {
   return createStorage<ChatMessage[]>(getSessionMessagesKey(sessionId), [], {
+    storageEnum: StorageEnum.Local,
+    liveUpdate: true,
+  });
+};
+
+// Helper function to get storage key for a specific session's token usage
+const getSessionTokenUsageKey = (sessionId: string) => `chat_usage_${sessionId}`;
+
+// Token usage is stored per session rather than on the metadata record, so listing sessions in the
+// history panel does not have to read every session's spend.
+const getSessionTokenUsageStorage = (sessionId: string) => {
+  return createStorage<ChatTokenUsage | null>(getSessionTokenUsageKey(sessionId), null, {
     storageEnum: StorageEnum.Local,
     liveUpdate: true,
   });
@@ -72,6 +85,8 @@ export function createChatHistoryStorage(): ChatHistoryStorage {
       for (const sessionMeta of sessionsMeta) {
         const messagesStorage = getSessionMessagesStorage(sessionMeta.id);
         await messagesStorage.set([]);
+        await getSessionAgentStepHistoryStorage(sessionMeta.id).set({ task: '', history: '', timestamp: 0 });
+        await getSessionTokenUsageStorage(sessionMeta.id).set(null);
       }
       await chatSessionsMetaStorage.set([]);
     },
@@ -160,6 +175,11 @@ export function createChatHistoryStorage(): ChatHistoryStorage {
       // Remove the session's messages
       const messagesStorage = getSessionMessagesStorage(sessionId);
       await messagesStorage.set([]);
+
+      // ...and everything else keyed by the session id. Without this the step history and the token
+      // totals outlive the session that owned them, invisible to the user and impossible to reach.
+      await getSessionAgentStepHistoryStorage(sessionId).set({ task: '', history: '', timestamp: 0 });
+      await getSessionTokenUsageStorage(sessionId).set(null);
     },
 
     addMessage: async (sessionId: string, message: Message): Promise<ChatMessage> => {
@@ -223,6 +243,16 @@ export function createChatHistoryStorage(): ChatHistoryStorage {
           return session;
         });
       });
+    },
+
+    storeTokenUsage: async (sessionId: string, usage: ChatTokenUsage): Promise<void> => {
+      await getSessionTokenUsageStorage(sessionId).set(usage);
+    },
+
+    loadTokenUsage: async (sessionId: string): Promise<ChatTokenUsage | null> => {
+      const usage = await getSessionTokenUsageStorage(sessionId).get();
+      // a session that never made a reporting model call has nothing worth showing
+      return usage && usage.byModel.length > 0 ? usage : null;
     },
 
     storeAgentStepHistory: async (sessionId: string, task: string, history: string): Promise<void> => {

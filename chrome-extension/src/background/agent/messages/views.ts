@@ -1,4 +1,4 @@
-import { type BaseMessage, HumanMessage, SystemMessage } from '@langchain/core/messages';
+import { type BaseMessage, HumanMessage, ToolMessage } from '@langchain/core/messages';
 
 export class MessageMetadata {
   tokens: number;
@@ -73,15 +73,26 @@ export class MessageHistory {
   }
 
   /**
-   * Remove oldest non-system message
+   * Drop the oldest exchange that is safe to forget, and report how many tokens that reclaimed.
+   *
+   * Messages tagged 'init' (system prompt, the task itself, the worked example) are the agent's
+   * identity, so they are never evicted. A tool response only makes sense next to the call it
+   * answers, so the ToolMessages following an AIMessage go with it. The newest message is never
+   * touched here - it is the one the next decision is made from.
+   *
+   * @returns the number of tokens reclaimed, or 0 when nothing was safe to evict
    */
-  removeOldestMessage(): void {
-    for (let i = 0; i < this.messages.length; i++) {
-      if (!(this.messages[i].message instanceof SystemMessage)) {
-        const msg = this.messages.splice(i, 1)[0];
-        this.totalTokens -= msg.metadata.tokens;
-        break;
-      }
+  removeOldestExchange(): number {
+    const start = this.messages.findIndex(m => m.metadata.message_type !== 'init');
+    if (start < 0) return 0;
+    let end = start + 1;
+    while (end < this.messages.length && this.messages[end].message instanceof ToolMessage) {
+      end++;
     }
+    if (end >= this.messages.length) return 0;
+    const removed = this.messages.splice(start, end - start);
+    const tokens = removed.reduce((sum, m) => sum + m.metadata.tokens, 0);
+    this.totalTokens -= tokens;
+    return tokens;
   }
 }

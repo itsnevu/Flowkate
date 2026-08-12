@@ -1,7 +1,11 @@
+import { t } from '@extension/i18n';
 import { createLogger } from '@src/background/log';
 import { ProviderTypeEnum } from '@extension/storage';
 import { convertInputMessages, extractJsonFromModelOutput, removeThinkTags } from '../messages/utils';
+import { Actors, ExecutionState } from '../event/types';
+import { readUsage } from '../usage';
 import { isAbortedError, ResponseParseError } from './errors';
+import { callWithRetry } from './retry';
 import type { z } from 'zod';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import type { AgentContext, AgentOutput } from '../types';
@@ -118,6 +122,36 @@ export abstract class BaseAgent<T extends z.ZodType, M = unknown> {
     return true;
   }
 
+  /** Which actor this agent reports as in the event stream. Subclasses that emit override it. */
+  protected get eventActor(): Actors {
+    return Actors.SYSTEM;
+  }
+
+  /**
+   * Run one model call, trying again when the failure was the network or the provider rather than
+   * the request.
+   *
+   * This wraps the call itself rather than the whole of invoke() on purpose: both paths below
+   * rewrap failures into a plain `Error` whose message no longer carries `status`, so a retry layer
+   * any further out could only guess from text.
+   */
+  protected async callModelWithRetry<T>(call: () => Promise<T>): Promise<T> {
+    return callWithRetry(call, {
+      signal: this.context.controller.signal,
+      capMs: this.context.options.retryDelay * 1000,
+      onRetry: (attempt, maxAttempts, delayMs, error) => {
+        logger.warning(
+          `[${this.modelName}] attempt ${attempt}/${maxAttempts} failed, retrying in ${delayMs}ms: ${error.message}`,
+        );
+        this.context.emitEvent(
+          this.eventActor,
+          ExecutionState.STEP_RETRY,
+          t('exec_llm_retry', [String(attempt), String(maxAttempts - 1), String(Math.ceil(delayMs / 1000))]),
+        );
+      },
+    });
+  }
+
   async invoke(inputMessages: BaseMessage[]): Promise<this['ModelOutput']> {
     // Use structured output
     if (this.withStructuredOutput) {
@@ -135,10 +169,15 @@ export abstract class BaseAgent<T extends z.ZodType, M = unknown> {
       let response = undefined;
       try {
         logger.debug(`[${this.modelName}] Invoking LLM with structured output...`);
-        response = await structuredLlm.invoke(inputMessages, {
-          signal: this.context.controller.signal,
-          ...this.callOptions,
-        });
+        response = await this.callModelWithRetry(() =>
+          structuredLlm.invoke(inputMessages, {
+            signal: this.context.controller.signal,
+            ...this.callOptions,
+          }),
+        );
+        // before the parsed/unparsed branch: a call that returned unusable JSON still cost money,
+        // and that is exactly when you want to know it did
+        this.recordUsage(response.raw);
 
         logger.debug(`[${this.modelName}] LLM response received:`, {
           hasParsed: !!response.parsed,
@@ -179,10 +218,15 @@ export abstract class BaseAgent<T extends z.ZodType, M = unknown> {
     const convertedInputMessages = convertInputMessages(inputMessages, this.modelName);
 
     try {
-      const response = await this.chatLLM.invoke(convertedInputMessages, {
-        signal: this.context.controller.signal,
-        ...this.callOptions,
-      });
+      const response = await this.callModelWithRetry(() =>
+        this.chatLLM.invoke(convertedInputMessages, {
+          signal: this.context.controller.signal,
+          ...this.callOptions,
+        }),
+      );
+      // this path gets the AIMessage directly rather than a {raw, parsed} wrapper; readUsage reads
+      // usage_metadata off either shape
+      this.recordUsage(response);
 
       if (typeof response.content === 'string') {
         const parsed = this.manuallyParseResponse(response.content);
@@ -210,6 +254,26 @@ export abstract class BaseAgent<T extends z.ZodType, M = unknown> {
     } catch (error) {
       logger.error('validateModelOutput', error);
       throw new ResponseParseError('Could not validate model output');
+    }
+  }
+
+  /**
+   * Record what a model call actually cost, using the provider's own numbers.
+   *
+   * Never falls back to the character-count estimate in MessageManager: mixing measured and guessed
+   * tokens in one total makes the total a lie. A provider that reports nothing is counted as
+   * unreported instead, so the UI can say the number is a floor.
+   */
+  protected recordUsage(raw: unknown): void {
+    const usage = readUsage(raw);
+    this.context.tokenUsage.record(this.id, this.modelName, usage);
+    if (usage) {
+      void this.context.emitEvent(
+        Actors.SYSTEM,
+        ExecutionState.TASK_USAGE,
+        String(usage.total_tokens ?? 0),
+        this.context.tokenUsage.snapshot(),
+      );
     }
   }
 

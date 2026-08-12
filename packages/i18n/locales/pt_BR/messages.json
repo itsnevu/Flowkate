@@ -235,6 +235,12 @@
   "options_general_maxFailures_desc": {
     "message": "Quantas falhas consecutivas antes de parar"
   },
+  "options_general_maxInputTokens": {
+    "message": "Máximo de Tokens de Entrada"
+  },
+  "options_general_maxInputTokens_desc": {
+    "message": "Limite do tamanho do prompt - mantenha abaixo da janela de contexto do seu modelo"
+  },
   "options_general_enableVision": {
     "message": "Ativar Visão"
   },
@@ -258,6 +264,18 @@
   },
   "options_general_minWaitPageLoad_desc": {
     "message": "Tempo mínimo de espera após o carregamento da página (250-5000ms)"
+  },
+  "options_general_waitBetweenActions": {
+    "message": "Pausa Entre Ações"
+  },
+  "options_general_waitBetweenActions_desc": {
+    "message": "Espera extra após cada ação, em ms. 0 usa apenas a espera adaptativa de carregamento"
+  },
+  "options_general_retryDelay": {
+    "message": "Limite de Espera para Nova Tentativa"
+  },
+  "options_general_retryDelay_desc": {
+    "message": "Maior espera antes de repetir uma chamada de modelo que falhou, em segundos"
   },
   "options_general_replayHistoricalTasks": {
     "message": "Reproduzir Tarefas Históricas (experimental)"
@@ -508,6 +526,26 @@
   "exec_errors_maxFailuresReached": {
     "message": "Máximo de falhas atingido"
   },
+  "exec_llm_retry": {
+    "message": "A chamada ao modelo falhou, tentando novamente ($ATTEMPT$ de $RETRIES$) em $SECONDS$s",
+    "placeholders": {
+      "attempt": {
+        "content": "$1",
+        "example": "1"
+      },
+      "retries": {
+        "content": "$2",
+        "example": "2"
+      },
+      "seconds": {
+        "content": "$3",
+        "example": "2"
+      }
+    }
+  },
+  "exec_errors_contextTooLarge": {
+    "message": "A tarefa e a página não cabem mais no limite de tokens. Aumente o Máximo de Tokens de Entrada nas configurações ou use um modelo com uma janela de contexto maior."
+  },
   "exec_task_cancel": {
     "message": "Tarefa cancelada"
   },
@@ -674,6 +712,15 @@
       },
       "index": {
         "content": "$2",
+        "example": "5"
+      }
+    }
+  },
+  "act_inputText_okRedacted": {
+    "message": "Inserir texto oculto no índice $INDEX$",
+    "placeholders": {
+      "index": {
+        "content": "$1",
         "example": "5"
       }
     }
@@ -1137,5 +1184,57 @@
   },
   "act_parallel_needsTwo": {
     "message": "A pesquisa paralela precisa de pelo menos duas subtarefas independentes"
+  },
+  "chat_usage_label": {
+    "message": "Tokens"
+  },
+  "chat_usage_inOut": {
+    "message": "$IN$ entrada · $OUT$ saída",
+    "placeholders": {
+      "in": {
+        "content": "$1",
+        "example": "12.4k"
+      },
+      "out": {
+        "content": "$2",
+        "example": "830"
+      }
+    }
+  },
+  "chat_usage_calls": {
+    "message": "$COUNT$ chamadas",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "7"
+      }
+    }
+  },
+  "chat_usage_cached": {
+    "message": "$COUNT$ em cache",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "9.1k"
+      }
+    }
+  },
+  "chat_usage_reasoning": {
+    "message": "$COUNT$ de raciocínio",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "512"
+      }
+    }
+  },
+  "chat_usage_partial": {
+    "message": "Alguns modelos não informaram o uso, então este é um mínimo."
+  },
+  "chat_usage_noPrice": {
+    "message": "Apenas tokens. Consulte o painel do seu provedor para ver a cobrança."
+  },
+  "chat_usage_details_a11y": {
+    "message": "Mostrar uso de tokens por modelo"
   }
 }

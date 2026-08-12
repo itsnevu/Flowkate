@@ -4,12 +4,12 @@ import { chatHistoryStore } from '@extension/storage/lib/chat';
 import { memoryStore } from '@extension/storage';
 import { URLNotAllowedError } from '../browser/views';
 import { analytics } from '../services/analytics';
-import { type ActionResult, AgentContext, type AgentOptions, type AgentOutput } from './types';
+import { type ActionResult, AgentContext, type AgentOptions, type AgentOutput, DEFAULT_AGENT_OPTIONS } from './types';
 import { NavigatorAgent, NavigatorActionRegistry } from './agents/navigator';
 import { PlannerAgent, type PlannerOutput } from './agents/planner';
 import { NavigatorPrompt } from './prompts/navigator';
 import { PlannerPrompt } from './prompts/planner';
-import MessageManager from './messages/service';
+import MessageManager, { MessageManagerSettings } from './messages/service';
 import { ActionBuilder } from './actions/builder';
 import { EventManager } from './event/manager';
 import { Actors, type EventCallback, EventType, ExecutionState } from './event/types';
@@ -21,6 +21,7 @@ import {
   RequestCancelledError,
   MaxStepsReachedError,
   MaxFailuresReachedError,
+  MaxTokensExceededError,
 } from './agents/errors';
 import { routeStep, ModelTier } from './routing';
 import type BrowserContext from '../browser/context';
@@ -65,18 +66,17 @@ export class Executor {
     navigatorLLM: BaseChatModel,
     extraArgs?: Partial<ExecutorExtraArgs>,
   ) {
-    const messageManager = new MessageManager();
+    // Resolved before the MessageManager because the manager needs the token budget and is built
+    // first; AgentContext re-merges over the same defaults, so this is idempotent.
+    const agentOptions: AgentOptions = { ...DEFAULT_AGENT_OPTIONS, ...(extraArgs?.agentOptions ?? {}) };
+    const messageManager = new MessageManager(
+      new MessageManagerSettings({ maxInputTokens: agentOptions.maxInputTokens }),
+    );
 
     const plannerLLM = extraArgs?.plannerLLM ?? navigatorLLM;
     const extractorLLM = extraArgs?.extractorLLM ?? navigatorLLM;
     const eventManager = new EventManager();
-    const context = new AgentContext(
-      taskId,
-      browserContext,
-      messageManager,
-      eventManager,
-      extraArgs?.agentOptions ?? {},
-    );
+    const context = new AgentContext(taskId, browserContext, messageManager, eventManager, agentOptions);
 
     this.generalSettings = extraArgs?.generalSettings;
     this.tasks.push(task);
@@ -89,6 +89,8 @@ export class Executor {
       navigatorLLM,
       agentOptions: context.options,
       getBrowserConfig: () => browserContext.getConfig(),
+      // subtasks spend on the parent's behalf, so their tokens belong in the parent's total
+      usage: context.tokenUsage,
     });
     const navigatorActionRegistry = new NavigatorActionRegistry(actionBuilder.buildDefaultActions());
 
@@ -391,7 +393,8 @@ export class Executor {
         error instanceof ChatModelForbiddenError ||
         error instanceof URLNotAllowedError ||
         error instanceof RequestCancelledError ||
-        error instanceof ExtensionConflictError
+        error instanceof ExtensionConflictError ||
+        error instanceof MaxTokensExceededError
       ) {
         throw error;
       }
@@ -467,7 +470,8 @@ export class Executor {
         error instanceof ChatModelForbiddenError ||
         error instanceof URLNotAllowedError ||
         error instanceof RequestCancelledError ||
-        error instanceof ExtensionConflictError
+        error instanceof ExtensionConflictError ||
+        error instanceof MaxTokensExceededError
       ) {
         throw error;
       }

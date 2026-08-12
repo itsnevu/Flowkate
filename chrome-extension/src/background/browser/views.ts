@@ -27,8 +27,12 @@ export interface BrowserContextConfig {
   maximumWaitPageLoadTime: number;
 
   /**
-   * Time to wait between multiple actions in one step
-   * @default 0.5
+   * Extra fixed pad after the adaptive page-load wait between actions in one step, in seconds.
+   *
+   * Defaults to 0 because `waitForPageAndFramesLoad` already runs between actions and adapts to the
+   * page (~0.6s typically). This is the escape hatch for pages that settle later than the network
+   * suggests - a JS-driven re-render after load, say - not the primary settle.
+   * @default 0
    */
   waitBetweenActions: number;
 
@@ -82,7 +86,7 @@ export const DEFAULT_BROWSER_CONTEXT_CONFIG: BrowserContextConfig = {
   minimumWaitPageLoadTime: 0.25,
   waitForNetworkIdlePageLoadTime: 0.5,
   maximumWaitPageLoadTime: 5.0,
-  waitBetweenActions: 0.5,
+  waitBetweenActions: 0,
   browserWindowSize: { width: 1280, height: 1100 },
   viewportExpansion: 0,
   allowedUrls: [],
