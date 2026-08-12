@@ -73,6 +73,9 @@
   "chat_input_form": {
     "message": "Formulário de entrada de chat"
   },
+  "chat_disclaimer": {
+    "message": "O Flowkite pode cometer erros. Confira as respostas."
+  },
   "chat_input_editor": {
     "message": "Entrada de mensagem"
   },
@@ -246,12 +249,6 @@
   },
   "options_general_enableVision_desc": {
     "message": "Usar capacidade de visão dos modelos de linguagem (consome mais tokens para melhores resultados)"
-  },
-  "options_general_displayHighlights": {
-    "message": "Mostrar Destaques"
-  },
-  "options_general_displayHighlights_desc": {
-    "message": "Mostrar destaques visuais em elementos interativos (ex: botões, links, etc.)"
   },
   "options_general_groupTaskTabs": {
     "message": "Agrupar abas da tarefa"
@@ -1061,12 +1058,6 @@
   "chat_undo": {
     "message": "Desfazer última etapa"
   },
-  "options_general_requirePlanApproval": {
-    "message": "Aprovar o plano antes de executar"
-  },
-  "options_general_requirePlanApproval_desc": {
-    "message": "Mostra o plano do agente e aguarda sua aprovação antes de qualquer ação na página"
-  },
   "act_declinedByUser": {
     "message": "Você recusou esta ação: $INTENT$. O agente vai procurar outro caminho.",
     "placeholders": {
@@ -1110,12 +1101,6 @@
   },
   "actConfirm_reason_formSubmit": {
     "message": "Isto vai enviar um formulário."
-  },
-  "options_general_confirmSensitiveActions": {
-    "message": "Confirmar ações sensíveis"
-  },
-  "options_general_confirmSensitiveActions_desc": {
-    "message": "Perguntar antes de o agente enviar um formulário, comprar algo, excluir dados, baixar um arquivo ou digitar uma senha"
   },
   "act_remember_start": {
     "message": "Memorizando: $CONTENT$",
@@ -1248,5 +1233,111 @@
   },
   "chat_usage_details_a11y": {
     "message": "Mostrar uso de tokens por modelo"
+  },
+  "chat_status_working": {
+    "message": "Trabalhando…"
+  },
+  "chat_status_planning": {
+    "message": "Planejando os próximos passos…"
+  },
+  "chat_status_acting": {
+    "message": "Trabalhando na página…"
+  },
+  "chat_result_completed": {
+    "message": "Tarefa concluída."
+  },
+  "chat_task_interrupted": {
+    "message": "A tarefa parou antes do fim — a conexão com o service worker caiu."
+  },
+  "chat_trail_steps": {
+    "message": "$STEPS$ passos",
+    "placeholders": {
+      "steps": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "chat_trail_summary": {
+    "message": "$STEPS$ passos · $ISSUES$ problemas",
+    "placeholders": {
+      "steps": {
+        "content": "$1",
+        "example": "12"
+      },
+      "issues": {
+        "content": "$2",
+        "example": "2"
+      }
+    }
+  },
+  "chat_trail_details_a11y": {
+    "message": "Mostrar os passos que esta tarefa executou"
+  },
+  "options_general_approvalMode": {
+    "message": "O que precisa da sua aprovação"
+  },
+  "options_general_approvalMode_desc": {
+    "message": "Definido pelo seletor de modo ao lado da caixa de chat. Atualmente $MODE$.",
+    "placeholders": {
+      "mode": {
+        "content": "$1",
+        "example": "Planner"
+      }
+    }
+  },
+  "actConfirm_reason_routine": {
+    "message": "Você pediu para confirmar cada ação, então o agente está checando antes de cada uma."
+  },
+  "chat_mode_label": {
+    "message": "Modo de aprovação"
+  },
+  "chat_mode_current": {
+    "message": "Modo de aprovação: $MODE$",
+    "placeholders": {
+      "mode": {
+        "content": "$1",
+        "example": "Planejador"
+      }
+    }
+  },
+  "chat_mode_auto": {
+    "message": "Automático"
+  },
+  "chat_mode_auto_desc": {
+    "message": "Executa a tarefa inteira sem perguntar."
+  },
+  "chat_mode_planner": {
+    "message": "Planejador"
+  },
+  "chat_mode_planner_desc": {
+    "message": "Aprove o plano e depois confirme as ações arriscadas."
+  },
+  "chat_mode_manual": {
+    "message": "Manual"
+  },
+  "chat_mode_manual_desc": {
+    "message": "Aprove o plano e cada ação na página."
+  },
+  "chat_mode_autoNotice_title": {
+    "message": "Rodar sem nenhuma verificação?"
+  },
+  "chat_mode_autoNotice_body": {
+    "message": "O agente não vai mais mostrar o plano nem parar para perguntar antes de comprar algo, apagar dados, digitar credenciais ou enviar um formulário. Numa página que tente enganá-lo, você pode só ficar sabendo depois que a ação aconteceu. Dá para voltar atrás a qualquer momento."
+  },
+  "chat_mode_autoNotice_confirm": {
+    "message": "Desligar todas as verificações"
+  },
+  "chat_mode_autoNotice_cancel": {
+    "message": "Manter as verificações"
+  },
+  "bg_cmd_approvalMode_invalid": {
+    "message": "Modo de aprovação desconhecido: $MODE$",
+    "placeholders": {
+      "mode": {
+        "content": "$1",
+        "example": "planner"
+      }
+    }
   }
 }

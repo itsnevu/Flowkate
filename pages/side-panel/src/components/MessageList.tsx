@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { ACTOR_PROFILES } from '../types/message';
-import { PROGRESS_MESSAGE } from '../constants';
+import StepTrail from './StepTrail';
 import type { Message } from '@extension/storage';
 
 interface MessageListProps {
@@ -32,8 +32,10 @@ function MessageBlock({ message, isSameActor }: MessageBlockProps) {
     return <div />;
   }
   const actor = ACTOR_PROFILES[message.actor as keyof typeof ACTOR_PROFILES];
-  const isProgress = message.content === PROGRESS_MESSAGE;
   const isUser = message.actor === 'user';
+  const steps = message.steps ?? [];
+  // A task that hit trouble opens its own trail: that is what the reader came for.
+  const hasIssue = steps.some(step => step.kind === 'error');
   // The user speaks in graphite keys; every agent answers on a raised pale card.
   const bubble = isUser
     ? 'rounded-slab bg-graphite text-graphite-50 shadow-key'
@@ -55,22 +57,18 @@ function MessageBlock({ message, isSameActor }: MessageBlockProps) {
       )}
 
       <div className={`min-w-0 max-w-[85%] px-3.5 py-2.5 text-sm ${bubble}`}>
-        <div className="whitespace-pre-wrap break-words">
-          {isProgress ? (
-            <div className="h-1.5 w-32 animate-pulse-soft overflow-hidden rounded-pill bg-canvas-sunk shadow-neu-inset-sm">
-              <div className="h-full w-1/2 animate-progress rounded-pill bg-graphite" />
-            </div>
-          ) : (
-            message.content
-          )}
-        </div>
+        <div className="whitespace-pre-wrap break-words">{message.content}</div>
       </div>
 
-      {!isProgress && (
-        <div className="mt-1 px-1 text-[11px] uppercase tracking-wide text-ink-faint">
-          {formatTimestamp(message.timestamp)}
+      {steps.length > 0 && (
+        <div className="mt-1.5 w-full max-w-[85%]">
+          <StepTrail steps={steps} defaultExpanded={hasIssue} />
         </div>
       )}
+
+      <div className="mt-1 px-1 text-[11px] uppercase tracking-wide text-ink-faint">
+        {formatTimestamp(message.timestamp)}
+      </div>
     </div>
   );
 }

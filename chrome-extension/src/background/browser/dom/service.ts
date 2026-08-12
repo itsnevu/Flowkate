@@ -37,6 +37,8 @@ declare global {
     buildDomTree: (args: BuildDomTreeArgs) => RawDomTreeNode | null;
     turn2Markdown: (selector?: string) => string;
     parserReadability: () => ReadabilityResult | null;
+    /** Listener-release closures parked by buildDomTree.js, drained by removeHighlights(). */
+    _highlightCleanupFunctions?: (() => void)[];
   }
 }
 
@@ -512,16 +514,26 @@ export async function removeHighlights(tabId: number): Promise<void> {
     await chrome.scripting.executeScript({
       target: { tabId, allFrames: true },
       func: () => {
+        // Release the per-element scroll/resize listeners first. buildDomTree.js registers two of
+        // them for every element it draws and parks the matching cleanup here; without this call they
+        // stay attached to the window for the life of the page, each closing over detached overlay
+        // nodes, and a long task on a busy page accumulates thousands of them.
+        const cleanups = window._highlightCleanupFunctions;
+        if (cleanups?.length) {
+          for (const cleanup of cleanups) {
+            try {
+              cleanup();
+            } catch {
+              // one broken closure must not strand the rest
+            }
+          }
+        }
+        window._highlightCleanupFunctions = [];
+
         // Remove the highlight container and all its contents
         const container = document.getElementById('playwright-highlight-container');
         if (container) {
           container.remove();
-        }
-
-        // Remove highlight attributes from elements
-        const highlightedElements = document.querySelectorAll('[browser-user-highlight-id^="playwright-highlight-"]');
-        for (const el of Array.from(highlightedElements)) {
-          el.removeAttribute('browser-user-highlight-id');
         }
       },
     });

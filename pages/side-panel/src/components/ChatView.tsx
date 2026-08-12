@@ -4,11 +4,14 @@ import ChatInput from './ChatInput';
 import BookmarkList from './BookmarkList';
 import PlanReviewCard from './PlanReviewCard';
 import ActionConfirmCard from './ActionConfirmCard';
+import AutoModeNotice from './AutoModeNotice';
 import TokenUsageBar from './TokenUsageBar';
+import LiveStatusStrip from './LiveStatusStrip';
 import type { RefObject } from 'react';
-import type { Message } from '@extension/storage';
+import type { ApprovalMode, Message, TrailStep } from '@extension/storage';
 import type { FavoritePrompt } from '@extension/storage/lib/prompt/favorites';
 import type { ActionConfirmationPayload, PlanReviewPayload, TokenUsagePayload } from '../types/event';
+import type { LiveStatus } from '../types/status';
 
 interface ChatViewProps {
   messages: Message[];
@@ -23,6 +26,10 @@ interface ChatViewProps {
   pendingPlan: PlanReviewPayload | null;
   pendingAction: ActionConfirmationPayload | null;
   canUndo: boolean;
+  /** what the running task is doing right now, or null when nothing is running */
+  liveStatus: LiveStatus | null;
+  /** the steps the running task has taken so far, shown collapsed under the status line */
+  trail: TrailStep[];
   tokenUsage: TokenUsagePayload | null;
   messagesEndRef: RefObject<HTMLDivElement>;
   onSetInputText: (setter: (text: string) => void) => void;
@@ -37,6 +44,13 @@ interface ChatViewProps {
   onPlanDecision: (approved: boolean) => void;
   onActionDecision: (approved: boolean) => void;
   onUndo: () => void;
+  /** how much the user signs off on before the agent acts */
+  approvalMode: ApprovalMode;
+  onApprovalModeSelect: (mode: ApprovalMode) => void;
+  /** true while the user is being shown, once, what Auto gives up */
+  pendingAutoNotice: boolean;
+  onAcknowledgeAuto: () => void;
+  onDismissAutoNotice: () => void;
 }
 
 /**
@@ -57,6 +71,8 @@ const ChatView = ({
   pendingPlan,
   pendingAction,
   canUndo,
+  liveStatus,
+  trail,
   tokenUsage,
   messagesEndRef,
   onSetInputText,
@@ -71,6 +87,11 @@ const ChatView = ({
   onPlanDecision,
   onActionDecision,
   onUndo,
+  approvalMode,
+  onApprovalModeSelect,
+  pendingAutoNotice,
+  onAcknowledgeAuto,
+  onDismissAutoNotice,
 }: ChatViewProps) => (
   <>
     {messages.length === 0 && (
@@ -87,6 +108,8 @@ const ChatView = ({
             setContent={onSetInputText}
             historicalSessionId={isHistoricalSession && replayEnabled ? currentSessionId : null}
             onReplay={onReplay}
+            approvalMode={approvalMode}
+            onApprovalModeSelect={onApprovalModeSelect}
           />
         </div>
         <div className="flex-1 overflow-y-auto px-1 pb-2">
@@ -106,6 +129,7 @@ const ChatView = ({
         <div ref={messagesEndRef} />
       </div>
     )}
+    {pendingAutoNotice && <AutoModeNotice onConfirm={onAcknowledgeAuto} onDismiss={onDismissAutoNotice} />}
     {pendingPlan && (
       <PlanReviewCard
         plan={pendingPlan}
@@ -130,6 +154,7 @@ const ChatView = ({
         </button>
       </div>
     )}
+    {liveStatus && !pendingPlan && !pendingAction && <LiveStatusStrip status={liveStatus} trail={trail} />}
     {tokenUsage && messages.length > 0 && !pendingPlan && !pendingAction && <TokenUsageBar usage={tokenUsage} />}
     {messages.length > 0 && (
       <div className="shrink-0 px-3 pb-3 pt-2">
@@ -144,6 +169,8 @@ const ChatView = ({
           setContent={onSetInputText}
           historicalSessionId={isHistoricalSession && replayEnabled ? currentSessionId : null}
           onReplay={onReplay}
+          approvalMode={approvalMode}
+          onApprovalModeSelect={onApprovalModeSelect}
         />
       </div>
     )}

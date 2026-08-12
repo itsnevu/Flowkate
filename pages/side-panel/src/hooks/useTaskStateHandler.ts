@@ -1,14 +1,21 @@
 import { useCallback } from 'react';
 import { Actors } from '@extension/storage';
+import { t } from '@extension/i18n';
 import { ExecutionState } from '../types/event';
-import { PROGRESS_MESSAGE } from '../constants';
 import { playTaskChime } from '../chime';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
-import type { Message } from '@extension/storage';
+import type { Message, TrailKind, TrailStep } from '@extension/storage';
+import type { LiveStatus } from '../types/status';
 import type { ActionConfirmationPayload, AgentEvent, PlanReviewPayload, TokenUsagePayload } from '../types/event';
 
 interface TaskStateHandlerProps {
-  appendMessage: (newMessage: Message, sessionId?: string | null) => void;
+  /** the one and only message a task is allowed to leave in the transcript */
+  finalizeTask: (message: Message) => void;
+  setLiveStatus: Dispatch<SetStateAction<LiveStatus | null>>;
+  pushTrail: (step: TrailStep) => void;
+  resetTrail: () => void;
+  /** latched by the first terminal event, cleared on TASK_START; see the note on outcomes below */
+  taskSettledRef: MutableRefObject<boolean>;
   /** read, never written, so the handler can stay stable while replay state changes */
   isReplayingRef: MutableRefObject<boolean>;
   setCanUndo: Dispatch<SetStateAction<boolean>>;
@@ -25,13 +32,28 @@ interface TaskStateHandlerProps {
 /**
  * Translates one execution event from the background worker into panel state.
  *
+ * A task produces one message, not a running commentary. Every event is routed to exactly one of
+ * three destinations:
+ *
+ *   - **status** — overwrites the live status line in place. Never persisted, by construction.
+ *   - **trail**  — appended to the running step trail, which is shown collapsed while the task runs
+ *                  and then attached to the task's one message, so a bad run stays inspectable.
+ *   - **outcome** — the single persisted message. Exactly one per task, enforced by `taskSettledRef`.
+ *
+ * The latch is not paranoia: rejecting a plan emits PLAN_REJECTED and calls `stop()`, so the loop
+ * breaks and emits TASK_CANCEL straight after it. Two terminal events, one task.
+ *
  * The returned callback must stay referentially stable: it is captured once by the port's
  * message listener when the connection is opened, so a new identity per render would leave
- * that listener calling a stale copy. Every input above is stable (state setters, refs and a
- * memoised appender), which is what keeps it that way.
+ * that listener calling a stale copy. Every input above is stable (state setters, refs and
+ * memoised callbacks), which is what keeps it that way.
  */
 export const useTaskStateHandler = ({
-  appendMessage,
+  finalizeTask,
+  setLiveStatus,
+  pushTrail,
+  resetTrail,
+  taskSettledRef,
   isReplayingRef,
   setCanUndo,
   setTokenUsage,
@@ -57,8 +79,13 @@ export const useTaskStateHandler = ({
         setTokenUsage((data?.payload as TokenUsagePayload) ?? null);
         return;
       }
-      let skip = true;
-      let displayProgress = false;
+
+      /** text for the live status line, or null to leave the current one standing */
+      let status: string | null = null;
+      /** how this event reads in the trail, or null to keep it out of the trail entirely */
+      let trailKind: TrailKind | null = null;
+      /** the task's outcome text — set only by terminal events, and only one of them wins */
+      let outcome: string | null = null;
 
       switch (actor) {
         case Actors.SYSTEM:
@@ -67,6 +94,10 @@ export const useTaskStateHandler = ({
               // Reset historical session flag when a new task starts
               setIsHistoricalSession(false);
               setCanUndo(false);
+              // A fresh task gets a fresh trail and a fresh right to produce an outcome message.
+              resetTrail();
+              taskSettledRef.current = false;
+              status = t('chat_status_working');
               break;
             case ExecutionState.PLAN_REVIEW:
               // the executor is blocked until the user answers, so take over the input area
@@ -75,14 +106,15 @@ export const useTaskStateHandler = ({
               return;
             case ExecutionState.PLAN_APPROVED:
               setPendingPlan(null);
-              skip = false;
+              // Approval is not a result, it is the run continuing. It belongs on the status line.
+              status = content || t('chat_status_working');
               break;
             case ExecutionState.PLAN_REJECTED:
               setPendingPlan(null);
               setPendingAction(null);
               setInputEnabled(true);
               setShowStopButton(false);
-              skip = false;
+              outcome = content || '';
               break;
             case ExecutionState.TASK_OK:
               setPendingPlan(null);
@@ -96,6 +128,9 @@ export const useTaskStateHandler = ({
               if (!isReplayingRef.current) {
                 void playTaskChime('ok');
               }
+              // The executor falls back to the task id when the planner returned no final answer,
+              // and a raw UUID is not an answer. Say plainly that the task finished instead.
+              outcome = !content || content === data?.taskId ? t('chat_result_completed') : content;
               break;
             case ExecutionState.TASK_FAIL:
               setPendingPlan(null);
@@ -107,7 +142,7 @@ export const useTaskStateHandler = ({
               if (!isReplayingRef.current) {
                 void playTaskChime('fail');
               }
-              skip = false;
+              outcome = content || '';
               break;
             case ExecutionState.TASK_CANCEL:
               setPendingPlan(null);
@@ -116,11 +151,12 @@ export const useTaskStateHandler = ({
               setInputEnabled(true);
               setShowStopButton(false);
               setIsReplaying(false);
-              skip = false;
+              outcome = content || '';
               break;
             case ExecutionState.TASK_PAUSE:
-              // carries the pause reason, e.g. the confirmation that a step was undone
-              skip = !content;
+              // carries the pause reason, e.g. the confirmation that a step was undone. A pause is
+              // not an outcome - the task can still be resumed - so it only updates the status.
+              status = content || null;
               break;
             case ExecutionState.TASK_RESUME:
               break;
@@ -134,18 +170,27 @@ export const useTaskStateHandler = ({
         case Actors.PLANNER:
           switch (state) {
             case ExecutionState.STEP_START:
-              displayProgress = true;
+              // The background's own detail here is a hardcoded English 'Planning...', so the panel
+              // supplies its own localized wording rather than echoing it.
+              status = t('chat_status_planning');
               break;
             case ExecutionState.STEP_OK:
-              skip = false;
+              // The plan, including the final answer on the last run. Never persisted: TASK_OK
+              // carries the identical answer moments later, and that is the message the user keeps.
+              status = firstLine(content);
+              trailKind = 'note';
               break;
             case ExecutionState.STEP_FAIL:
-              skip = false;
+              // A failed plan neither throws nor counts against the failure budget, so the task can
+              // still succeed. The trail is the only place that keeps the fact that it happened.
+              status = content || null;
+              trailKind = 'error';
               break;
             case ExecutionState.STEP_CANCEL:
               break;
             case ExecutionState.STEP_RETRY:
-              skip = false;
+              status = content || null;
+              trailKind = 'note';
               break;
             default:
               console.error('Invalid step state', state);
@@ -155,34 +200,36 @@ export const useTaskStateHandler = ({
         case Actors.NAVIGATOR:
           switch (state) {
             case ExecutionState.STEP_START:
-              displayProgress = true;
+              status = t('chat_status_acting');
               break;
             case ExecutionState.STEP_OK:
-              displayProgress = false;
               break;
             case ExecutionState.STEP_FAIL:
-              skip = false;
-              displayProgress = false;
+              // The executor either retries or gives up into TASK_FAIL, which is the message.
+              trailKind = 'error';
               break;
             case ExecutionState.STEP_CANCEL:
-              displayProgress = false;
               break;
             case ExecutionState.STEP_RETRY:
-              // replace the spinner with the notice, so a stalled step reads as "retrying", not "hung"
-              skip = false;
-              displayProgress = false;
+              // a retry can take tens of seconds, so it has to reach the status line or the panel
+              // reads as hung
+              status = content || null;
+              trailKind = 'note';
               break;
             case ExecutionState.ACT_START:
-              if (content !== 'cache_content') {
-                // skip to display caching content
-                skip = false;
+              // What the agent is about to do. `cache_content` is internal bookkeeping and `done` is
+              // a raw schema name rather than a sentence - neither is something the user asked for.
+              if (content && content !== 'cache_content' && content !== 'done') {
+                status = content;
+                trailKind = 'note';
               }
               break;
             case ExecutionState.ACT_OK:
-              skip = !isReplayingRef.current;
+              trailKind = 'ok';
               break;
             case ExecutionState.ACT_FAIL:
-              skip = false;
+              status = content || null;
+              trailKind = 'error';
               break;
             case ExecutionState.ACT_CONFIRM:
               // the navigator is blocked until the user answers, so take over the input area
@@ -190,8 +237,10 @@ export const useTaskStateHandler = ({
               setInputEnabled(false);
               return;
             case ExecutionState.ACT_DECLINED:
+              // The run continues after a decline, so this is a step, not an outcome.
               setPendingAction(null);
-              skip = false;
+              status = content || null;
+              trailKind = 'error';
               break;
             default:
               console.error('Invalid action', state);
@@ -202,13 +251,15 @@ export const useTaskStateHandler = ({
           // Handle legacy validator events from historical messages
           switch (state) {
             case ExecutionState.STEP_START:
-              displayProgress = true;
+              status = t('chat_status_acting');
               break;
             case ExecutionState.STEP_OK:
-              skip = false;
+              status = firstLine(content);
+              trailKind = 'note';
               break;
             case ExecutionState.STEP_FAIL:
-              skip = false;
+              status = content || null;
+              trailKind = 'error';
               break;
             default:
               console.error('Invalid validation', state);
@@ -220,24 +271,29 @@ export const useTaskStateHandler = ({
           return;
       }
 
-      if (!skip) {
-        appendMessage({
-          actor,
-          content: content || '',
-          timestamp: timestamp,
-        });
+      if (status) {
+        setLiveStatus({ actor, text: status, step: data?.step, maxSteps: data?.maxSteps });
       }
 
-      if (displayProgress) {
-        appendMessage({
-          actor,
-          content: PROGRESS_MESSAGE,
-          timestamp: timestamp,
-        });
+      if (trailKind && content) {
+        pushTrail({ actor, text: content, kind: trailKind, timestamp });
+      }
+
+      if (outcome !== null) {
+        // The status line dies with the task either way, settled or not.
+        setLiveStatus(null);
+        if (!taskSettledRef.current) {
+          taskSettledRef.current = true;
+          finalizeTask({ actor, content: outcome, timestamp });
+        }
       }
     },
     [
-      appendMessage,
+      finalizeTask,
+      setLiveStatus,
+      pushTrail,
+      resetTrail,
+      taskSettledRef,
       isReplayingRef,
       setCanUndo,
       setTokenUsage,
@@ -250,3 +306,13 @@ export const useTaskStateHandler = ({
       setIsReplaying,
     ],
   );
+
+/**
+ * The status line is one row tall. A plan arrives as a numbered list, so show its opening line
+ * there and leave the whole thing to the trail.
+ */
+function firstLine(text: string | undefined): string | null {
+  if (!text) return null;
+  const line = text.split('\n').find(candidate => candidate.trim() !== '');
+  return line ? line.trim() : null;
+}

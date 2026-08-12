@@ -73,6 +73,9 @@
   "chat_input_form": {
     "message": "Chat input form"
   },
+  "chat_disclaimer": {
+    "message": "Flowkite can make mistakes. Please double-check responses."
+  },
   "chat_input_editor": {
     "message": "Message input"
   },
@@ -246,12 +249,6 @@
   },
   "options_general_enableVision_desc": {
     "message": "Use vision capability of LLMs (consumes more tokens for better results)"
-  },
-  "options_general_displayHighlights": {
-    "message": "Display Highlights"
-  },
-  "options_general_displayHighlights_desc": {
-    "message": "Show visual highlights on interactive elements (e.g. buttons, links, etc.)"
   },
   "options_general_groupTaskTabs": {
     "message": "Group task tabs"
@@ -1061,12 +1058,6 @@
   "chat_undo": {
     "message": "Undo last step"
   },
-  "options_general_requirePlanApproval": {
-    "message": "Approve plan before running"
-  },
-  "options_general_requirePlanApproval_desc": {
-    "message": "Show the agent’s plan and wait for your approval before it takes any action on a page"
-  },
   "act_declinedByUser": {
     "message": "You declined this action: $INTENT$. The agent will look for another way.",
     "placeholders": {
@@ -1110,12 +1101,6 @@
   },
   "actConfirm_reason_formSubmit": {
     "message": "This will submit a form."
-  },
-  "options_general_confirmSensitiveActions": {
-    "message": "Confirm sensitive actions"
-  },
-  "options_general_confirmSensitiveActions_desc": {
-    "message": "Ask before the agent submits a form, buys something, deletes data, downloads a file or types a password"
   },
   "act_remember_start": {
     "message": "Remembering: $CONTENT$",
@@ -1248,5 +1233,111 @@
   },
   "chat_usage_details_a11y": {
     "message": "Show token usage per model"
+  },
+  "chat_status_working": {
+    "message": "Working…"
+  },
+  "chat_status_planning": {
+    "message": "Planning the next steps…"
+  },
+  "chat_status_acting": {
+    "message": "Working on the page…"
+  },
+  "chat_result_completed": {
+    "message": "Task completed."
+  },
+  "chat_task_interrupted": {
+    "message": "The task stopped early — the connection to the background worker dropped."
+  },
+  "chat_trail_steps": {
+    "message": "$STEPS$ steps",
+    "placeholders": {
+      "steps": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "chat_trail_summary": {
+    "message": "$STEPS$ steps · $ISSUES$ issues",
+    "placeholders": {
+      "steps": {
+        "content": "$1",
+        "example": "12"
+      },
+      "issues": {
+        "content": "$2",
+        "example": "2"
+      }
+    }
+  },
+  "chat_trail_details_a11y": {
+    "message": "Show the steps this task took"
+  },
+  "options_general_approvalMode": {
+    "message": "What needs your approval"
+  },
+  "options_general_approvalMode_desc": {
+    "message": "Set from the mode picker next to the chat box. Currently $MODE$.",
+    "placeholders": {
+      "mode": {
+        "content": "$1",
+        "example": "Planner"
+      }
+    }
+  },
+  "actConfirm_reason_routine": {
+    "message": "You asked to confirm every action, so the agent is checking before each one."
+  },
+  "chat_mode_label": {
+    "message": "Approval mode"
+  },
+  "chat_mode_current": {
+    "message": "Approval mode: $MODE$",
+    "placeholders": {
+      "mode": {
+        "content": "$1",
+        "example": "Planner"
+      }
+    }
+  },
+  "chat_mode_auto": {
+    "message": "Auto"
+  },
+  "chat_mode_auto_desc": {
+    "message": "Runs the whole task without asking."
+  },
+  "chat_mode_planner": {
+    "message": "Planner"
+  },
+  "chat_mode_planner_desc": {
+    "message": "Approve the plan, then confirm risky actions."
+  },
+  "chat_mode_manual": {
+    "message": "Manual"
+  },
+  "chat_mode_manual_desc": {
+    "message": "Approve the plan and every action on the page."
+  },
+  "chat_mode_autoNotice_title": {
+    "message": "Run with no checks at all?"
+  },
+  "chat_mode_autoNotice_body": {
+    "message": "The agent will no longer show you its plan, and will not stop to ask before buying something, deleting data, entering credentials or submitting a form. On a page that tries to mislead it, the first you may hear of an action is after it has happened. You can switch back at any time."
+  },
+  "chat_mode_autoNotice_confirm": {
+    "message": "Turn off all checks"
+  },
+  "chat_mode_autoNotice_cancel": {
+    "message": "Keep checks on"
+  },
+  "bg_cmd_approvalMode_invalid": {
+    "message": "Unknown approval mode: $MODE$",
+    "placeholders": {
+      "mode": {
+        "content": "$1",
+        "example": "planner"
+      }
+    }
   }
 }

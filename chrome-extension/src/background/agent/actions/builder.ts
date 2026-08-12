@@ -194,7 +194,9 @@ export class ActionBuilder {
     const actions = [];
 
     const done = new Action(async (input: z.infer<typeof doneActionSchema.schema>) => {
-      this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, doneActionSchema.name);
+      // No ACT_START here. Every other action announces an intent the user can read; this one
+      // announced the literal schema name `done`, which reached the panel as a bubble saying
+      // "done" and nothing else. The ACT_OK below carries the actual answer text.
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, input.text);
       return new ActionResult({
         isDone: true,

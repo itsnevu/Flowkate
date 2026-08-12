@@ -1,3 +1,4 @@
+import type { AgentOverlayMode } from '@extension/storage';
 import type { DOMState } from './dom/views';
 import type { DOMHistoryElement } from './dom/history/view';
 
@@ -76,10 +77,15 @@ export interface BrowserContextConfig {
   homePageUrl: string;
 
   /**
-   * Display highlights on interactive elements
-   * @default true
+   * What the agent draws on the page it is driving. `boxes` is the numbered overlay the model grounds
+   * screenshot indices on; `off` leaves the page looking exactly as the user would see it.
+   *
+   * Defaults to `off` and not to the stored preference on purpose: background/index.ts constructs a
+   * BrowserContext at module load, long before any settings are read, so this value is what every
+   * parse before the first setupExecutor() runs on - including the read-only `/state` command.
+   * @default 'off'
    */
-  displayHighlights: boolean;
+  agentOverlay: AgentOverlayMode;
 
   /**
    * Collect every tab the agent drives into one labelled Chrome tab group, so the user can tell
@@ -100,7 +106,7 @@ export const DEFAULT_BROWSER_CONTEXT_CONFIG: BrowserContextConfig = {
   deniedUrls: [],
   includeDynamicAttributes: true,
   homePageUrl: 'about:blank',
-  displayHighlights: true,
+  agentOverlay: 'off',
   groupTabs: true,
 };
 

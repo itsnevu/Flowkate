@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { DOMElementNode, DOMTextNode } from '../../../browser/dom/views';
-import { classifySensitiveAction, SensitiveActionKind } from '../sensitivity';
+import { classifySensitiveAction, classifyManualAction, SensitiveActionKind, SILENT_ACTION_NAMES } from '../sensitivity';
 
 /** Build a clickable element with the given visible text and attributes. */
 function element(text: string, attributes: Record<string, string> = {}, tagName = 'button'): DOMElementNode {
@@ -84,5 +84,48 @@ describe('classifySensitiveAction', () => {
     it('ignores arrow keys', () => {
       expect(classifySensitiveAction('send_keys', { keys: 'ArrowDown' }, undefined)).toBeNull();
     });
+  });
+});
+
+describe('classifyManualAction', () => {
+  /**
+   * Manual mode's gate set. This exists because the failure is silent in both directions: widening
+   * SILENT_ACTION_NAMES un-gates an action nobody notices is no longer asked about, and narrowing it
+   * buries the sensitive prompts under noise until the user clicks through everything by reflex.
+   */
+  it('gates navigation, which is where an agent ends up somewhere unexpected', () => {
+    for (const action of ['go_to_url', 'search_google', 'go_back']) {
+      expect(`${action}: ${classifyManualAction(action, undefined) !== null}`).toBe(`${action}: true`);
+    }
+  });
+
+  it('gates the actions that change the page', () => {
+    for (const action of ['click_element', 'input_text', 'send_keys', 'select_dropdown_option']) {
+      expect(`${action}: ${classifyManualAction(action, undefined) !== null}`).toBe(`${action}: true`);
+    }
+  });
+
+  it('stays silent for scrolling, reading and waiting', () => {
+    for (const action of ['scroll_to_percent', 'scroll_to_top', 'scroll_to_text', 'cache_content', 'wait', 'done']) {
+      expect(`${action}: ${classifyManualAction(action, undefined)}`).toBe(`${action}: null`);
+    }
+  });
+
+  // the silent set must never quietly acquire a navigation action - see subtaskRunner's 'auto' pin,
+  // which is load-bearing precisely because these three are NOT silent
+  it('never lets a navigation action into the silent set', () => {
+    for (const action of ['go_to_url', 'search_google', 'go_back']) {
+      expect(`${action} silent: ${SILENT_ACTION_NAMES.has(action)}`).toBe(`${action} silent: false`);
+    }
+  });
+
+  it('describes the target by its label when there is an element', () => {
+    // labelOf normalises to lower case, so assert on that rather than on the source casing
+    const verdict = classifyManualAction('click_element', element('Open settings', {}, 'a'));
+    expect(verdict?.target).toContain('open settings');
+  });
+
+  it('falls back to the action name when there is no element', () => {
+    expect(classifyManualAction('go_back', undefined)?.target).toBe('go_back');
   });
 });

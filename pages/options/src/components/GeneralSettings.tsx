@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
-import { type GeneralSettingsConfig, generalSettingsStore, DEFAULT_GENERAL_SETTINGS } from '@extension/storage';
+import {
+  type ApprovalMode,
+  type GeneralSettingsConfig,
+  generalSettingsStore,
+  DEFAULT_GENERAL_SETTINGS,
+} from '@extension/storage';
 import { t } from '@extension/i18n';
 import { Divider, SettingRow, Toggle } from './controls';
 
@@ -7,12 +12,24 @@ import { Divider, SettingRow, Toggle } from './controls';
 const numberFieldClass =
   'w-24 rounded-soft bg-canvas-sunk px-3 py-2 text-right text-sm font-semibold text-ink shadow-neu-inset';
 
+const APPROVAL_MODE_LABELS: Record<ApprovalMode, () => string> = {
+  auto: () => t('chat_mode_auto'),
+  planner: () => t('chat_mode_planner'),
+  manual: () => t('chat_mode_manual'),
+};
+
 export const GeneralSettings = () => {
   const [settings, setSettings] = useState<GeneralSettingsConfig>(DEFAULT_GENERAL_SETTINGS);
 
   useEffect(() => {
     // Load initial settings
     generalSettingsStore.getSettings().then(setSettings);
+
+    // The mode is now set from the side panel, which is a different document. Without following
+    // the store this row would show whatever the mode was when Options was opened.
+    return generalSettingsStore.subscribe(() => {
+      generalSettingsStore.getSettings().then(setSettings);
+    });
   }, []);
 
   const updateSetting = async <K extends keyof GeneralSettingsConfig>(key: K, value: GeneralSettingsConfig[K]) => {
@@ -24,8 +41,8 @@ export const GeneralSettings = () => {
       [key]: value,
     } as Partial<GeneralSettingsConfig>);
 
-    // After the store update (which might have side effects, e.g., useVision affecting displayHighlights),
-    // fetch the latest settings from the store and update the local state again to ensure UI consistency.
+    // Re-read rather than trust the optimistic write: the store derives some fields on read (legacy
+    // approval flags collapsing into approvalMode, for one), so what came back is what is actually stored.
     const latestSettings = await generalSettingsStore.getSettings();
     setSettings(latestSettings);
   };
@@ -113,18 +130,12 @@ export const GeneralSettings = () => {
           />
         </SettingRow>
 
-        <Divider />
-
-        <SettingRow
-          title={t('options_general_displayHighlights')}
-          description={t('options_general_displayHighlights_desc')}>
-          <Toggle
-            id="displayHighlights"
-            label={t('options_general_displayHighlights')}
-            checked={settings.displayHighlights}
-            onChange={checked => updateSetting('displayHighlights', checked)}
-          />
-        </SettingRow>
+        {/*
+          There is no highlight toggle here on purpose. The page the agent drives now stays clean by
+          default, and the numbered boxes are drawn automatically whenever vision is on because the
+          model grounds its element indices on them - which is not a decision worth handing the user
+          a switch for.
+        */}
 
         <Divider />
 
@@ -139,7 +150,9 @@ export const GeneralSettings = () => {
 
         <Divider />
 
-        <SettingRow title={t('options_general_soundOnComplete')} description={t('options_general_soundOnComplete_desc')}>
+        <SettingRow
+          title={t('options_general_soundOnComplete')}
+          description={t('options_general_soundOnComplete_desc')}>
           <Toggle
             id="soundOnComplete"
             label={t('options_general_soundOnComplete')}
@@ -226,28 +239,23 @@ export const GeneralSettings = () => {
 
         <Divider />
 
+        {/*
+          Read-only on purpose. The mode has to be pushable into a *running* executor to be honest,
+          and this page has no port to one - an editable copy here could only ever write to storage
+          and be ignored for the rest of the session, which is precisely the split-brain that made
+          the two old booleans confusing. The row stays visible rather than vanishing because
+          Options is where people look for settings, and a pointer is cheaper than a support
+          question - hence a description that names where the real control lives.
+        */}
         <SettingRow
-          title={t('options_general_requirePlanApproval')}
-          description={t('options_general_requirePlanApproval_desc')}>
-          <Toggle
-            id="requirePlanApproval"
-            label={t('options_general_requirePlanApproval')}
-            checked={settings.requirePlanApproval}
-            onChange={checked => updateSetting('requirePlanApproval', checked)}
-          />
-        </SettingRow>
-
-        <Divider />
-
-        <SettingRow
-          title={t('options_general_confirmSensitiveActions')}
-          description={t('options_general_confirmSensitiveActions_desc')}>
-          <Toggle
-            id="confirmSensitiveActions"
-            label={t('options_general_confirmSensitiveActions')}
-            checked={settings.confirmSensitiveActions}
-            onChange={checked => updateSetting('confirmSensitiveActions', checked)}
-          />
+          title={t('options_general_approvalMode')}
+          description={t('options_general_approvalMode_desc', [APPROVAL_MODE_LABELS[settings.approvalMode]()])}>
+          <span
+            className={`rounded-pill bg-canvas-sunk px-3 py-1 text-xs font-medium shadow-neu-inset-sm ${
+              settings.approvalMode === 'auto' ? 'text-signal-warn' : 'text-ink'
+            }`}>
+            {APPROVAL_MODE_LABELS[settings.approvalMode]()}
+          </span>
         </SettingRow>
 
         <Divider />

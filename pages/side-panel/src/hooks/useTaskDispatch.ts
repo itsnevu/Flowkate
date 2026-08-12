@@ -1,8 +1,9 @@
 import { Actors, chatHistoryStore } from '@extension/storage';
 import { t } from '@extension/i18n';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
-import type { Message } from '@extension/storage';
+import type { ApprovalMode, Message } from '@extension/storage';
 import type { ActionConfirmationPayload, PlanReviewPayload } from '../types/event';
+import type { LiveStatus } from '../types/status';
 
 interface TaskDispatchProps {
   /** posted to directly, so a re-render can never swap the port out from under a handler */
@@ -11,6 +12,7 @@ interface TaskDispatchProps {
   sendMessage: (message: unknown) => void;
   stopConnection: () => void;
   appendMessage: (newMessage: Message, sessionId?: string | null) => void;
+  setLiveStatus: Dispatch<SetStateAction<LiveStatus | null>>;
   replayEnabled: boolean;
   isHistoricalSession: boolean;
   isFollowUpMode: boolean;
@@ -26,6 +28,15 @@ interface TaskDispatchProps {
   setPendingPlan: Dispatch<SetStateAction<PlanReviewPayload | null>>;
   setPendingAction: Dispatch<SetStateAction<ActionConfirmationPayload | null>>;
   setCanUndo: Dispatch<SetStateAction<boolean>>;
+  /**
+   * The mode the composer is currently showing, attached to whatever task this dispatch starts.
+   *
+   * Sent with the task rather than left for the background to read from storage, because the
+   * panel's write to chrome.storage is asynchronous: a user who picks a mode and immediately
+   * presses Enter would otherwise start the task under the previous value. What the composer
+   * visibly says is what the task it launched runs under.
+   */
+  approvalMode: ApprovalMode;
 }
 
 /**
@@ -42,6 +53,7 @@ export const useTaskDispatch = ({
   sendMessage,
   stopConnection,
   appendMessage,
+  setLiveStatus,
   replayEnabled,
   isHistoricalSession,
   isFollowUpMode,
@@ -56,6 +68,7 @@ export const useTaskDispatch = ({
   setPendingPlan,
   setPendingAction,
   setCanUndo,
+  approvalMode,
 }: TaskDispatchProps) => {
   // Handle replay command
   const handleReplay = async (historySessionId: string): Promise<void> => {
@@ -132,11 +145,8 @@ export const useTaskDispatch = ({
         task: historyData.task, // Add the task from history
       });
 
-      appendMessage({
-        actor: Actors.SYSTEM,
-        content: t('chat_replay_starting', historyData.task),
-        timestamp: Date.now(),
-      });
+      // Progress, not a result: it belongs on the status line the replay is about to drive.
+      setLiveStatus({ actor: Actors.SYSTEM, text: t('chat_replay_starting', historyData.task) });
       setIsReplaying(true);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -272,6 +282,7 @@ export const useTaskDispatch = ({
           task: text,
           taskId: sessionIdRef.current,
           tabId,
+          approvalMode,
         });
       } else {
         // Send as new task
@@ -280,6 +291,7 @@ export const useTaskDispatch = ({
           task: text,
           taskId: sessionIdRef.current,
           tabId,
+          approvalMode,
         });
       }
     } catch (err) {

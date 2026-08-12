@@ -1,18 +1,19 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { type Message, chatHistoryStore } from '@extension/storage';
+import { Actors, type Message, type TrailStep, chatHistoryStore } from '@extension/storage';
 import { t } from '@extension/i18n';
 import ChatHistoryList from './components/ChatHistoryList';
 import ChatView from './components/ChatView';
 import SetupGuide from './components/SetupGuide';
 import SidePanelHeader from './components/SidePanelHeader';
+import { useApprovalMode } from './hooks/useApprovalMode';
 import { useBackgroundConnection } from './hooks/useBackgroundConnection';
 import { useFavoritePrompts } from './hooks/useFavoritePrompts';
 import { useModelConfigGate } from './hooks/useModelConfigGate';
 import { useSpeechInput } from './hooks/useSpeechInput';
 import { useTaskDispatch } from './hooks/useTaskDispatch';
 import { useTaskStateHandler } from './hooks/useTaskStateHandler';
-import { PROGRESS_MESSAGE } from './constants';
 import type { ActionConfirmationPayload, PlanReviewPayload, TokenUsagePayload } from './types/event';
+import type { LiveStatus } from './types/status';
 import './SidePanel.css';
 
 // Declare chrome API types
@@ -37,8 +38,18 @@ const SidePanel = () => {
   const [pendingAction, setPendingAction] = useState<ActionConfirmationPayload | null>(null);
   const [canUndo, setCanUndo] = useState(false);
   const [tokenUsage, setTokenUsage] = useState<TokenUsagePayload | null>(null);
+  const [liveStatus, setLiveStatus] = useState<LiveStatus | null>(null);
+  const [trail, setTrail] = useState<TrailStep[]>([]);
   const sessionIdRef = useRef<string | null>(null);
   const isReplayingRef = useRef<boolean>(false);
+  /**
+   * The trail is held as a ref as well as state. The event handler is captured once by the port
+   * listener, so it can never read the state copy - it would read whatever the trail was when the
+   * connection opened. The state copy exists only so React re-renders the live strip.
+   */
+  const trailRef = useRef<TrailStep[]>([]);
+  /** true once a task has produced its one message, so a second terminal event adds nothing */
+  const taskSettledRef = useRef<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const setInputTextRef = useRef<((text: string) => void) | null>(null);
 
@@ -54,29 +65,61 @@ const SidePanel = () => {
   }, [isReplaying]);
 
   const appendMessage = useCallback((newMessage: Message, sessionId?: string | null) => {
-    // Don't save progress messages
-    const isProgressMessage = newMessage.content === PROGRESS_MESSAGE;
-
-    setMessages(prev => {
-      const filteredMessages = prev.filter(
-        (msg, idx) => !(msg.content === PROGRESS_MESSAGE && idx === prev.length - 1),
-      );
-      return [...filteredMessages, newMessage];
-    });
+    setMessages(prev => [...prev, newMessage]);
 
     // Use provided sessionId if available, otherwise fall back to sessionIdRef.current
     const effectiveSessionId = sessionId !== undefined ? sessionId : sessionIdRef.current;
 
-    // Save message to storage if we have a session and it's not a progress message
-    if (effectiveSessionId && !isProgressMessage) {
+    // Save message to storage if we have a session
+    if (effectiveSessionId) {
       chatHistoryStore
         .addMessage(effectiveSessionId, newMessage)
         .catch(err => console.error('Failed to save message to history:', err));
     }
   }, []);
 
+  const pushTrail = useCallback((step: TrailStep) => {
+    trailRef.current = [...trailRef.current, step];
+    setTrail(trailRef.current);
+  }, []);
+
+  const resetTrail = useCallback(() => {
+    trailRef.current = [];
+    setTrail([]);
+  }, []);
+
+  /**
+   * The single message a task is allowed to leave behind, carrying the steps that produced it.
+   *
+   * Capped at the last 200 entries: a 100-step task would otherwise write a large blob into every
+   * session, and the tail is the part that explains how the task ended.
+   */
+  const finalizeTask = useCallback(
+    (message: Message) => {
+      const steps = trailRef.current.slice(-200);
+      appendMessage(steps.length > 0 ? { ...message, steps } : message);
+      setLiveStatus(null);
+    },
+    [appendMessage],
+  );
+
+  /**
+   * A dropped service worker is not a terminal event, so nothing would ever settle the task: the
+   * status line would simply freeze. Close the task out with a record that it was cut short.
+   */
+  const handleConnectionLost = useCallback(() => {
+    setLiveStatus(null);
+    if (taskSettledRef.current || trailRef.current.length === 0) return;
+    taskSettledRef.current = true;
+    finalizeTask({ actor: Actors.SYSTEM, content: t('chat_task_interrupted'), timestamp: Date.now() });
+  }, [finalizeTask]);
+
   const handleTaskState = useTaskStateHandler({
-    appendMessage,
+    finalizeTask,
+    setLiveStatus,
+    pushTrail,
+    resetTrail,
+    taskSettledRef,
     isReplayingRef,
     setCanUndo,
     setTokenUsage,
@@ -91,11 +134,16 @@ const SidePanel = () => {
 
   const { portRef, setupConnection, stopConnection, sendMessage } = useBackgroundConnection({
     onExecutionEvent: handleTaskState,
+    onConnectionLost: handleConnectionLost,
     appendMessage,
     setInputEnabled,
     setShowStopButton,
     setIsProcessingSpeech,
     setInputTextRef,
+  });
+
+  const { mode: approvalMode, selectMode, pendingAutoNotice, acknowledgeAuto, dismissAutoNotice } = useApprovalMode({
+    portRef,
   });
 
   const { isRecording, handleMicClick } = useSpeechInput({
@@ -112,6 +160,7 @@ const SidePanel = () => {
       sendMessage,
       stopConnection,
       appendMessage,
+      setLiveStatus,
       replayEnabled,
       isHistoricalSession,
       isFollowUpMode,
@@ -126,6 +175,7 @@ const SidePanel = () => {
       setPendingPlan,
       setPendingAction,
       setCanUndo,
+      approvalMode,
     });
 
   const handleNewChat = () => {
@@ -142,6 +192,9 @@ const SidePanel = () => {
     setCanUndo(false);
     // the background tracker's lifetime is the Executor's, which stopConnection ends
     setTokenUsage(null);
+    setLiveStatus(null);
+    resetTrail();
+    taskSettledRef.current = false;
 
     // Disconnect any existing connection
     stopConnection();
@@ -191,6 +244,10 @@ const SidePanel = () => {
         setIsHistoricalSession(true); // Mark this as a historical session
         // show what THIS session spent, not whatever the last live task happened to leave on screen
         setTokenUsage(await chatHistoryStore.loadTokenUsage(sessionId));
+        // whatever the previous task was doing is not what this stored session shows
+        setLiveStatus(null);
+        resetTrail();
+        taskSettledRef.current = false;
       }
       setShowHistory(false);
     } catch (error) {
@@ -302,6 +359,8 @@ const SidePanel = () => {
               pendingPlan={pendingPlan}
               pendingAction={pendingAction}
               canUndo={canUndo}
+              liveStatus={liveStatus}
+              trail={trail}
               tokenUsage={tokenUsage}
               messagesEndRef={messagesEndRef}
               onSetInputText={setter => {
@@ -318,6 +377,11 @@ const SidePanel = () => {
               onPlanDecision={handlePlanDecision}
               onActionDecision={handleActionDecision}
               onUndo={handleUndo}
+              approvalMode={approvalMode}
+              onApprovalModeSelect={selectMode}
+              pendingAutoNotice={pendingAutoNotice}
+              onAcknowledgeAuto={acknowledgeAuto}
+              onDismissAutoNotice={dismissAutoNotice}
             />
           )}
         </>

@@ -2,6 +2,8 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { FaMicrophone, FaPaperclip, FaArrowUp, FaTimes } from 'react-icons/fa';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { t } from '@extension/i18n';
+import ApprovalModePicker from './ApprovalModePicker';
+import type { ApprovalMode } from '@extension/storage';
 
 interface ChatInputProps {
   onSendMessage: (text: string, displayText?: string) => void;
@@ -15,6 +17,9 @@ interface ChatInputProps {
   // Historical session ID - if provided, shows replay button instead of send button
   historicalSessionId?: string | null;
   onReplay?: (sessionId: string) => void;
+  /** how much the user signs off on before the agent acts */
+  approvalMode: ApprovalMode;
+  onApprovalModeSelect: (mode: ApprovalMode) => void;
 }
 
 // File attachment interface
@@ -48,6 +53,8 @@ export default function ChatInput({
   setContent,
   historicalSessionId,
   onReplay,
+  approvalMode,
+  onApprovalModeSelect,
 }: ChatInputProps) {
   const [text, setText] = useState('');
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
@@ -194,132 +201,152 @@ export default function ChatInput({
   }, []);
 
   return (
-    // The composer is a well pressed into the canvas; focusing it deepens the well.
-    <form
-      onSubmit={handleSubmit}
-      className={`rounded-slab bg-canvas-sunk p-2.5 shadow-neu-inset-sm transition-shadow duration-200 ease-press focus-within:shadow-neu-inset ${disabled ? 'cursor-not-allowed' : ''}`}
-      aria-label={t('chat_input_form')}>
-      <div className="flex flex-col gap-2">
-        {/* File attachments display */}
-        {attachedFiles.length > 0 && (
-          <div className="flex flex-wrap gap-2 px-0.5">
-            {attachedFiles.map((file, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-1.5 rounded-pill bg-canvas-raised px-3 py-1 text-xs text-ink-soft shadow-neu-sm">
-                <FaPaperclip className="size-2.5 shrink-0 text-ink-faint" aria-hidden="true" />
-                <span className="max-w-[150px] truncate">{file.name}</span>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveFile(index)}
-                  className="grid size-4 shrink-0 place-items-center rounded-pill text-ink-faint transition-colors duration-150 ease-press hover:text-ink"
-                  aria-label={`Remove ${file.name}`}>
-                  <FaTimes className="size-2.5" aria-hidden="true" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+    <>
+      {/* The composer is a well pressed into the canvas; focusing it deepens the well. */}
+      <form
+        onSubmit={handleSubmit}
+        className={`rounded-slab bg-canvas-sunk p-2.5 shadow-neu-inset-sm transition-shadow duration-200 ease-press focus-within:shadow-neu-inset ${disabled ? 'cursor-not-allowed' : ''}`}
+        aria-label={t('chat_input_form')}>
+        <div className="flex flex-col gap-2">
+          {/* File attachments display */}
+          {attachedFiles.length > 0 && (
+            <div className="flex flex-wrap gap-2 px-0.5">
+              {attachedFiles.map((file, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-1.5 rounded-pill bg-canvas-raised px-3 py-1 text-xs text-ink-soft shadow-neu-sm">
+                  <FaPaperclip className="size-2.5 shrink-0 text-ink-faint" aria-hidden="true" />
+                  <span className="max-w-[150px] truncate">{file.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveFile(index)}
+                    className="grid size-4 shrink-0 place-items-center rounded-pill text-ink-faint transition-colors duration-150 ease-press hover:text-ink"
+                    aria-label={`Remove ${file.name}`}>
+                    <FaTimes className="size-2.5" aria-hidden="true" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
-        <textarea
-          ref={textareaRef}
-          value={text}
-          onChange={handleTextChange}
-          onKeyDown={handleKeyDown}
-          disabled={disabled}
-          aria-disabled={disabled}
-          rows={5}
-          className="w-full resize-none bg-transparent px-1.5 py-1 text-sm leading-relaxed text-ink placeholder:text-ink-faint focus:outline-none disabled:cursor-not-allowed disabled:text-ink-faint"
-          placeholder={attachedFiles.length > 0 ? 'Add a message (optional)...' : t('chat_input_placeholder')}
-          aria-label={t('chat_input_editor')}
-        />
+          <textarea
+            ref={textareaRef}
+            value={text}
+            onChange={handleTextChange}
+            onKeyDown={handleKeyDown}
+            disabled={disabled}
+            aria-disabled={disabled}
+            rows={5}
+            className="w-full resize-none bg-transparent px-1.5 py-1 text-sm leading-relaxed text-ink placeholder:text-ink-faint focus:outline-none disabled:cursor-not-allowed disabled:text-ink-faint"
+            placeholder={attachedFiles.length > 0 ? 'Add a message (optional)...' : t('chat_input_placeholder')}
+            aria-label={t('chat_input_editor')}
+          />
 
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            {/* File attachment button */}
-            <button
-              type="button"
-              onClick={handleFileSelect}
-              disabled={disabled}
-              aria-label="Attach files"
-              title="Attach text files (txt, md, json, csv, etc.)"
-              className={`${ICON_BUTTON} ${disabled ? DISABLED_CONTROL : ICON_BUTTON_IDLE}`}>
-              <FaPaperclip className="size-4" aria-hidden="true" />
-            </button>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              {/*
+                Leads the cluster: the mode is the thing to read first, before deciding what to
+                send. Deliberately NOT disabled alongside the rest of the composer — `disabled` is
+                true precisely while a task is running, which is exactly when tightening the mode
+                matters most, and the background pushes the change into the live Executor. Greying
+                it out mid-task would make that whole path unreachable.
+              */}
+              <ApprovalModePicker mode={approvalMode} onSelect={onApprovalModeSelect} />
 
-            {/* Hidden file input */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept=".txt,.md,.markdown,.json,.csv,.log,.xml,.yaml,.yml"
-              onChange={handleFileChange}
-              className="hidden"
-              aria-hidden="true"
-            />
-
-            {onMicClick && (
+              {/* File attachment button */}
               <button
                 type="button"
-                onClick={onMicClick}
-                disabled={disabled || isProcessingSpeech}
-                aria-label={
-                  isProcessingSpeech
-                    ? t('chat_stt_processing')
-                    : isRecording
-                      ? t('chat_stt_recording_stop')
-                      : t('chat_stt_input_start')
-                }
-                className={`${ICON_BUTTON} ${
-                  disabled || isProcessingSpeech
-                    ? DISABLED_CONTROL
-                    : isRecording
-                      ? ICON_BUTTON_PRESSED
-                      : ICON_BUTTON_IDLE
+                onClick={handleFileSelect}
+                disabled={disabled}
+                aria-label="Attach files"
+                title="Attach text files (txt, md, json, csv, etc.)"
+                className={`${ICON_BUTTON} ${disabled ? DISABLED_CONTROL : ICON_BUTTON_IDLE}`}>
+                <FaPaperclip className="size-4" aria-hidden="true" />
+              </button>
+
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".txt,.md,.markdown,.json,.csv,.log,.xml,.yaml,.yml"
+                onChange={handleFileChange}
+                className="hidden"
+                aria-hidden="true"
+              />
+
+              {onMicClick && (
+                <button
+                  type="button"
+                  onClick={onMicClick}
+                  disabled={disabled || isProcessingSpeech}
+                  aria-label={
+                    isProcessingSpeech
+                      ? t('chat_stt_processing')
+                      : isRecording
+                        ? t('chat_stt_recording_stop')
+                        : t('chat_stt_input_start')
+                  }
+                  className={`${ICON_BUTTON} ${
+                    disabled || isProcessingSpeech
+                      ? DISABLED_CONTROL
+                      : isRecording
+                        ? ICON_BUTTON_PRESSED
+                        : ICON_BUTTON_IDLE
+                  }`}>
+                  {isProcessingSpeech ? (
+                    <AiOutlineLoading3Quarters className="size-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <FaMicrophone className={`size-4 ${isRecording ? 'animate-pulse-soft' : ''}`} aria-hidden="true" />
+                  )}
+                </button>
+              )}
+            </div>
+
+            {showStopButton ? (
+              <button
+                type="button"
+                onClick={onStopTask}
+                className={`flex h-9 shrink-0 items-center gap-2 rounded-pill px-4 text-xs font-medium ${GRAPHITE_KEY} ${GRAPHITE_KEY_IDLE}`}>
+                <span className="size-2 shrink-0 animate-pulse-soft rounded-pill bg-signal-bad" aria-hidden="true" />
+                {t('chat_buttons_stop')}
+              </button>
+            ) : historicalSessionId ? (
+              <button
+                type="button"
+                onClick={handleReplay}
+                disabled={!historicalSessionId}
+                aria-disabled={!historicalSessionId}
+                className={`flex h-9 shrink-0 items-center rounded-pill px-4 text-xs font-medium ${GRAPHITE_KEY} ${
+                  !historicalSessionId ? GRAPHITE_KEY_DISABLED : GRAPHITE_KEY_IDLE
                 }`}>
-                {isProcessingSpeech ? (
-                  <AiOutlineLoading3Quarters className="size-4 animate-spin" aria-hidden="true" />
-                ) : (
-                  <FaMicrophone className={`size-4 ${isRecording ? 'animate-pulse-soft' : ''}`} aria-hidden="true" />
-                )}
+                {t('chat_buttons_replay')}
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={isSendButtonDisabled}
+                aria-disabled={isSendButtonDisabled}
+                aria-label={t('chat_buttons_send')}
+                title={t('chat_buttons_send')}
+                className={`grid size-9 shrink-0 place-items-center rounded-pill ${GRAPHITE_KEY} ${
+                  isSendButtonDisabled ? GRAPHITE_KEY_DISABLED : GRAPHITE_KEY_IDLE
+                }`}>
+                <FaArrowUp className="size-3.5" aria-hidden="true" />
               </button>
             )}
           </div>
-
-          {showStopButton ? (
-            <button
-              type="button"
-              onClick={onStopTask}
-              className={`flex h-9 shrink-0 items-center gap-2 rounded-pill px-4 text-xs font-medium ${GRAPHITE_KEY} ${GRAPHITE_KEY_IDLE}`}>
-              <span className="size-2 shrink-0 animate-pulse-soft rounded-pill bg-signal-bad" aria-hidden="true" />
-              {t('chat_buttons_stop')}
-            </button>
-          ) : historicalSessionId ? (
-            <button
-              type="button"
-              onClick={handleReplay}
-              disabled={!historicalSessionId}
-              aria-disabled={!historicalSessionId}
-              className={`flex h-9 shrink-0 items-center rounded-pill px-4 text-xs font-medium ${GRAPHITE_KEY} ${
-                !historicalSessionId ? GRAPHITE_KEY_DISABLED : GRAPHITE_KEY_IDLE
-              }`}>
-              {t('chat_buttons_replay')}
-            </button>
-          ) : (
-            <button
-              type="submit"
-              disabled={isSendButtonDisabled}
-              aria-disabled={isSendButtonDisabled}
-              aria-label={t('chat_buttons_send')}
-              title={t('chat_buttons_send')}
-              className={`grid size-9 shrink-0 place-items-center rounded-pill ${GRAPHITE_KEY} ${
-                isSendButtonDisabled ? GRAPHITE_KEY_DISABLED : GRAPHITE_KEY_IDLE
-              }`}>
-              <FaArrowUp className="size-3.5" aria-hidden="true" />
-            </button>
-          )}
         </div>
-      </div>
-    </form>
+      </form>
+      {/*
+      Sits with the composer rather than in ChatView, so it follows the input in both the empty
+      state and the conversation state without either call site having to remember it. Not
+      aria-hidden: a caveat about reliability is exactly the kind of thing a screen-reader user
+      needs, but it is polite so it never interrupts the agent's own status announcements.
+    */}
+      <p className="px-1 pt-1.5 text-center text-[10px] leading-tight text-ink-faint" role="note">
+        {t('chat_disclaimer')}
+      </p>
+    </>
   );
 }

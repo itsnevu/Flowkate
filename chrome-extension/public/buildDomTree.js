@@ -10,8 +10,10 @@ window.buildDomTree = (
 ) => {
   const { showHighlightElements, focusHighlightIndex, viewportExpansion, startHighlightIndex, startId, debugMode } =
     args;
-  // Make sure to do highlight elements always, but we can hide the highlights if needed
-  const doHighlightElements = true;
+  // Whether anything is actually painted onto the page. This is purely cosmetic: index assignment in
+  // handleHighlighting() runs either way, so the selector map the model indexes against is identical
+  // with the overlay on or off.
+  const doHighlightElements = showHighlightElements;
 
   let highlightIndex = startHighlightIndex; // Reset highlight index
 
@@ -149,10 +151,11 @@ window.buildDomTree = (
         // Use the maximum valid value in zIndex to ensure the element is not blocked by overlapping elements.
         container.style.zIndex = '2147483647';
         container.style.backgroundColor = 'transparent';
-        // Show or hide the container based on the showHighlightElements flag
-        container.style.display = showHighlightElements ? 'block' : 'none';
         document.body.appendChild(container);
       }
+      // Set on every call, not just on creation: a container left over from a parse that ran with the
+      // overlay on would otherwise keep `display: block` after the user turns it off.
+      container.style.display = showHighlightElements ? 'block' : 'none';
 
       // Get element client rects
       const rects = element.getClientRects(); // Use getClientRects()
@@ -350,17 +353,9 @@ window.buildDomTree = (
     }
   }
 
-  // // Add this function to perform cleanup when needed
-  // function cleanupHighlights() {
-  //   if (window._highlightCleanupFunctions && window._highlightCleanupFunctions.length) {
-  //     window._highlightCleanupFunctions.forEach(fn => fn());
-  //     window._highlightCleanupFunctions = [];
-  //   }
-
-  //   // Also remove the container
-  //   const container = document.getElementById(HIGHLIGHT_CONTAINER_ID);
-  //   if (container) container.remove();
-  // }
+  // The cleanups collected above are run by removeHighlights() in background/browser/dom/service.ts,
+  // which is the only thing that tears the overlay down. Do not reintroduce a local caller: it would
+  // release listeners the page still has overlays for.
 
   /**
    * Gets the position of an element in its parent.
@@ -1206,6 +1201,10 @@ window.buildDomTree = (
       if (nodeData.isInViewport || viewportExpansion === -1) {
         nodeData.highlightIndex = highlightIndex++;
 
+        // Drawing is optional; being indexed is not. The return value below becomes
+        // `isParentHighlighted` for this node's children and therefore decides whether a nested
+        // interactive child gets an index of its own, so it must depend only on whether this node
+        // was indexed - never on whether an overlay happened to be painted for it.
         if (doHighlightElements) {
           if (focusHighlightIndex >= 0) {
             if (focusHighlightIndex === nodeData.highlightIndex) {
@@ -1214,8 +1213,8 @@ window.buildDomTree = (
           } else {
             highlightElement(node, nodeData.highlightIndex, parentIframe);
           }
-          return true; // Successfully highlighted
         }
+        return true; // Indexed
       } else {
         // console.log(`Skipping highlight for ${nodeData.tagName} (outside viewport)`);
       }

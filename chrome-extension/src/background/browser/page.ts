@@ -172,8 +172,17 @@ export default class Page {
     }
   }
 
+  /**
+   * Tear down anything the agent drew on this page.
+   *
+   * Deliberately not gated on the overlay preference. Boxes get drawn for reasons the preference does
+   * not cover - the useVision OR below, a Page holding a config snapshot from before the user changed
+   * the setting, a container left behind by an earlier session - and a removal that only fires when
+   * drawing is enabled can never clean any of those up. Removal is idempotent and cheap, so the only
+   * thing gating it buys is overlays that outlive the run that made them.
+   */
   async removeHighlight(): Promise<void> {
-    if (this._config.displayHighlights && this._validWebPage) {
+    if (this._validWebPage) {
       await _removeHighlights(this._tabId);
     }
   }
@@ -431,10 +440,11 @@ export default class Page {
       await this.removeHighlight();
 
       // Get DOM content (equivalent to dom_service.get_clickable_elements)
-      // This part would need to be implemented based on your DomService logic
-      // showHighlightElements is true if either useVision or displayHighlights is true
-      const displayHighlights = this._config.displayHighlights || useVision;
-      const content = await this.getClickableElementsWithRetry(displayHighlights, focusElement);
+      // Boxes are drawn when the user asked for them, and also whenever vision is on regardless of
+      // the preference: the model reads the numbers off the screenshot, so without them a vision run
+      // has no way to map what it sees back onto an element index.
+      const drawBoxes = this._config.agentOverlay === 'boxes' || useVision;
+      const content = await this.getClickableElementsWithRetry(drawBoxes, focusElement);
       if (!content) {
         logger.warning('Failed to get clickable elements');
         // Return last known good state if available
@@ -462,6 +472,14 @@ export default class Page {
 
       // Take screenshot if needed
       const screenshot = useVision || domGroundingFailed ? await this.takeScreenshot() : null;
+
+      // Boxes drawn only to ground the screenshot have done their job the moment it is captured. Clear
+      // them here rather than at the start of the next parse, or they sit on the user's screen for the
+      // whole model round-trip - seconds of graffiti instead of the length of a capture.
+      if (drawBoxes && this._config.agentOverlay !== 'boxes') {
+        await this.removeHighlight();
+      }
+
       const [scrollY, visualViewportHeight, scrollHeight] = await this.getScrollInfo();
 
       // update the state

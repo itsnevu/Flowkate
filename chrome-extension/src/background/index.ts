@@ -6,10 +6,12 @@ import {
   generalSettingsStore,
   llmProviderStore,
   analyticsSettingsStore,
+  APPROVAL_MODES,
 } from '@extension/storage';
 import { t } from '@extension/i18n';
 import BrowserContext from './browser/context';
 import { Executor } from './agent/executor';
+import { undoLastStepSafely } from './agent/undo';
 import { createLogger } from './log';
 import { ExecutionState } from './agent/event/types';
 import { createChatModel } from './agent/helper';
@@ -18,6 +20,7 @@ import { SpeechToTextService } from './services/speechToText';
 import { injectBuildDomTreeScripts } from './browser/dom/service';
 import { analytics } from './services/analytics';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
+import type { ApprovalMode } from '@extension/storage';
 
 const logger = createLogger('background');
 
@@ -25,6 +28,22 @@ const browserContext = new BrowserContext({});
 let currentExecutor: Executor | null = null;
 let currentPort: chrome.runtime.Port | null = null;
 const SIDE_PANEL_URL = chrome.runtime.getURL('side-panel/index.html');
+
+/**
+ * Narrow an approval mode arriving over the port.
+ *
+ * The port is a message boundary, so this is not ceremony: an unvalidated string would land
+ * straight in `context.options.approvalMode`, where any value that is not exactly 'auto' reads as
+ * "run the gates" and any typo of 'manual' silently downgrades to planner-level checking.
+ */
+function isApprovalMode(value: unknown): value is ApprovalMode {
+  return typeof value === 'string' && (APPROVAL_MODES as readonly string[]).includes(value);
+}
+
+/** The same check for optional fields: absent is fine and means "use the stored setting". */
+function readApprovalMode(value: unknown): ApprovalMode | undefined {
+  return isApprovalMode(value) ? value : undefined;
+}
 
 // Setup side panel behavior
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(error => console.error(error));
@@ -100,7 +119,12 @@ chrome.runtime.onConnect.addListener(port => {
             if (!message.tabId) return port.postMessage({ type: 'error', error: t('bg_errors_noTabId') });
 
             logger.info('new_task', message.tabId, message.task);
-            currentExecutor = await setupExecutor(message.taskId, message.task, browserContext);
+            currentExecutor = await setupExecutor(
+              message.taskId,
+              message.task,
+              browserContext,
+              readApprovalMode(message.approvalMode),
+            );
             subscribeToExecutorEvents(currentExecutor);
 
             const result = await currentExecutor.execute();
@@ -116,6 +140,11 @@ chrome.runtime.onConnect.addListener(port => {
 
             // If executor exists, add follow-up task
             if (currentExecutor) {
+              // The Executor is reused here rather than rebuilt, so it still carries the mode the
+              // session started with. Without this the picker would appear to work for the first
+              // task and be silently ignored for every follow-up after it.
+              const followUpMode = readApprovalMode(message.approvalMode);
+              if (followUpMode) currentExecutor.setApprovalMode(followUpMode);
               currentExecutor.addFollowUpTask(message.task);
               // Re-subscribe to events in case the previous subscription was cleaned up
               subscribeToExecutorEvents(currentExecutor);
@@ -150,6 +179,15 @@ chrome.runtime.onConnect.addListener(port => {
             return port.postMessage({ type: 'success' });
           }
 
+          case 'set_approval_mode': {
+            if (!isApprovalMode(message.mode))
+              return port.postMessage({ type: 'error', error: t('bg_cmd_approvalMode_invalid', [String(message.mode)]) });
+            // Deliberately no noRunningTask error: moving the picker with nothing running is normal,
+            // and the panel has already written the choice to storage, so there is nothing to fail.
+            currentExecutor?.setApprovalMode(message.mode);
+            return port.postMessage({ type: 'success' });
+          }
+
           case 'confirm_action':
           case 'decline_action': {
             if (!currentExecutor) return port.postMessage({ type: 'error', error: t('bg_errors_noRunningTask') });
@@ -162,9 +200,7 @@ chrome.runtime.onConnect.addListener(port => {
           case 'undo_last_step': {
             if (!currentExecutor) return port.postMessage({ type: 'error', error: t('bg_errors_noRunningTask') });
             try {
-              // pause first so the agent cannot act on the state we are about to roll back
-              await currentExecutor.pause();
-              await currentExecutor.undoLastStep();
+              await undoLastStepSafely(currentExecutor);
               return port.postMessage({ type: 'success' });
             } catch (error) {
               logger.error('Undo failed:', error);
@@ -191,7 +227,9 @@ chrome.runtime.onConnect.addListener(port => {
 
           case 'state': {
             try {
-              const browserState = await browserContext.getState(true);
+              // useVision false: this is a read-only dump of the element tree. Passing true would make a
+              // debug command draw boxes on the page and take a screenshot nothing here reads.
+              const browserState = await browserContext.getState(false);
               const elementsText = browserState.elementTree.clickableElementsToString(
                 DEFAULT_AGENT_OPTIONS.includeAttributes,
               );
@@ -299,7 +337,20 @@ chrome.runtime.onConnect.addListener(port => {
   }
 });
 
-async function setupExecutor(taskId: string, task: string, browserContext: BrowserContext) {
+/**
+ * @param approvalModeOverride the mode the panel is currently showing, when it sent one.
+ *
+ * Takes precedence over the stored setting to close a real race: the panel writes the mode to
+ * chrome.storage asynchronously, so a user who picks a mode and immediately presses Enter would
+ * otherwise start the task under the previous value. Whatever the composer visibly says is what
+ * the task it launched runs under.
+ */
+async function setupExecutor(
+  taskId: string,
+  task: string,
+  browserContext: BrowserContext,
+  approvalModeOverride?: ApprovalMode,
+) {
   const providers = await llmProviderStore.getAllProviders();
   // if no providers, need to display the options page
   if (Object.keys(providers).length === 0) {
@@ -348,10 +399,11 @@ async function setupExecutor(taskId: string, task: string, browserContext: Brows
   }
 
   const generalSettings = await generalSettingsStore.getSettings();
+  const approvalMode = approvalModeOverride ?? generalSettings.approvalMode;
   browserContext.updateConfig({
     minimumWaitPageLoadTime: generalSettings.minWaitPageLoad / 1000.0,
     waitBetweenActions: generalSettings.waitBetweenActions / 1000.0,
-    displayHighlights: generalSettings.displayHighlights,
+    agentOverlay: generalSettings.agentOverlay,
     groupTabs: generalSettings.groupTaskTabs,
   });
 
@@ -373,11 +425,16 @@ async function setupExecutor(taskId: string, task: string, browserContext: Brows
       retryDelay: generalSettings.retryDelay,
       maxActionsPerStep: generalSettings.maxActionsPerStep,
       useVision: generalSettings.useVision,
+      // Pinned, not stored: the planner grounds its reading of the page on the same screenshot the
+      // navigator sees, so switching it off while vision is on gives the planner a worse view than
+      // the agent it is directing. There is no setting behind this on purpose.
       useVisionForPlanner: true,
       planningInterval: generalSettings.planningInterval,
-      confirmSensitiveActions: generalSettings.confirmSensitiveActions,
+      approvalMode,
     },
-    generalSettings: generalSettings,
+    // The override has to reach both readers, or the plan gate would run the stored mode while the
+    // navigator's action gate ran the picked one.
+    generalSettings: { ...generalSettings, approvalMode },
   });
 
   return executor;

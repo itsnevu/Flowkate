@@ -9,6 +9,8 @@ import type { AgentEvent } from '../types/event';
 
 interface BackgroundConnectionProps {
   onExecutionEvent: (event: AgentEvent) => void;
+  /** the port dropped: a running task will never report an outcome of its own, so close it out */
+  onConnectionLost: () => void;
   appendMessage: (newMessage: Message, sessionId?: string | null) => void;
   setInputEnabled: Dispatch<SetStateAction<boolean>>;
   setShowStopButton: Dispatch<SetStateAction<boolean>>;
@@ -28,6 +30,7 @@ interface BackgroundConnectionProps {
  */
 export const useBackgroundConnection = ({
   onExecutionEvent,
+  onConnectionLost,
   appendMessage,
   setInputEnabled,
   setShowStopButton,
@@ -73,6 +76,16 @@ export const useBackgroundConnection = ({
           });
           setInputEnabled(true);
           setShowStopButton(false);
+        } else if (message && message.type === 'success' && message.msg) {
+          // Acknowledgements for the debug commands (/state, /nohighlight), which otherwise look
+          // like they did nothing. Gated on `msg` on purpose: the control commands - approve_plan,
+          // undo, pause - reply with a bare {type:'success'} and must stay silent, because their
+          // result is already visible in the transcript.
+          appendMessage({
+            actor: Actors.SYSTEM,
+            content: message.msg,
+            timestamp: Date.now(),
+          });
         } else if (message && message.type === 'speech_to_text_result') {
           // Handle speech-to-text result
           if (message.text && setInputTextRef.current) {
@@ -102,6 +115,7 @@ export const useBackgroundConnection = ({
         }
         setInputEnabled(true);
         setShowStopButton(false);
+        onConnectionLost();
       });
 
       // Setup heartbeat interval
@@ -133,6 +147,7 @@ export const useBackgroundConnection = ({
     }
   }, [
     onExecutionEvent,
+    onConnectionLost,
     appendMessage,
     stopConnection,
     setInputEnabled,

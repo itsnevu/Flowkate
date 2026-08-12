@@ -1,7 +1,7 @@
 import { t } from '@extension/i18n';
 import { createLogger } from '@src/background/log';
 import { chatHistoryStore } from '@extension/storage/lib/chat';
-import { memoryStore } from '@extension/storage';
+import { memoryStore, requiresPlanApproval } from '@extension/storage';
 import { URLNotAllowedError } from '../browser/views';
 import { TabGroupStatus } from '../browser/tabGroup';
 import { analytics } from '../services/analytics';
@@ -27,7 +27,7 @@ import {
 import { routeStep, ModelTier } from './routing';
 import type BrowserContext from '../browser/context';
 import type { AgentStepHistory } from './history';
-import type { GeneralSettingsConfig } from '@extension/storage';
+import type { ApprovalMode, GeneralSettingsConfig } from '@extension/storage';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 
 const logger = createLogger('Executor');
@@ -53,6 +53,15 @@ export class Executor {
   private readonly plannerPrompt: PlannerPrompt;
   private readonly navigatorPrompt: NavigatorPrompt;
   private readonly generalSettings: GeneralSettingsConfig | undefined;
+  /**
+   * How much the user signs off on before the agent acts.
+   *
+   * Held apart from `generalSettings` because it is the one setting that can change after
+   * construction — the composer's mode picker pushes it through {@link setApprovalMode} while a
+   * task is running, and follow-up tasks reuse this same Executor instance rather than building a
+   * new one. Everything else in `generalSettings` is snapshotted once and stays snapshotted.
+   */
+  private approvalMode: ApprovalMode;
   private tasks: string[] = [];
   /** Resolver for the pending plan-approval gate, set only while the user is being asked. */
   private planApprovalResolver: ((approved: boolean) => void) | null = null;
@@ -70,6 +79,17 @@ export class Executor {
     // Resolved before the MessageManager because the manager needs the token budget and is built
     // first; AgentContext re-merges over the same defaults, so this is idempotent.
     const agentOptions: AgentOptions = { ...DEFAULT_AGENT_OPTIONS, ...(extraArgs?.agentOptions ?? {}) };
+
+    // One value, two readers: the plan gate below reads `this.approvalMode`, the navigator's action
+    // gate reads `context.options.approvalMode`. Reconciled here rather than left to the caller to
+    // set twice, because two independently-set copies of the same policy are how a picker ends up
+    // showing one thing while the agent does another. `generalSettings` wins when present since it
+    // is what the user actually chose; agentOptions carries the fallback for callers without it.
+    // Absent both, this lands on DEFAULT_AGENT_OPTIONS.approvalMode ('planner') — fail closed, so a
+    // caller that forgets to pass settings gets a visible stall rather than silent ungated spending.
+    this.approvalMode = extraArgs?.generalSettings?.approvalMode ?? agentOptions.approvalMode;
+    agentOptions.approvalMode = this.approvalMode;
+
     const messageManager = new MessageManager(
       new MessageManagerSettings({ maxInputTokens: agentOptions.maxInputTokens }),
     );
@@ -121,6 +141,27 @@ export class Executor {
     this.context.messageManager.initTaskMessages(this.navigatorPrompt.getSystemMessage(), task);
   }
 
+  /**
+   * Change how much the user wants to sign off on, mid-task.
+   *
+   * Both readers of the mode are updated together: this instance's plan gate, and
+   * `context.options`, which the navigator re-reads before every action. That second write is what
+   * makes the change take effect with no subscription and no restart — `AgentContext.options` is a
+   * plain mutable object shared with both navigators.
+   *
+   * Tightening applies at the next gate. An action already dispatched to the page is not
+   * retro-gated, and a plan already approved for the current task stays approved.
+   *
+   * Loosening deliberately does NOT resolve a gate the user is currently looking at: silently
+   * auto-approving a pending purchase because a menu changed is the exact failure this feature
+   * exists to prevent. The user answers the card in front of them; the new mode starts at the next
+   * one. Do not "helpfully" resolve `planApprovalResolver` here.
+   */
+  setApprovalMode(mode: ApprovalMode): void {
+    this.approvalMode = mode;
+    this.context.options.approvalMode = mode;
+  }
+
   subscribeExecutionEvents(callback: EventCallback): void {
     this.context.eventManager.subscribe(EventType.EXECUTION, callback);
   }
@@ -136,6 +177,10 @@ export class Executor {
     // a follow-up is a new intent, so it needs its own approval, and it may be on a different site
     this.planApproved = false;
     this.memoriesInjected = false;
+    // ...and it needs its own answer. The Executor is reused across follow-ups, and TASK_OK falls
+    // back to `finalAnswer` whenever the planner returns an empty one - so leaving the previous
+    // task's answer here makes the next task report a result it never produced.
+    this.context.finalAnswer = null;
 
     // need to reset previous action results that are not included in memory
     this.context.actionResults = this.context.actionResults.filter(result => result.includeInMemory);
@@ -329,7 +374,9 @@ export class Executor {
    * @returns true if execution may continue, false if the user rejected the plan
    */
   private async ensurePlanApproved(planOutput: AgentOutput<PlannerOutput> | null): Promise<boolean> {
-    if (!this.generalSettings?.requirePlanApproval) return true;
+    // Read from the mutable field, not from the settings snapshot: the user may have moved the
+    // picker since this Executor was built, and a follow-up task runs on this same instance.
+    if (!requiresPlanApproval(this.approvalMode)) return true;
     if (this.planApproved) return true;
     // nothing actionable to review
     if (!planOutput?.result || planOutput.result.web_task === false) return true;
@@ -558,6 +605,15 @@ export class Executor {
 
   async pause(): Promise<void> {
     this.context.pause();
+  }
+
+  /**
+   * Whether the agent loop is currently parked. Callers that pause the agent to do something to
+   * the page underneath it need this to know whether releasing it afterwards is theirs to do, or
+   * whether the user had already paused it and expects it to stay that way.
+   */
+  isPaused(): boolean {
+    return this.context.paused;
   }
 
   async cleanup(): Promise<void> {

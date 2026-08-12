@@ -20,6 +20,15 @@ export interface SensitivityVerdict {
 }
 
 /**
+ * The kind reported when the `manual` approval mode asks about an action the classifier cleared.
+ *
+ * Deliberately not a member of {@link SensitiveActionKind}: nothing flagged it, and labelling an
+ * ordinary click `form_submit` to reuse an existing kind would put a warning on the card that is
+ * simply untrue. The reason the user is being asked is the mode they chose.
+ */
+export const ROUTINE_ACTION_KIND = 'routine';
+
+/**
  * Keyword groups, matched against the visible label of the element the agent wants to click.
  * Ordered by how much damage a wrong click does: a purchase beats a generic submit.
  */
@@ -191,4 +200,54 @@ export function classifySensitiveAction(
   }
 
   return null;
+}
+
+/**
+ * Actions that change nothing a user would want to veto: they read, wait, or move the viewport.
+ *
+ * Deliberately NOT `READ_ONLY_ACTION_NAMES` from ./readOnlyActions, even though the two overlap.
+ * That set answers "can a background subtask with no user attached run this without changing the
+ * world?", and so it contains `go_to_url`, `search_google` and `go_back` — navigation changes no
+ * state, so it is safe there. This set answers a different question: "can this happen in front of a
+ * user who asked to see everything, without asking?" Navigation is precisely what such a user wants
+ * to see coming, because it is how an agent ends up somewhere unexpected. So those three are absent
+ * here and gated.
+ *
+ * Two sets, two jobs. Keeping them separate is what stops a later addition to one silently
+ * widening the other — adding a read-only action for subtasks must not also make it un-gateable.
+ */
+export const SILENT_ACTION_NAMES: ReadonlySet<string> = new Set([
+  'done',
+  'cache_content',
+  'remember',
+  'wait',
+  'scroll_to_percent',
+  'scroll_to_top',
+  'scroll_to_bottom',
+  'previous_page',
+  'next_page',
+  'scroll_to_text',
+  'get_dropdown_options',
+]);
+
+/**
+ * Manual mode's gate: everything that reaches the page needs a yes, not just the risky things.
+ *
+ * Scrolls, reads and waits are excluded on purpose. A prompt the user always says yes to is a
+ * prompt that teaches them to say yes to the one that mattered, and manual mode's whole value
+ * depends on each card corresponding to something that actually touched the page.
+ *
+ * Returns the {@link ROUTINE_ACTION_KIND} rather than one of the sensitivity kinds: nothing flagged
+ * this action, and the honest reason the user is being asked is the mode they chose.
+ *
+ * @param actionName the registered action being invoked, e.g. `click_element`
+ * @param element the DOM element the action targets, when the action takes an index
+ * @returns the reason to ask the user, or null if the action may run silently
+ */
+export function classifyManualAction(
+  actionName: string,
+  element: DOMElementNode | undefined,
+): { kind: typeof ROUTINE_ACTION_KIND; target: string } | null {
+  if (SILENT_ACTION_NAMES.has(actionName)) return null;
+  return { kind: ROUTINE_ACTION_KIND, target: element ? labelOf(element) : actionName };
 }

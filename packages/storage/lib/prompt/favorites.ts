@@ -2,7 +2,14 @@ import { StorageEnum } from '../base/enums';
 import { createStorage } from '../base/base';
 import type { BaseStorage } from '../base/types';
 
-// Template data
+/**
+ * Starter prompts written into a fresh install so the bookmark strip is not empty on first open.
+ *
+ * These are worked examples of what the agent is for, and nothing else belongs here. A prompt that
+ * asks the agent to promote the project reads to the user as one of their own saved bookmarks,
+ * because that is exactly what it becomes the moment it is seeded - renameable, deletable, and
+ * indistinguishable from something they wrote. Shipping an ad in that disguise is not on.
+ */
 const defaultFavoritePrompts = [
   {
     title: '📚 Explore AI Papers',
@@ -13,11 +20,6 @@ const defaultFavoritePrompts = [
     title: '🛒 Compare prices across shops',
     content:
       'Compare the current price of the Logitech MX Master 3S across Amazon, Best Buy and Walmart. Research all three at the same time, then tell me which is cheapest and what each one charges for shipping.',
-  },
-  {
-    title: '🌟 Star us on GitHub!',
-    content:
-      "Open the Flowkite repository at https://github.com/itsnevu/Flowkite and check if you've already starred it. If not, please support us by giving us a star!",
   },
 ];
 

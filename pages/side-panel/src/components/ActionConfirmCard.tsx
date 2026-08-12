@@ -22,6 +22,9 @@ const reasonFor = (kind: string): string => {
       return t('actConfirm_reason_credentials');
     case 'publish':
       return t('actConfirm_reason_publish');
+    case 'routine':
+      // nothing flagged this one - the user is in manual mode and asked to see every action
+      return t('actConfirm_reason_routine');
     default:
       return t('actConfirm_reason_formSubmit');
   }

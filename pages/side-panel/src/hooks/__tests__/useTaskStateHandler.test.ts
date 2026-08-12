@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Actors } from '@extension/storage';
+import { t } from '@extension/i18n';
 import { AgentEvent, ExecutionState } from '../../types/event';
-import { PROGRESS_MESSAGE } from '../../constants';
 import { useTaskStateHandler } from '../useTaskStateHandler';
 import type * as ReactModule from 'react';
+import type { Message, TrailStep } from '@extension/storage';
 import type { EventPayload } from '../../types/event';
 
 /**
@@ -17,16 +18,40 @@ vi.mock('react', async () => {
   return { ...actual, useCallback: <T>(fn: T) => fn };
 });
 
+/** The chime is a Web Audio side effect; only *when* it fires is behaviour worth pinning here. */
+const chime = vi.hoisted(() => ({ playTaskChime: vi.fn(async () => {}) }));
+vi.mock('../../chime', () => chime);
+
 /* eslint-disable react-hooks/rules-of-hooks --
    With `useCallback` mocked above there is no dispatcher involved: `useTaskStateHandler` is a
    plain function of its props here, so the rule's assumption that this must run inside a render
    does not hold. */
 
 const TIMESTAMP = 1_700_000_000_000;
+const TASK_ID = 'task-1';
 
+/**
+ * The panel's own wiring, reproduced closely enough to count bubbles.
+ *
+ * `finalizeTask` here does exactly what SidePanel's does — append the message with the trail
+ * accumulated so far — because the assertion that actually encodes the requirement is "one
+ * appendMessage per task", and a spy that only counted `finalizeTask` calls would not test the
+ * hop where the trail is attached.
+ */
 function setup() {
+  const appendMessage = vi.fn();
+  const trail: TrailStep[] = [];
   const spies = {
-    appendMessage: vi.fn(),
+    setLiveStatus: vi.fn(),
+    pushTrail: vi.fn((step: TrailStep) => {
+      trail.push(step);
+    }),
+    resetTrail: vi.fn(() => {
+      trail.length = 0;
+    }),
+    finalizeTask: vi.fn((message: Message) => {
+      appendMessage(trail.length > 0 ? { ...message, steps: [...trail] } : message);
+    }),
     setCanUndo: vi.fn(),
     setTokenUsage: vi.fn(),
     setIsHistoricalSession: vi.fn(),
@@ -38,17 +63,22 @@ function setup() {
     setIsReplaying: vi.fn(),
   };
   const isReplayingRef = { current: false };
-  const handle = useTaskStateHandler({ ...spies, isReplayingRef });
-  return { handle, isReplayingRef, ...spies };
+  const taskSettledRef = { current: false };
+  const handle = useTaskStateHandler({ ...spies, isReplayingRef, taskSettledRef });
+  return { handle, appendMessage, trail, isReplayingRef, taskSettledRef, ...spies };
 }
 
 function event(actor: Actors, state: ExecutionState, details = 'detail text', payload?: EventPayload) {
-  return new AgentEvent(actor, state, { taskId: 'task-1', step: 1, maxSteps: 10, details, payload }, TIMESTAMP);
+  return new AgentEvent(actor, state, { taskId: TASK_ID, step: 1, maxSteps: 10, details, payload }, TIMESTAMP);
 }
 
-/** The contents of every message the handler appended, in order. */
+/** The contents of every message that reached the transcript, in order. */
 const appended = (appendMessage: ReturnType<typeof vi.fn>) =>
   appendMessage.mock.calls.map(([message]) => message.content);
+
+/** The text of every status line the handler asked for, in order. */
+const statuses = (setLiveStatus: ReturnType<typeof vi.fn>) =>
+  setLiveStatus.mock.calls.map(([status]) => status?.text ?? null);
 
 /**
  * The actor/state pairs the background can put on the wire, read off its emit sites.
@@ -90,9 +120,18 @@ const EMITTED: Array<[Actors, ExecutionState]> = [
   [Actors.VALIDATOR, ExecutionState.STEP_FAIL],
 ];
 
+/** Every state that ends a task, i.e. every state allowed to produce the task's one message. */
+const TERMINAL: ExecutionState[] = [
+  ExecutionState.TASK_OK,
+  ExecutionState.TASK_FAIL,
+  ExecutionState.TASK_CANCEL,
+  ExecutionState.PLAN_REJECTED,
+];
+
 let errorSpy: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
+  chime.playTaskChime.mockClear();
   errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
@@ -110,6 +149,14 @@ describe('coverage of the emitted event surface', () => {
     expect(errorSpy).not.toHaveBeenCalled();
   });
 
+  // The whole point of the consolidation: only a terminal event may write to the transcript.
+  it.each(EMITTED)('lets %s / %s reach the transcript only if it ends the task', (actor, state) => {
+    const { handle, appendMessage } = setup();
+    handle(event(actor, state));
+    const allowed = actor === Actors.SYSTEM && TERMINAL.includes(state);
+    expect(`${state}: ${appendMessage.mock.calls.length}`).toBe(`${state}: ${allowed ? 1 : 0}`);
+  });
+
   it('logs and drops an actor it does not know', () => {
     const { handle, appendMessage } = setup();
     handle(event('auditor' as Actors, ExecutionState.STEP_OK));
@@ -125,10 +172,434 @@ describe('coverage of the emitted event surface', () => {
   });
 
   it('ignores user events, which the panel has already rendered locally', () => {
-    const { handle, appendMessage } = setup();
+    const { handle, appendMessage, setLiveStatus, pushTrail } = setup();
     handle(event(Actors.USER, ExecutionState.STEP_OK));
     expect(appendMessage).not.toHaveBeenCalled();
+    expect(setLiveStatus).not.toHaveBeenCalled();
+    expect(pushTrail).not.toHaveBeenCalled();
     expect(errorSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('one message per task', () => {
+  /**
+   * The requirement, end to end. This is the exact shape of the 'search github' run the user
+   * complained about: it used to leave four bubbles behind — the plan, the navigator's narration,
+   * a bare "done", and the final summary.
+   */
+  it('leaves exactly one message behind for a whole search-github run', () => {
+    const { handle, appendMessage, setLiveStatus } = setup();
+    const answer = 'Flowkite is at github.com/flowkite/flowkite — 1.2k stars.';
+
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_START, TASK_ID));
+    handle(event(Actors.PLANNER, ExecutionState.STEP_START, 'Planning...'));
+    handle(event(Actors.PLANNER, ExecutionState.STEP_OK, '1. Open github.com\n2. Search for flowkite'));
+    handle(event(Actors.SYSTEM, ExecutionState.PLAN_REVIEW, 'open github', undefined));
+    handle(event(Actors.SYSTEM, ExecutionState.PLAN_APPROVED, 'Plan approved'));
+    handle(event(Actors.NAVIGATOR, ExecutionState.STEP_START, 'Navigating...'));
+    handle(event(Actors.NAVIGATOR, ExecutionState.ACT_START, 'Navigating to https://github.com'));
+    handle(event(Actors.NAVIGATOR, ExecutionState.ACT_OK, 'Navigated to https://github.com'));
+    handle(event(Actors.NAVIGATOR, ExecutionState.STEP_OK, ''));
+    handle(event(Actors.NAVIGATOR, ExecutionState.STEP_START, 'Navigating...'));
+    handle(event(Actors.NAVIGATOR, ExecutionState.ACT_START, 'Typing flowkite into the search box'));
+    handle(event(Actors.NAVIGATOR, ExecutionState.ACT_OK, 'Typed flowkite'));
+    // The done action, which used to publish its own schema name as a bubble reading "done".
+    handle(event(Actors.NAVIGATOR, ExecutionState.ACT_OK, answer));
+    handle(event(Actors.PLANNER, ExecutionState.STEP_START, 'Planning...'));
+    handle(event(Actors.PLANNER, ExecutionState.STEP_OK, answer));
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_OK, answer));
+
+    expect(appendMessage).toHaveBeenCalledTimes(1);
+    expect(appendMessage.mock.calls[0][0].content).toBe(answer);
+    // ...and the run stayed visible the whole way through, in place.
+    expect(statuses(setLiveStatus).length).toBeGreaterThan(5);
+  });
+
+  it('carries the trail into the one message', () => {
+    const { handle, appendMessage } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_START, TASK_ID));
+    handle(event(Actors.NAVIGATOR, ExecutionState.ACT_START, 'Clicking Submit'));
+    handle(event(Actors.NAVIGATOR, ExecutionState.ACT_OK, 'Clicked Submit'));
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_OK, 'all done'));
+
+    expect(appendMessage.mock.calls[0][0].steps).toEqual([
+      { actor: Actors.NAVIGATOR, text: 'Clicking Submit', kind: 'note', timestamp: TIMESTAMP },
+      { actor: Actors.NAVIGATOR, text: 'Clicked Submit', kind: 'ok', timestamp: TIMESTAMP },
+    ]);
+  });
+
+  it('omits the steps field entirely when nothing was recorded', () => {
+    const { handle, appendMessage } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_OK, 'all done'));
+    expect(appendMessage.mock.calls[0][0]).toEqual({
+      actor: Actors.SYSTEM,
+      content: 'all done',
+      timestamp: TIMESTAMP,
+    });
+  });
+
+  /**
+   * Rejecting a plan calls `stop()`, so the executor emits PLAN_REJECTED and then breaks out of
+   * its loop and emits TASK_CANCEL too. Two terminal events, one task — and without the latch
+   * this is exactly how the double bubble comes back.
+   */
+  it('writes one message when a rejected plan also cancels the task', () => {
+    const { handle, appendMessage } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_START, TASK_ID));
+    handle(event(Actors.SYSTEM, ExecutionState.PLAN_REJECTED, 'Plan rejected — task stopped'));
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_CANCEL, 'Task cancelled'));
+
+    expect(appended(appendMessage)).toEqual(['Plan rejected — task stopped']);
+  });
+
+  // The latch stops the second bubble, not the second event: the panel still has to unlock.
+  it('still resets the panel on a terminal event that arrives after the task settled', () => {
+    const { handle, setInputEnabled, setShowStopButton, setLiveStatus } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_START, TASK_ID));
+    handle(event(Actors.SYSTEM, ExecutionState.PLAN_REJECTED, 'Plan rejected'));
+    setInputEnabled.mockClear();
+    setShowStopButton.mockClear();
+    setLiveStatus.mockClear();
+
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_CANCEL, 'Task cancelled'));
+    expect(setInputEnabled).toHaveBeenCalledWith(true);
+    expect(setShowStopButton).toHaveBeenCalledWith(false);
+    expect(setLiveStatus).toHaveBeenCalledWith(null);
+  });
+
+  it('lets the next task speak again', () => {
+    const { handle, appendMessage, resetTrail, taskSettledRef } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_OK, 'first answer'));
+    expect(taskSettledRef.current).toBe(true);
+
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_START, TASK_ID));
+    expect(taskSettledRef.current).toBe(false);
+    expect(resetTrail).toHaveBeenCalled();
+
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_OK, 'second answer'));
+    expect(appended(appendMessage)).toEqual(['first answer', 'second answer']);
+  });
+
+  it('drops the status line when the task ends', () => {
+    const { handle, setLiveStatus } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_OK, 'all done'));
+    expect(setLiveStatus).toHaveBeenLastCalledWith(null);
+  });
+});
+
+describe('the successful outcome', () => {
+  it('is the final answer the executor sent', () => {
+    const { handle, appendMessage } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_OK, 'The repo has 1.2k stars.'));
+    expect(appended(appendMessage)).toEqual(['The repo has 1.2k stars.']);
+  });
+
+  /**
+   * The executor falls back to the task id when the planner returned an empty `final_answer`, so
+   * without this guard a successful task reports a raw UUID as its result.
+   */
+  it('never prints the task id as an answer', () => {
+    const { handle, appendMessage } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_OK, TASK_ID));
+    expect(appended(appendMessage)).toEqual([t('chat_result_completed')]);
+  });
+
+  it('falls back for an empty payload too', () => {
+    const { handle, appendMessage } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_OK, ''));
+    expect(appended(appendMessage)).toEqual([t('chat_result_completed')]);
+  });
+});
+
+describe('failures stay legible', () => {
+  it('keeps the reason as the message', () => {
+    const { handle, appendMessage, setInputEnabled, setIsFollowUpMode } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_FAIL, 'rate limited'));
+    expect(appended(appendMessage)).toEqual(['rate limited']);
+    expect(setInputEnabled).toHaveBeenCalledWith(true);
+    expect(setIsFollowUpMode).toHaveBeenCalledWith(true);
+  });
+
+  /**
+   * A failed plan neither throws nor counts against the failure budget, so the task can carry on
+   * and even succeed. The trail is the only record that anything went wrong along the way.
+   */
+  it('attaches the errors collected along the way', () => {
+    const { handle, appendMessage } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_START, TASK_ID));
+    handle(event(Actors.PLANNER, ExecutionState.STEP_FAIL, 'Planning failed: bad JSON'));
+    handle(event(Actors.NAVIGATOR, ExecutionState.ACT_START, 'Clicking Submit'));
+    handle(event(Actors.NAVIGATOR, ExecutionState.ACT_FAIL, 'element detached'));
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_FAIL, 'Task failed'));
+
+    const steps: TrailStep[] = appendMessage.mock.calls[0][0].steps;
+    expect(steps.filter(step => step.kind === 'error').map(step => step.text)).toEqual([
+      'Planning failed: bad JSON',
+      'element detached',
+    ]);
+  });
+
+  // A cancelled task is not something to follow up on, unlike a failed one.
+  it('leaves follow-up mode when a task is cancelled', () => {
+    const { handle, setIsFollowUpMode, appendMessage } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_CANCEL, 'stopped'));
+    expect(setIsFollowUpMode).toHaveBeenCalledWith(false);
+    expect(appended(appendMessage)).toEqual(['stopped']);
+  });
+
+  it('clears both gates whenever a task ends', () => {
+    for (const state of TERMINAL) {
+      const { handle, setPendingPlan, setPendingAction } = setup();
+      handle(event(Actors.SYSTEM, state));
+      expect(setPendingPlan).toHaveBeenCalledWith(null);
+      expect(setPendingAction).toHaveBeenCalledWith(null);
+    }
+  });
+});
+
+describe('the live status line', () => {
+  // 'Planning...' and 'Navigating...' are hardcoded English in the background; the panel says it
+  // in the user's language instead of echoing them.
+  it('localizes the planner and navigator step headings', () => {
+    const planning = setup();
+    planning.handle(event(Actors.PLANNER, ExecutionState.STEP_START, 'Planning...'));
+    expect(statuses(planning.setLiveStatus)).toEqual([t('chat_status_planning')]);
+
+    const acting = setup();
+    acting.handle(event(Actors.NAVIGATOR, ExecutionState.STEP_START, 'Navigating...'));
+    expect(statuses(acting.setLiveStatus)).toEqual([t('chat_status_acting')]);
+  });
+
+  it('carries the step counter, so a long run shows progress', () => {
+    const { handle, setLiveStatus } = setup();
+    handle(event(Actors.NAVIGATOR, ExecutionState.STEP_START));
+    expect(setLiveStatus).toHaveBeenCalledWith({
+      actor: Actors.NAVIGATOR,
+      text: t('chat_status_acting'),
+      step: 1,
+      maxSteps: 10,
+    });
+  });
+
+  // The plan arrives as a numbered list; the line is one row tall.
+  it('shows only the first line of a plan', () => {
+    const { handle, setLiveStatus } = setup();
+    handle(event(Actors.PLANNER, ExecutionState.STEP_OK, '  \n1. Open github.com\n2. Search for flowkite'));
+    expect(statuses(setLiveStatus)).toEqual(['1. Open github.com']);
+  });
+
+  it('reports an approved plan as progress rather than as a result', () => {
+    const { handle, setPendingPlan, setInputEnabled, appendMessage, setLiveStatus } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.PLAN_APPROVED, 'Plan approved — running'));
+    expect(setPendingPlan).toHaveBeenCalledWith(null);
+    expect(statuses(setLiveStatus)).toEqual(['Plan approved — running']);
+    expect(appendMessage).not.toHaveBeenCalled();
+    // Execution continues, so the input stays locked.
+    expect(setInputEnabled).not.toHaveBeenCalled();
+  });
+
+  // A pause carries a reason only sometimes — e.g. the confirmation that a step was undone.
+  it('shows a pause reason when there is one, and nothing when there is not', () => {
+    const withReason = setup();
+    withReason.handle(event(Actors.SYSTEM, ExecutionState.TASK_PAUSE, 'undid the last step'));
+    expect(statuses(withReason.setLiveStatus)).toEqual(['undid the last step']);
+    expect(withReason.appendMessage).not.toHaveBeenCalled();
+
+    const silent = setup();
+    silent.handle(event(Actors.SYSTEM, ExecutionState.TASK_PAUSE, ''));
+    expect(silent.setLiveStatus).not.toHaveBeenCalled();
+  });
+
+  // A retry can take tens of seconds. Without this the panel just sits there and reads as hung.
+  it('explains a retry on both agents', () => {
+    for (const actor of [Actors.PLANNER, Actors.NAVIGATOR]) {
+      const { handle, setLiveStatus, pushTrail, appendMessage } = setup();
+      handle(event(actor, ExecutionState.STEP_RETRY, 'attempt 2/3, retrying in 4s'));
+      expect(statuses(setLiveStatus)).toEqual(['attempt 2/3, retrying in 4s']);
+      expect(pushTrail).toHaveBeenCalledWith({
+        actor,
+        text: 'attempt 2/3, retrying in 4s',
+        kind: 'note',
+        timestamp: TIMESTAMP,
+      });
+      expect(appendMessage).not.toHaveBeenCalled();
+    }
+  });
+
+  it('opens with a working line when a task starts', () => {
+    const { handle, setLiveStatus } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_START, TASK_ID));
+    expect(statuses(setLiveStatus)).toEqual([t('chat_status_working')]);
+  });
+
+  it('says nothing on resume', () => {
+    const { handle, appendMessage, setLiveStatus } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_RESUME));
+    expect(appendMessage).not.toHaveBeenCalled();
+    expect(setLiveStatus).not.toHaveBeenCalled();
+  });
+});
+
+describe('the step trail', () => {
+  it('records the plan without printing it', () => {
+    const { handle, pushTrail, appendMessage } = setup();
+    handle(event(Actors.PLANNER, ExecutionState.STEP_OK, '1. Open github.com'));
+    expect(pushTrail).toHaveBeenCalledWith({
+      actor: Actors.PLANNER,
+      text: '1. Open github.com',
+      kind: 'note',
+      timestamp: TIMESTAMP,
+    });
+    expect(appendMessage).not.toHaveBeenCalled();
+  });
+
+  it('records what the agent is about to do', () => {
+    const { handle, pushTrail, setLiveStatus, appendMessage } = setup();
+    handle(event(Actors.NAVIGATOR, ExecutionState.ACT_START, 'Clicking Submit'));
+    expect(pushTrail).toHaveBeenCalledWith({
+      actor: Actors.NAVIGATOR,
+      text: 'Clicking Submit',
+      kind: 'note',
+      timestamp: TIMESTAMP,
+    });
+    expect(statuses(setLiveStatus)).toEqual(['Clicking Submit']);
+    expect(appendMessage).not.toHaveBeenCalled();
+  });
+
+  /**
+   * `cache_content` is internal bookkeeping. `done` is the done action's raw schema name — the
+   * background no longer emits it, and the filter stays so an older worker cannot resurrect it.
+   */
+  it.each(['cache_content', 'done'])('drops the %s action entirely', details => {
+    const { handle, pushTrail, setLiveStatus, appendMessage } = setup();
+    handle(event(Actors.NAVIGATOR, ExecutionState.ACT_START, details));
+    expect(pushTrail).not.toHaveBeenCalled();
+    expect(setLiveStatus).not.toHaveBeenCalled();
+    expect(appendMessage).not.toHaveBeenCalled();
+  });
+
+  // Replay drives the same builder actions, so it narrates through the trail like a live run does.
+  it('records a successful action live and in replay alike', () => {
+    for (const replaying of [false, true]) {
+      const { handle, isReplayingRef, pushTrail, appendMessage } = setup();
+      isReplayingRef.current = replaying;
+      handle(event(Actors.NAVIGATOR, ExecutionState.ACT_OK, 'clicked Submit'));
+      expect(pushTrail).toHaveBeenCalledWith({
+        actor: Actors.NAVIGATOR,
+        text: 'clicked Submit',
+        kind: 'ok',
+        timestamp: TIMESTAMP,
+      });
+      expect(appendMessage).not.toHaveBeenCalled();
+    }
+  });
+
+  it('records a failed step as an issue without ending the task', () => {
+    const { handle, pushTrail, appendMessage } = setup();
+    handle(event(Actors.NAVIGATOR, ExecutionState.STEP_FAIL, 'could not find the button'));
+    expect(pushTrail).toHaveBeenCalledWith({
+      actor: Actors.NAVIGATOR,
+      text: 'could not find the button',
+      kind: 'error',
+      timestamp: TIMESTAMP,
+    });
+    expect(appendMessage).not.toHaveBeenCalled();
+  });
+
+  it('says nothing at all for the states that carry no news', () => {
+    for (const state of [ExecutionState.STEP_OK, ExecutionState.STEP_CANCEL]) {
+      const { handle, pushTrail, setLiveStatus, appendMessage } = setup();
+      handle(event(Actors.NAVIGATOR, state, 'whatever'));
+      expect(pushTrail).not.toHaveBeenCalled();
+      expect(setLiveStatus).not.toHaveBeenCalled();
+      expect(appendMessage).not.toHaveBeenCalled();
+    }
+  });
+
+  it('keeps an empty event out of the trail', () => {
+    const { handle, pushTrail } = setup();
+    handle(event(Actors.NAVIGATOR, ExecutionState.ACT_OK, ''));
+    expect(pushTrail).not.toHaveBeenCalled();
+  });
+});
+
+describe('plan review gate', () => {
+  const plan = { observation: 'on the search page', nextSteps: 'search', challenges: 'none', reasoning: 'because' };
+
+  // The executor is blocked until the user answers, so the input area is handed to the plan card.
+  it('parks the plan and takes over the input', () => {
+    const { handle, setPendingPlan, setInputEnabled, appendMessage, setLiveStatus } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.PLAN_REVIEW, '', plan));
+    expect(setPendingPlan).toHaveBeenCalledWith(plan);
+    expect(setInputEnabled).toHaveBeenCalledWith(false);
+    expect(appendMessage).not.toHaveBeenCalled();
+    expect(setLiveStatus).not.toHaveBeenCalled();
+  });
+
+  it('hands control back to the user on rejection', () => {
+    const { handle, setPendingPlan, setPendingAction, setInputEnabled, setShowStopButton, appendMessage } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.PLAN_REJECTED, 'plan rejected'));
+    expect(setPendingPlan).toHaveBeenCalledWith(null);
+    expect(setPendingAction).toHaveBeenCalledWith(null);
+    expect(setInputEnabled).toHaveBeenCalledWith(true);
+    expect(setShowStopButton).toHaveBeenCalledWith(false);
+    expect(appended(appendMessage)).toEqual(['plan rejected']);
+  });
+});
+
+describe('action confirmation gate', () => {
+  const action = { kind: 'purchase', description: 'buy the ticket', target: 'Pay now', url: 'https://shop.test' };
+
+  it('parks the action and takes over the input', () => {
+    const { handle, setPendingAction, setInputEnabled, appendMessage } = setup();
+    handle(event(Actors.NAVIGATOR, ExecutionState.ACT_CONFIRM, '', action));
+    expect(setPendingAction).toHaveBeenCalledWith(action);
+    expect(setInputEnabled).toHaveBeenCalledWith(false);
+    expect(appendMessage).not.toHaveBeenCalled();
+  });
+
+  // The run continues after a decline, so it is a step in the trail, not the task's outcome.
+  it('clears the action and records the decline as an issue', () => {
+    const { handle, setPendingAction, pushTrail, appendMessage } = setup();
+    handle(event(Actors.NAVIGATOR, ExecutionState.ACT_DECLINED, 'declined'));
+    expect(setPendingAction).toHaveBeenCalledWith(null);
+    expect(pushTrail).toHaveBeenCalledWith({
+      actor: Actors.NAVIGATOR,
+      text: 'declined',
+      kind: 'error',
+      timestamp: TIMESTAMP,
+    });
+    expect(appendMessage).not.toHaveBeenCalled();
+  });
+});
+
+describe('completion chime', () => {
+  it('rises on success and falls on failure', () => {
+    const ok = setup();
+    ok.handle(event(Actors.SYSTEM, ExecutionState.TASK_OK, 'all done'));
+    expect(chime.playTaskChime).toHaveBeenCalledWith('ok');
+
+    chime.playTaskChime.mockClear();
+    const failed = setup();
+    failed.handle(event(Actors.SYSTEM, ExecutionState.TASK_FAIL, 'rate limited'));
+    expect(chime.playTaskChime).toHaveBeenCalledWith('fail');
+  });
+
+  // A replay is the user re-reading a task, not one finishing.
+  it('stays silent during a replay', () => {
+    const { handle, isReplayingRef } = setup();
+    isReplayingRef.current = true;
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_OK, 'all done'));
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_FAIL, 'rate limited'));
+    expect(chime.playTaskChime).not.toHaveBeenCalled();
+  });
+
+  it('stays silent for everything that is not an outcome', () => {
+    const { handle } = setup();
+    for (const state of [ExecutionState.TASK_START, ExecutionState.TASK_CANCEL, ExecutionState.PLAN_REJECTED]) {
+      handle(event(Actors.SYSTEM, state, 'text'));
+    }
+    expect(chime.playTaskChime).not.toHaveBeenCalled();
   });
 });
 
@@ -179,194 +650,6 @@ describe('TASK_USAGE', () => {
   });
 });
 
-describe('STEP_RETRY', () => {
-  // A retry can take tens of seconds. Without a message the panel just sits on the spinner and
-  // reads as hung, which is the whole reason this state exists.
-  it('tells the user the planner is retrying', () => {
-    const { handle, appendMessage } = setup();
-    handle(event(Actors.PLANNER, ExecutionState.STEP_RETRY, 'attempt 2/3, retrying in 4s'));
-    expect(appended(appendMessage)).toEqual(['attempt 2/3, retrying in 4s']);
-    expect(appendMessage).toHaveBeenCalledWith({
-      actor: Actors.PLANNER,
-      content: 'attempt 2/3, retrying in 4s',
-      timestamp: TIMESTAMP,
-    });
-  });
-
-  it('tells the user the navigator is retrying', () => {
-    const { handle, appendMessage } = setup();
-    handle(event(Actors.NAVIGATOR, ExecutionState.STEP_RETRY, 'attempt 2/3, retrying in 4s'));
-    expect(appended(appendMessage)).toEqual(['attempt 2/3, retrying in 4s']);
-  });
-
-  // The notice replaces the spinner rather than joining it, so the row does not read as both.
-  it('does not leave a progress row behind on the navigator', () => {
-    const { handle, appendMessage } = setup();
-    handle(event(Actors.NAVIGATOR, ExecutionState.STEP_RETRY));
-    expect(appended(appendMessage)).not.toContain(PROGRESS_MESSAGE);
-  });
-});
-
-describe('system task lifecycle', () => {
-  it('clears the historical flag and the undo offer when a task starts', () => {
-    const { handle, setIsHistoricalSession, setCanUndo, appendMessage } = setup();
-    handle(event(Actors.SYSTEM, ExecutionState.TASK_START));
-    expect(setIsHistoricalSession).toHaveBeenCalledWith(false);
-    expect(setCanUndo).toHaveBeenCalledWith(false);
-    expect(appendMessage).not.toHaveBeenCalled();
-  });
-
-  it('re-opens the input and leaves follow-up mode on when a task succeeds', () => {
-    const { handle, setInputEnabled, setShowStopButton, setIsFollowUpMode, setIsReplaying, appendMessage } = setup();
-    handle(event(Actors.SYSTEM, ExecutionState.TASK_OK));
-    expect(setInputEnabled).toHaveBeenCalledWith(true);
-    expect(setShowStopButton).toHaveBeenCalledWith(false);
-    expect(setIsFollowUpMode).toHaveBeenCalledWith(true);
-    expect(setIsReplaying).toHaveBeenCalledWith(false);
-    // The executor already reported the result; a second copy would duplicate it.
-    expect(appendMessage).not.toHaveBeenCalled();
-  });
-
-  it('shows the reason when a task fails', () => {
-    const { handle, appendMessage, setInputEnabled, setIsFollowUpMode } = setup();
-    handle(event(Actors.SYSTEM, ExecutionState.TASK_FAIL, 'rate limited'));
-    expect(appended(appendMessage)).toEqual(['rate limited']);
-    expect(setInputEnabled).toHaveBeenCalledWith(true);
-    expect(setIsFollowUpMode).toHaveBeenCalledWith(true);
-  });
-
-  // A cancelled task is not something to follow up on, unlike a failed one.
-  it('leaves follow-up mode when a task is cancelled', () => {
-    const { handle, setIsFollowUpMode, appendMessage } = setup();
-    handle(event(Actors.SYSTEM, ExecutionState.TASK_CANCEL, 'stopped'));
-    expect(setIsFollowUpMode).toHaveBeenCalledWith(false);
-    expect(appended(appendMessage)).toEqual(['stopped']);
-  });
-
-  it('clears both gates whenever a task ends', () => {
-    for (const state of [ExecutionState.TASK_OK, ExecutionState.TASK_FAIL, ExecutionState.TASK_CANCEL]) {
-      const { handle, setPendingPlan, setPendingAction } = setup();
-      handle(event(Actors.SYSTEM, state));
-      expect(setPendingPlan).toHaveBeenCalledWith(null);
-      expect(setPendingAction).toHaveBeenCalledWith(null);
-    }
-  });
-
-  // A pause carries a reason only sometimes — e.g. the confirmation that a step was undone.
-  it('shows a pause only when it carries a reason', () => {
-    const withReason = setup();
-    withReason.handle(event(Actors.SYSTEM, ExecutionState.TASK_PAUSE, 'undid the last step'));
-    expect(appended(withReason.appendMessage)).toEqual(['undid the last step']);
-
-    const silent = setup();
-    silent.handle(event(Actors.SYSTEM, ExecutionState.TASK_PAUSE, ''));
-    expect(silent.appendMessage).not.toHaveBeenCalled();
-  });
-
-  it('says nothing on resume', () => {
-    const { handle, appendMessage } = setup();
-    handle(event(Actors.SYSTEM, ExecutionState.TASK_RESUME));
-    expect(appendMessage).not.toHaveBeenCalled();
-  });
-});
-
-describe('plan review gate', () => {
-  const plan = { observation: 'on the search page', nextSteps: 'search', challenges: 'none', reasoning: 'because' };
-
-  // The executor is blocked until the user answers, so the input area is handed to the plan card.
-  it('parks the plan and takes over the input', () => {
-    const { handle, setPendingPlan, setInputEnabled, appendMessage } = setup();
-    handle(event(Actors.SYSTEM, ExecutionState.PLAN_REVIEW, '', plan));
-    expect(setPendingPlan).toHaveBeenCalledWith(plan);
-    expect(setInputEnabled).toHaveBeenCalledWith(false);
-    expect(appendMessage).not.toHaveBeenCalled();
-  });
-
-  it('clears the plan and reports it on approval, without re-enabling the input', () => {
-    const { handle, setPendingPlan, setInputEnabled, appendMessage } = setup();
-    handle(event(Actors.SYSTEM, ExecutionState.PLAN_APPROVED, 'plan approved'));
-    expect(setPendingPlan).toHaveBeenCalledWith(null);
-    expect(appended(appendMessage)).toEqual(['plan approved']);
-    // Execution continues, so the input stays locked.
-    expect(setInputEnabled).not.toHaveBeenCalled();
-  });
-
-  it('hands control back to the user on rejection', () => {
-    const { handle, setPendingPlan, setPendingAction, setInputEnabled, setShowStopButton, appendMessage } = setup();
-    handle(event(Actors.SYSTEM, ExecutionState.PLAN_REJECTED, 'plan rejected'));
-    expect(setPendingPlan).toHaveBeenCalledWith(null);
-    expect(setPendingAction).toHaveBeenCalledWith(null);
-    expect(setInputEnabled).toHaveBeenCalledWith(true);
-    expect(setShowStopButton).toHaveBeenCalledWith(false);
-    expect(appended(appendMessage)).toEqual(['plan rejected']);
-  });
-});
-
-describe('action confirmation gate', () => {
-  const action = { kind: 'purchase', description: 'buy the ticket', target: 'Pay now', url: 'https://shop.test' };
-
-  it('parks the action and takes over the input', () => {
-    const { handle, setPendingAction, setInputEnabled, appendMessage } = setup();
-    handle(event(Actors.NAVIGATOR, ExecutionState.ACT_CONFIRM, '', action));
-    expect(setPendingAction).toHaveBeenCalledWith(action);
-    expect(setInputEnabled).toHaveBeenCalledWith(false);
-    expect(appendMessage).not.toHaveBeenCalled();
-  });
-
-  it('clears the action and reports it when declined', () => {
-    const { handle, setPendingAction, appendMessage } = setup();
-    handle(event(Actors.NAVIGATOR, ExecutionState.ACT_DECLINED, 'declined'));
-    expect(setPendingAction).toHaveBeenCalledWith(null);
-    expect(appended(appendMessage)).toEqual(['declined']);
-  });
-});
-
-describe('navigator steps and actions', () => {
-  it('shows the progress row while a step runs', () => {
-    const { handle, appendMessage } = setup();
-    handle(event(Actors.NAVIGATOR, ExecutionState.STEP_START, 'thinking'));
-    // The spinner replaces the detail text rather than following it.
-    expect(appended(appendMessage)).toEqual([PROGRESS_MESSAGE]);
-  });
-
-  it('says nothing when a step succeeds, since the actions already reported', () => {
-    const { handle, appendMessage } = setup();
-    handle(event(Actors.NAVIGATOR, ExecutionState.STEP_OK, 'done'));
-    expect(appendMessage).not.toHaveBeenCalled();
-  });
-
-  it('reports a failed step and drops the progress row', () => {
-    const { handle, appendMessage } = setup();
-    handle(event(Actors.NAVIGATOR, ExecutionState.STEP_FAIL, 'could not find the button'));
-    expect(appended(appendMessage)).toEqual(['could not find the button']);
-  });
-
-  it('says nothing when a step is cancelled', () => {
-    const { handle, appendMessage } = setup();
-    handle(event(Actors.NAVIGATOR, ExecutionState.STEP_CANCEL));
-    expect(appendMessage).not.toHaveBeenCalled();
-  });
-
-  it('announces an action as it starts', () => {
-    const { handle, appendMessage } = setup();
-    handle(event(Actors.NAVIGATOR, ExecutionState.ACT_START, 'Clicking Submit'));
-    expect(appended(appendMessage)).toEqual(['Clicking Submit']);
-  });
-
-  // Cache warm-ups are internal bookkeeping, not something the user asked for.
-  it('hides the cache_content action', () => {
-    const { handle, appendMessage } = setup();
-    handle(event(Actors.NAVIGATOR, ExecutionState.ACT_START, 'cache_content'));
-    expect(appendMessage).not.toHaveBeenCalled();
-  });
-
-  it('reports a failed action', () => {
-    const { handle, appendMessage } = setup();
-    handle(event(Actors.NAVIGATOR, ExecutionState.ACT_FAIL, 'element detached'));
-    expect(appended(appendMessage)).toEqual(['element detached']);
-  });
-});
-
 describe('undo offer', () => {
   // Anything that reached the browser is something the user may want rolled back.
   it('opens on a successful action', () => {
@@ -380,70 +663,53 @@ describe('undo offer', () => {
     handle(event(Actors.NAVIGATOR, ExecutionState.STEP_OK));
     expect(setCanUndo).not.toHaveBeenCalled();
   });
-});
 
-describe('replay', () => {
-  // During a live run the ACT_START line already said what was about to happen, so echoing the
-  // result doubles every action. A replay has no such line, so the result is all there is.
-  it('reports successful actions only while replaying', () => {
-    const live = setup();
-    live.handle(event(Actors.NAVIGATOR, ExecutionState.ACT_OK, 'clicked Submit'));
-    expect(live.appendMessage).not.toHaveBeenCalled();
-
-    const replaying = setup();
-    replaying.isReplayingRef.current = true;
-    replaying.handle(event(Actors.NAVIGATOR, ExecutionState.ACT_OK, 'clicked Submit'));
-    expect(appended(replaying.appendMessage)).toEqual(['clicked Submit']);
-  });
-
-  // The ref is read at call time, never captured, so the handler can stay referentially stable
-  // while replay state changes underneath it.
-  it('reads the replay flag at call time rather than at construction', () => {
-    const { handle, isReplayingRef, appendMessage } = setup();
-    handle(event(Actors.NAVIGATOR, ExecutionState.ACT_OK, 'first'));
-    isReplayingRef.current = true;
-    handle(event(Actors.NAVIGATOR, ExecutionState.ACT_OK, 'second'));
-    expect(appended(appendMessage)).toEqual(['second']);
+  // TASK_START also drops the historical-session flag, which is what unlocks the composer.
+  it('closes again when a new task starts', () => {
+    const { handle, setCanUndo, setIsHistoricalSession } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_START, TASK_ID));
+    expect(setCanUndo).toHaveBeenCalledWith(false);
+    expect(setIsHistoricalSession).toHaveBeenCalledWith(false);
   });
 });
 
 describe('legacy validator events', () => {
-  it('still renders validator history', () => {
-    const progress = setup();
-    progress.handle(event(Actors.VALIDATOR, ExecutionState.STEP_START));
-    expect(appended(progress.appendMessage)).toEqual([PROGRESS_MESSAGE]);
+  // Nothing emits these any more, but stored histories still contain them and the default arm
+  // would log them as invalid.
+  it('narrates them without writing a message', () => {
+    const { handle, setLiveStatus, pushTrail, appendMessage } = setup();
+    handle(event(Actors.VALIDATOR, ExecutionState.STEP_START));
+    handle(event(Actors.VALIDATOR, ExecutionState.STEP_OK, 'looks right'));
+    handle(event(Actors.VALIDATOR, ExecutionState.STEP_FAIL, 'wrong page'));
 
-    const ok = setup();
-    ok.handle(event(Actors.VALIDATOR, ExecutionState.STEP_OK, 'looks right'));
-    expect(appended(ok.appendMessage)).toEqual(['looks right']);
-
-    const fail = setup();
-    fail.handle(event(Actors.VALIDATOR, ExecutionState.STEP_FAIL, 'wrong page'));
-    expect(appended(fail.appendMessage)).toEqual(['wrong page']);
+    expect(statuses(setLiveStatus)).toEqual([t('chat_status_acting'), 'looks right', 'wrong page']);
+    expect(pushTrail.mock.calls.map(([step]) => step.kind)).toEqual(['note', 'error']);
+    expect(appendMessage).not.toHaveBeenCalled();
   });
 });
 
 describe('message shape', () => {
   it('carries the event actor and timestamp through', () => {
-    const { handle, appendMessage } = setup();
-    handle(event(Actors.PLANNER, ExecutionState.STEP_OK, 'planned'));
-    expect(appendMessage).toHaveBeenCalledWith({
-      actor: Actors.PLANNER,
-      content: 'planned',
+    const { handle, finalizeTask } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_FAIL, 'rate limited'));
+    expect(finalizeTask).toHaveBeenCalledWith({
+      actor: Actors.SYSTEM,
+      content: 'rate limited',
       timestamp: TIMESTAMP,
     });
   });
 
   // `content` is a required string on Message; an undefined would break rendering downstream.
-  it('substitutes an empty string when the event carries no detail', () => {
-    const { handle, appendMessage } = setup();
-    handle(new AgentEvent(Actors.PLANNER, ExecutionState.STEP_OK, { taskId: 't', step: 1, maxSteps: 10 } as never));
-    expect(appendMessage.mock.calls[0][0].content).toBe('');
+  it('substitutes an empty string when a terminal event carries no detail', () => {
+    const { handle, finalizeTask } = setup();
+    handle(new AgentEvent(Actors.SYSTEM, ExecutionState.TASK_CANCEL, { taskId: 't', step: 1, maxSteps: 10 } as never));
+    expect(finalizeTask.mock.calls[0][0].content).toBe('');
   });
 
-  it('appends without a session id, so the message lands in the live session', () => {
-    const { handle, appendMessage } = setup();
-    handle(event(Actors.PLANNER, ExecutionState.STEP_OK, 'planned'));
-    expect(appendMessage.mock.calls[0]).toHaveLength(1);
+  // The session id is the panel's business; the handler knows only the event.
+  it('finalizes with the message alone', () => {
+    const { handle, finalizeTask } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_OK, 'done'));
+    expect(finalizeTask.mock.calls[0]).toHaveLength(1);
   });
 });

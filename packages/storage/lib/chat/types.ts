@@ -6,10 +6,31 @@ export enum Actors {
   VALIDATOR = 'validator',
 }
 
+/** How one trail entry reads: a step that worked, one that did not, or plain narration. */
+export type TrailKind = 'ok' | 'error' | 'note';
+
+/**
+ * One line of the step-by-step trail a task leaves behind.
+ *
+ * The panel shows these live and then attaches the accumulated list to the single message it
+ * persists for the task, so a run that finished badly is still inspectable after a reload.
+ */
+export interface TrailStep {
+  actor: Actors;
+  text: string;
+  kind: TrailKind;
+  timestamp: number; // Unix timestamp in milliseconds
+}
+
 export interface Message {
   actor: Actors;
   content: string;
   timestamp: number; // Unix timestamp in milliseconds
+  /**
+   * The steps that led to this message, present only on a task's outcome message. Optional so
+   * every message stored by an earlier build stays valid and needs no migration.
+   */
+  steps?: TrailStep[];
 }
 
 export interface ChatMessage extends Message {

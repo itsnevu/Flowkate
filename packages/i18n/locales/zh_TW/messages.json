@@ -73,6 +73,9 @@
   "chat_input_form": {
     "message": "對話輸入表單"
   },
+  "chat_disclaimer": {
+    "message": "Flowkite 可能會出錯，請自行核對回覆內容。"
+  },
   "chat_input_editor": {
     "message": "訊息輸入"
   },
@@ -246,12 +249,6 @@
   },
   "options_general_enableVision_desc": {
     "message": "使用大型語言模型的視覺能力 (將會消耗更多的 token 以取得更好的結果)"
-  },
-  "options_general_displayHighlights": {
-    "message": "顯示醒目標示"
-  },
-  "options_general_displayHighlights_desc": {
-    "message": "在可互動的元素 (如按鈕、連結等) 上顯示視覺化醒目標示"
   },
   "options_general_groupTaskTabs": {
     "message": "將工作分頁分組"
@@ -1061,12 +1058,6 @@
   "chat_undo": {
     "message": "復原上一個步驟"
   },
-  "options_general_requirePlanApproval": {
-    "message": "執行前先核准計畫"
-  },
-  "options_general_requirePlanApproval_desc": {
-    "message": "在代理對頁面採取任何動作前，先顯示其計畫並等待你核准"
-  },
   "act_declinedByUser": {
     "message": "你拒絕了這個動作：$INTENT$。代理會尋找其他方式。",
     "placeholders": {
@@ -1110,12 +1101,6 @@
   },
   "actConfirm_reason_formSubmit": {
     "message": "這會送出表單。"
-  },
-  "options_general_confirmSensitiveActions": {
-    "message": "確認敏感動作"
-  },
-  "options_general_confirmSensitiveActions_desc": {
-    "message": "在代理送出表單、購買、刪除資料、下載檔案或輸入密碼前先詢問你"
   },
   "act_remember_start": {
     "message": "正在記住：$CONTENT$",
@@ -1248,5 +1233,111 @@
   },
   "chat_usage_details_a11y": {
     "message": "顯示各模型的 Token 使用量"
+  },
+  "chat_status_working": {
+    "message": "執行中…"
+  },
+  "chat_status_planning": {
+    "message": "正在規劃下一步…"
+  },
+  "chat_status_acting": {
+    "message": "正在操作頁面…"
+  },
+  "chat_result_completed": {
+    "message": "任務已完成。"
+  },
+  "chat_task_interrupted": {
+    "message": "任務提前中止 — 與背景服務的連線已中斷。"
+  },
+  "chat_trail_steps": {
+    "message": "$STEPS$ 個步驟",
+    "placeholders": {
+      "steps": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "chat_trail_summary": {
+    "message": "$STEPS$ 個步驟 · $ISSUES$ 個問題",
+    "placeholders": {
+      "steps": {
+        "content": "$1",
+        "example": "12"
+      },
+      "issues": {
+        "content": "$2",
+        "example": "2"
+      }
+    }
+  },
+  "chat_trail_details_a11y": {
+    "message": "顯示這個任務執行過的步驟"
+  },
+  "options_general_approvalMode": {
+    "message": "哪些需要你核准"
+  },
+  "options_general_approvalMode_desc": {
+    "message": "由聊天輸入框旁的模式選擇器設定。目前為 $MODE$。",
+    "placeholders": {
+      "mode": {
+        "content": "$1",
+        "example": "Planner"
+      }
+    }
+  },
+  "actConfirm_reason_routine": {
+    "message": "你選擇了確認每個操作，所以代理在每次動作前都會先詢問。"
+  },
+  "chat_mode_label": {
+    "message": "核准模式"
+  },
+  "chat_mode_current": {
+    "message": "核准模式：$MODE$",
+    "placeholders": {
+      "mode": {
+        "content": "$1",
+        "example": "計畫"
+      }
+    }
+  },
+  "chat_mode_auto": {
+    "message": "自動"
+  },
+  "chat_mode_auto_desc": {
+    "message": "整個任務都不詢問，直接執行。"
+  },
+  "chat_mode_planner": {
+    "message": "計畫"
+  },
+  "chat_mode_planner_desc": {
+    "message": "先核准計畫，再確認有風險的動作。"
+  },
+  "chat_mode_manual": {
+    "message": "手動"
+  },
+  "chat_mode_manual_desc": {
+    "message": "核准計畫，以及頁面上的每一個動作。"
+  },
+  "chat_mode_autoNotice_title": {
+    "message": "完全不做任何檢查就執行？"
+  },
+  "chat_mode_autoNotice_body": {
+    "message": "代理將不再向你顯示計畫，也不會在購買、刪除資料、輸入憑證或送出表單前停下來詢問。若頁面刻意誤導它，你可能要等到事情發生之後才會知道。你隨時可以改回來。"
+  },
+  "chat_mode_autoNotice_confirm": {
+    "message": "關閉所有檢查"
+  },
+  "chat_mode_autoNotice_cancel": {
+    "message": "保留檢查"
+  },
+  "bg_cmd_approvalMode_invalid": {
+    "message": "未知的核准模式：$MODE$",
+    "placeholders": {
+      "mode": {
+        "content": "$1",
+        "example": "planner"
+      }
+    }
   }
 }

@@ -8,7 +8,7 @@ import { convertZodToJsonSchema, repairJsonString } from '@src/background/utils'
 import { HistoryTreeProcessor } from '@src/background/browser/dom/history/service';
 import { type DOMHistoryElement } from '@src/background/browser/dom/history/view';
 import { AgentStepRecord } from '../history';
-import { classifySensitiveAction } from '../actions/sensitivity';
+import { classifyManualAction, classifySensitiveAction } from '../actions/sensitivity';
 import { Actors, ExecutionState } from '../event/types';
 import { agentBrainSchema } from '../types';
 import { buildDynamicActionSchema } from '../actions/builder';
@@ -397,29 +397,39 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
   }
 
   /**
-   * Gate a single action behind the user's explicit approval when it looks consequential.
+   * Gate a single action behind the user's explicit approval when the current mode calls for it.
    *
    * The check reads the element the agent already picked rather than the model's own account of what
    * it is doing, so a page that talks the model into a purchase still has to get past the user.
    *
+   * The mode is read from `context.options` at action time, not captured at construction, which is
+   * what lets {@link Executor.setApprovalMode} change it in the middle of a running task.
+   *
    * @returns an ActionResult to record when the user declined, or null if the action may proceed
    */
-  private async confirmIfSensitive(
+  private async confirmBeforeAction(
     actionName: string,
     actionArgs: unknown,
     element: DOMElementNode | undefined,
   ): Promise<ActionResult | null> {
-    if (!this.context.options.confirmSensitiveActions) return null;
+    const mode = this.context.options.approvalMode;
+    if (mode === 'auto') return null;
 
-    const verdict = classifySensitiveAction(actionName, actionArgs, element);
-    if (!verdict) return null;
+    // Sensitive classification runs first even in manual mode, so a purchase still shows the
+    // purchase reason and its specific copy rather than a generic "you asked to confirm
+    // everything". The manual classifier only fills the gap the sensitivity rules left.
+    const request =
+      classifySensitiveAction(actionName, actionArgs, element) ??
+      (mode === 'manual' ? classifyManualAction(actionName, element) : null);
+    if (!request) return null;
 
     const intent = (actionArgs as { intent?: string })?.intent ?? actionName;
     const page = await this.context.browserContext.getCurrentPage();
     const approved = await this.context.requestActionConfirmation({
-      kind: verdict.kind,
+      kind: request.kind,
       description: intent,
-      target: verdict.target,
+      // falls back to the element's own label so a routine confirmation still says what it acts on
+      target: request.target || element?.getAllTextTillNextClickableElement(2).trim() || intent,
       url: page.url(),
     });
 
@@ -483,8 +493,9 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
           }
         }
 
-        // Human-in-the-loop: money, data loss and credentials never move without an explicit yes
-        const declined = await this.confirmIfSensitive(
+        // Human-in-the-loop: money, data loss and credentials never move without an explicit yes,
+        // and in manual mode neither does anything else that reaches the page.
+        const declined = await this.confirmBeforeAction(
           actionName,
           actionArgs,
           indexArg !== null ? browserState.selectorMap.get(indexArg) : undefined,

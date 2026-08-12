@@ -9,6 +9,7 @@ import type Page from '../browser/page';
 import type { DOMHistoryElement } from '../browser/dom/history/view';
 import type MessageManager from './messages/service';
 import type { EventManager } from './event/manager';
+import type { ApprovalMode } from '@extension/storage';
 
 export interface AgentOptions {
   maxSteps: number;
@@ -28,8 +29,16 @@ export interface AgentOptions {
   useVisionForPlanner: boolean;
   includeAttributes: string[];
   planningInterval: number;
-  /** Ask the user to confirm before running an action that spends money, deletes data, etc. */
-  confirmSensitiveActions: boolean;
+  /**
+   * How much the user signs off on before the agent acts.
+   *
+   * Carried as the mode itself rather than as the two booleans it implies, because the four boolean
+   * combinations do not map onto three modes — there is no mode for "no plan gate but confirm
+   * purchases" — and a pair of flags makes that illegal state representable. It is also the field
+   * {@link Executor.setApprovalMode} writes through to mid-task: `AgentContext.options` is a plain
+   * mutable object, so the navigator re-reads it before every action with no subscription needed.
+   */
+  approvalMode: ApprovalMode;
 }
 
 export const DEFAULT_AGENT_OPTIONS: AgentOptions = {
@@ -43,7 +52,7 @@ export const DEFAULT_AGENT_OPTIONS: AgentOptions = {
   useVisionForPlanner: true,
   includeAttributes: DEFAULT_INCLUDE_ATTRIBUTES,
   planningInterval: 3,
-  confirmSensitiveActions: true,
+  approvalMode: 'planner',
 };
 
 export class AgentContext {

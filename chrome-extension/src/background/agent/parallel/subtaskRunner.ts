@@ -54,8 +54,16 @@ async function runOne(subtask: Subtask, options: SubtaskRunnerOptions): Promise<
     const context = new AgentContext(`subtask-${tabId}`, browserContext, messageManager, new EventManager(), {
       ...options.agentOptions,
       maxSteps: MAX_SUBTASK_STEPS,
-      // a background tab has no way to reach the user, so it must not be able to raise a prompt
-      confirmSensitiveActions: false,
+      // A background tab has no way to reach the user, so it must not be able to raise a prompt -
+      // the promise would never resolve and the subtask would hang.
+      //
+      // This override is the ONLY thing preventing that, so do not remove it on the grounds that
+      // subtasks run the read-only action set: READ_ONLY_ACTION_NAMES contains go_to_url,
+      // search_google and go_back, and none of those are in SILENT_ACTION_NAMES, so `manual` gates
+      // all three. It is written after the spread deliberately - `options.agentOptions` is the
+      // parent's live options object, which setApprovalMode mutates when the user changes mode
+      // mid-task.
+      approvalMode: 'auto',
     });
     if (options.usage) context.tokenUsage = options.usage;
 
