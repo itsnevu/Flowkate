@@ -155,9 +155,7 @@ Questions and ideas belong in [Discussions](https://github.com/itsnevu/Flowkite/
 
 ## Credits
 
-Flowkite is a fork of [Nanobrowser](https://github.com/nanobrowser/nanobrowser) by alexchenzl and contributors, licensed under Apache-2.0. The multi-agent architecture and browser automation layer come from that project; this fork adds the human-in-the-loop controls, on-device memory, grounding retries, hybrid model routing and parallel research described above.
-
-It also stands on:
+Flowkite stands on:
 
 - [Browser Use](https://github.com/browser-use/browser-use)
 - [Agent-E](https://github.com/EmergenceAI/Agent-E)

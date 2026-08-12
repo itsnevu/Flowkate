@@ -415,7 +415,7 @@ export const ProviderCard = ({
             </code>{' '}
             {t('options_models_providers_ollama_reminder')}
             <a
-              href="https://github.com/ollama/ollama/blob/main/docs/faq.md#how-can-i-allow-additional-web-origins-to-access-ollama"
+              href="https://docs.ollama.com/faq#how-can-i-allow-additional-web-origins-to-access-ollama"
               target="_blank"
               rel="noopener noreferrer"
               className="ml-1 font-medium text-ink underline decoration-ink-faint underline-offset-2 transition-colors duration-150 hover:decoration-ink">

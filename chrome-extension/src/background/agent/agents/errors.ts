@@ -4,7 +4,7 @@
 import { URLNotAllowedError } from '../../browser/views';
 
 export const LLM_FORBIDDEN_ERROR_MESSAGE =
-  'Access denied (403 Forbidden). Please check:\n\n1. Your API key has the required permissions\n\n2. For Ollama: Set OLLAMA_ORIGINS=chrome-extension://* \nsee https://github.com/ollama/ollama/blob/main/docs/faq.md';
+  'Access denied (403 Forbidden). Please check:\n\n1. Your API key has the required permissions\n\n2. For Ollama: Set OLLAMA_ORIGINS=chrome-extension://* \nsee https://docs.ollama.com/faq';
 
 export const EXTENSION_CONFLICT_ERROR_MESSAGE = `
   Cannot access a chrome-extension:// URL of different extension.
