@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { Actors } from '@extension/storage';
 import { ExecutionState } from '../types/event';
 import { PROGRESS_MESSAGE } from '../constants';
+import { playTaskChime } from '../chime';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import type { Message } from '@extension/storage';
 import type { ActionConfirmationPayload, AgentEvent, PlanReviewPayload, TokenUsagePayload } from '../types/event';
@@ -90,6 +91,11 @@ export const useTaskStateHandler = ({
               setInputEnabled(true);
               setShowStopButton(false);
               setIsReplaying(false);
+              // Not awaited: the chime is an ornament and must not delay rendering the result.
+              // Replays are silent - they are the user re-reading a task, not one finishing.
+              if (!isReplayingRef.current) {
+                void playTaskChime('ok');
+              }
               break;
             case ExecutionState.TASK_FAIL:
               setPendingPlan(null);
@@ -98,6 +104,9 @@ export const useTaskStateHandler = ({
               setInputEnabled(true);
               setShowStopButton(false);
               setIsReplaying(false);
+              if (!isReplayingRef.current) {
+                void playTaskChime('fail');
+              }
               skip = false;
               break;
             case ExecutionState.TASK_CANCEL:

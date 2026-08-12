@@ -128,6 +128,28 @@ export const GeneralSettings = () => {
 
         <Divider />
 
+        <SettingRow title={t('options_general_groupTaskTabs')} description={t('options_general_groupTaskTabs_desc')}>
+          <Toggle
+            id="groupTaskTabs"
+            label={t('options_general_groupTaskTabs')}
+            checked={settings.groupTaskTabs}
+            onChange={checked => updateSetting('groupTaskTabs', checked)}
+          />
+        </SettingRow>
+
+        <Divider />
+
+        <SettingRow title={t('options_general_soundOnComplete')} description={t('options_general_soundOnComplete_desc')}>
+          <Toggle
+            id="soundOnComplete"
+            label={t('options_general_soundOnComplete')}
+            checked={settings.soundOnComplete}
+            onChange={checked => updateSetting('soundOnComplete', checked)}
+          />
+        </SettingRow>
+
+        <Divider />
+
         <SettingRow
           title={t('options_general_planningInterval')}
           description={t('options_general_planningInterval_desc')}>

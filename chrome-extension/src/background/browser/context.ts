@@ -10,12 +10,15 @@ import {
 } from './views';
 import Page, { build_initial_state } from './page';
 import { isUrlAllowed } from './util';
+import TaskTabGroup, { type TabGroupStatus } from './tabGroup';
 
 const logger = createLogger('BrowserContext');
 export default class BrowserContext {
   private _config: BrowserContextConfig;
   private _currentTabId: number | null = null;
   private _attachedPages: Map<number, Page> = new Map();
+  /** Null outside a task, and whenever the user has turned tab grouping off. */
+  private _tabGroup: TaskTabGroup | null = null;
 
   constructor(config: Partial<BrowserContextConfig>) {
     this._config = { ...DEFAULT_BROWSER_CONTEXT_CONFIG, ...config };
@@ -32,6 +35,25 @@ export default class BrowserContext {
   public updateCurrentTabId(tabId: number): void {
     // only update tab id, but don't attach it.
     this._currentTabId = tabId;
+  }
+
+  /**
+   * Open a labelled tab group for a task. Tabs are only adopted as they are attached, so no group
+   * appears in the tab strip until the agent actually takes hold of a tab - a task that fails on
+   * its first model call leaves the browser exactly as it found it.
+   */
+  public startTaskGroup(label: string): void {
+    this._tabGroup = this._config.groupTabs ? new TaskTabGroup(label) : null;
+  }
+
+  /**
+   * Stamp the task's outcome on the group chip and let go of it. The group and its tabs stay in
+   * the browser: they hold whatever the user asked the agent to find.
+   */
+  public async finishTaskGroup(status: TabGroupStatus): Promise<void> {
+    const group = this._tabGroup;
+    this._tabGroup = null;
+    await group?.setStatus(status);
   }
 
   private async _getOrCreatePage(tab: chrome.tabs.Tab, forceUpdate = false): Promise<Page> {
@@ -75,6 +97,9 @@ export default class BrowserContext {
       logger.info('attachPage', page.tabId, 'attached');
       // add page to managed pages
       this._attachedPages.set(page.tabId, page);
+      // Disclose the tab as agent-driven. Awaited so the chip is in place before the agent acts on
+      // the page, but it can never fail the attach - TaskTabGroup swallows its own errors.
+      await this._tabGroup?.adopt(page.tabId);
       return true;
     }
     return false;
@@ -286,6 +311,7 @@ export default class BrowserContext {
   public async closeTab(tabId: number): Promise<void> {
     await this.detachPage(tabId);
     await chrome.tabs.remove(tabId);
+    this._tabGroup?.forget(tabId);
     // update current tab id if needed
     if (this._currentTabId === tabId) {
       this._currentTabId = null;
@@ -298,6 +324,7 @@ export default class BrowserContext {
    */
   public removeAttachedPage(tabId: number): void {
     this._attachedPages.delete(tabId);
+    this._tabGroup?.forget(tabId);
     // update current tab id if needed
     if (this._currentTabId === tabId) {
       this._currentTabId = null;

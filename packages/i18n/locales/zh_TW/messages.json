@@ -253,6 +253,18 @@
   "options_general_displayHighlights_desc": {
     "message": "在可互動的元素 (如按鈕、連結等) 上顯示視覺化醒目標示"
   },
+  "options_general_groupTaskTabs": {
+    "message": "將工作分頁分組"
+  },
+  "options_general_groupTaskTabs_desc": {
+    "message": "將工作操作的分頁收攏成一個具名的 Chrome 分頁群組，讓你一眼看出 Flowkite 正在使用哪些分頁"
+  },
+  "options_general_soundOnComplete": {
+    "message": "工作結束時發出音效"
+  },
+  "options_general_soundOnComplete_desc": {
+    "message": "工作完成或失敗時播放一段短提示音，讓你在執行期間可以去忙別的事"
+  },
   "options_general_planningInterval": {
     "message": "重新規劃頻率"
   },

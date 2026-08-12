@@ -80,6 +80,13 @@ export interface BrowserContextConfig {
    * @default true
    */
   displayHighlights: boolean;
+
+  /**
+   * Collect every tab the agent drives into one labelled Chrome tab group, so the user can tell
+   * which tabs are being automated. Purely a disclosure affordance - it never gates automation.
+   * @default true
+   */
+  groupTabs: boolean;
 }
 
 export const DEFAULT_BROWSER_CONTEXT_CONFIG: BrowserContextConfig = {
@@ -94,6 +101,7 @@ export const DEFAULT_BROWSER_CONTEXT_CONFIG: BrowserContextConfig = {
   includeDynamicAttributes: true,
   homePageUrl: 'about:blank',
   displayHighlights: true,
+  groupTabs: true,
 };
 
 export interface PageState extends DOMState {

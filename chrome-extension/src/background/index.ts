@@ -352,6 +352,7 @@ async function setupExecutor(taskId: string, task: string, browserContext: Brows
     minimumWaitPageLoadTime: generalSettings.minWaitPageLoad / 1000.0,
     waitBetweenActions: generalSettings.waitBetweenActions / 1000.0,
     displayHighlights: generalSettings.displayHighlights,
+    groupTabs: generalSettings.groupTaskTabs,
   });
 
   // Optional cheap model for routine steps. Absent config simply means no hybrid routing.

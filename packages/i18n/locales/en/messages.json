@@ -253,6 +253,18 @@
   "options_general_displayHighlights_desc": {
     "message": "Show visual highlights on interactive elements (e.g. buttons, links, etc.)"
   },
+  "options_general_groupTaskTabs": {
+    "message": "Group task tabs"
+  },
+  "options_general_groupTaskTabs_desc": {
+    "message": "Collect the tabs a task drives into one labelled Chrome tab group, so you can see which tabs Flowkite is using"
+  },
+  "options_general_soundOnComplete": {
+    "message": "Sound when a task ends"
+  },
+  "options_general_soundOnComplete_desc": {
+    "message": "Play a short chime when a task finishes or fails, so you can look away while it runs"
+  },
   "options_general_planningInterval": {
     "message": "Replanning Frequency"
   },

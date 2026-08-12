@@ -23,6 +23,10 @@ export interface GeneralSettingsConfig {
   requirePlanApproval: boolean;
   /** Ask for explicit confirmation before actions that spend money, delete data or submit forms. */
   confirmSensitiveActions: boolean;
+  /** Collect the tabs a task drives into one labelled Chrome tab group, so automated tabs are obvious. */
+  groupTaskTabs: boolean;
+  /** Play a short chime when a task reaches a final state. */
+  soundOnComplete: boolean;
 }
 
 export type GeneralSettingsStorage = BaseStorage<GeneralSettingsConfig> & {
@@ -47,6 +51,8 @@ export const DEFAULT_GENERAL_SETTINGS: GeneralSettingsConfig = {
   replayHistoricalTasks: false,
   requirePlanApproval: true,
   confirmSensitiveActions: true,
+  groupTaskTabs: true,
+  soundOnComplete: true,
 };
 
 const storage = createStorage<GeneralSettingsConfig>('general-settings', DEFAULT_GENERAL_SETTINGS, {

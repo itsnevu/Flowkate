@@ -253,6 +253,18 @@
   "options_general_displayHighlights_desc": {
     "message": "Mostrar destaques visuais em elementos interativos (ex: botões, links, etc.)"
   },
+  "options_general_groupTaskTabs": {
+    "message": "Agrupar abas da tarefa"
+  },
+  "options_general_groupTaskTabs_desc": {
+    "message": "Reúne as abas que a tarefa controla em um grupo de abas do Chrome com rótulo, para você ver quais abas o Flowkite está usando"
+  },
+  "options_general_soundOnComplete": {
+    "message": "Som ao terminar a tarefa"
+  },
+  "options_general_soundOnComplete_desc": {
+    "message": "Toca um sinal curto quando a tarefa termina ou falha, para você poder desviar o olhar enquanto ela roda"
+  },
   "options_general_planningInterval": {
     "message": "Frequência de Replanejamento"
   },

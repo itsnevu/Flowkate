@@ -3,6 +3,7 @@ import { createLogger } from '@src/background/log';
 import { chatHistoryStore } from '@extension/storage/lib/chat';
 import { memoryStore } from '@extension/storage';
 import { URLNotAllowedError } from '../browser/views';
+import { TabGroupStatus } from '../browser/tabGroup';
 import { analytics } from '../services/analytics';
 import { type ActionResult, AgentContext, type AgentOptions, type AgentOutput, DEFAULT_AGENT_OPTIONS } from './types';
 import { NavigatorAgent, NavigatorActionRegistry } from './agents/navigator';
@@ -166,8 +167,13 @@ export class Executor {
     context.nSteps = 0;
     const allowedMaxSteps = this.context.options.maxSteps;
 
+    let tabGroupStatus = TabGroupStatus.Paused;
+
     try {
       this.context.emitEvent(Actors.SYSTEM, ExecutionState.TASK_START, this.context.taskId);
+      // Label the group with the task the user typed, not the generated task id, which means
+      // nothing to them. Follow-up tasks re-label the group they are continuing.
+      this.context.browserContext.startTaskGroup(this.tasks[this.tasks.length - 1]);
 
       await this.injectMemories();
 
@@ -225,12 +231,14 @@ export class Executor {
         // Emit final answer if available, otherwise use task ID
         const finalMessage = this.context.finalAnswer || this.context.taskId;
         this.context.emitEvent(Actors.SYSTEM, ExecutionState.TASK_OK, finalMessage);
+        tabGroupStatus = TabGroupStatus.Done;
 
         // Track task completion
         void analytics.trackTaskComplete(this.context.taskId);
       } else if (step >= allowedMaxSteps) {
         logger.error('❌ Task failed: Max steps reached');
         this.context.emitEvent(Actors.SYSTEM, ExecutionState.TASK_FAIL, t('exec_errors_maxStepsReached'));
+        tabGroupStatus = TabGroupStatus.Failed;
 
         // Track task failure with specific error category
         const maxStepsError = new MaxStepsReachedError(t('exec_errors_maxStepsReached'));
@@ -238,20 +246,24 @@ export class Executor {
         void analytics.trackTaskFailed(this.context.taskId, errorCategory);
       } else if (this.context.stopped) {
         this.context.emitEvent(Actors.SYSTEM, ExecutionState.TASK_CANCEL, t('exec_task_cancel'));
+        tabGroupStatus = TabGroupStatus.Cancelled;
 
         // Track task cancellation
         void analytics.trackTaskCancelled(this.context.taskId);
       } else {
         this.context.emitEvent(Actors.SYSTEM, ExecutionState.TASK_PAUSE, t('exec_task_pause'));
+        tabGroupStatus = TabGroupStatus.Paused;
         // Note: We don't track pause as it's not a final state
       }
     } catch (error) {
       if (error instanceof RequestCancelledError) {
         this.context.emitEvent(Actors.SYSTEM, ExecutionState.TASK_CANCEL, t('exec_task_cancel'));
+        tabGroupStatus = TabGroupStatus.Cancelled;
 
         // Track task cancellation
         void analytics.trackTaskCancelled(this.context.taskId);
       } else {
+        tabGroupStatus = TabGroupStatus.Failed;
         const errorMessage = error instanceof Error ? error.message : String(error);
         this.context.emitEvent(Actors.SYSTEM, ExecutionState.TASK_FAIL, t('exec_task_fail', [errorMessage]));
 
@@ -260,6 +272,10 @@ export class Executor {
         void analytics.trackTaskFailed(this.context.taskId, errorCategory);
       }
     } finally {
+      // Stamp the outcome on the tab-group chip whichever way execute() ended, including the throw
+      // paths above, so a group is never left reading "in progress" after the run is over.
+      await this.context.browserContext.finishTaskGroup(tabGroupStatus);
+
       if (import.meta.env.DEV) {
         logger.debug('Executor history', JSON.stringify(this.context.history, null, 2));
       }

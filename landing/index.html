@@ -15,9 +15,10 @@
     <link rel="apple-touch-icon" href="/mark.png" />
 
     <!--
-      Card image and canonical URL both point at the GitHub repository, because absolute URLs are the only kind
-      crawlers will fetch and there is no deployed site yet. Once the landing page has a real domain, move og:url
-      and both image tags to it and serve a purpose-built 1200×630 card from there.
+      Card image and canonical URL point at the deployed site. The card is a purpose-built 1200×630 PNG served
+      from this origin rather than the bare kite mark: that file is transparent, so every dark-mode client drew a
+      black kite on a black card. og-card.png is flattened onto the --canvas ground and carries no alpha channel.
+      Crawlers only fetch absolute URLs, so these must stay absolute and must track the production domain.
     -->
 
     <!-- Open Graph -->
@@ -27,11 +28,12 @@
     <meta
       property="og:description"
       content="An open-source Chrome extension running a Planner / Navigator agent system locally in your browser. Plan preview, undo, and your own API keys." />
-    <meta property="og:image" content="https://raw.githubusercontent.com/itsnevu/Flowkite/main/assets/mark-512.png" />
-    <meta property="og:image:width" content="512" />
-    <meta property="og:image:height" content="512" />
-    <meta property="og:image:alt" content="The Flowkite kite mark" />
-    <meta property="og:url" content="https://github.com/itsnevu/Flowkite" />
+    <meta property="og:image" content="https://flowkate.vercel.app/og-card.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:alt" content="The Flowkite kite mark on a light ground, above the wordmark Flowkite" />
+    <meta property="og:url" content="https://flowkate.vercel.app/" />
 
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
@@ -40,7 +42,8 @@
     <meta
       name="twitter:description"
       content="An open-source Chrome extension running a Planner / Navigator agent system locally in your browser. Plan preview, undo, and your own API keys." />
-    <meta name="twitter:image" content="https://raw.githubusercontent.com/itsnevu/Flowkite/main/assets/mark-512.png" />
+    <meta name="twitter:image" content="https://flowkate.vercel.app/og-card.png" />
+    <meta name="twitter:image:alt" content="The Flowkite kite mark on a light ground, above the wordmark Flowkite" />
 
     <link rel="stylesheet" href="/src/style.css" />
   </head>
@@ -509,8 +512,8 @@ pnpm build          <span class="c"># output lands in dist/</span></code></pre>
             <div>
               <p class="footer__name">Flowkite</p>
               <p class="footer__meta">
-                Open source under the Apache&nbsp;2.0 licence. A fork of Nanobrowser, with the human-in-the-loop
-                controls added.
+                Open source under the Apache&nbsp;2.0 licence. Human-in-the-loop control, running on your own API
+                keys.
               </p>
             </div>
           </div>

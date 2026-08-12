@@ -27,6 +27,20 @@ function withSidePanel(manifest) {
 }
 
 /**
+ * Grants the tabGroups permission, which backs the labelled group the agent collects its tabs
+ * into. Firefox implements neither `tabs.group` nor the `tabGroups` namespace and rejects the
+ * permission outright at install time, so it is added the same conditional way as sidePanel.
+ */
+function withTabGroups(manifest) {
+  if (isFirefox) {
+    return manifest;
+  }
+  return deepmerge(manifest, {
+    permissions: ['tabGroups'],
+  });
+}
+
+/**
  * Adds Opera sidebar support using the sidebar_action API.
  * This is compatible with Chrome extensions and won't break Chrome Web Store validation.
  */
@@ -50,59 +64,61 @@ function withOperaSidebar(manifest) {
  * @type {chrome.runtime.ManifestV3}
  */
 const manifest = withOperaSidebar(
-  withSidePanel({
-    manifest_version: 3,
-    default_locale: 'en',
-    /**
-     * if you want to support multiple languages, you can use the following reference
-     * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Internationalization
-     */
-    name: '__MSG_app_metadata_name__',
-    version: packageJson.version,
-    description: '__MSG_app_metadata_description__',
-    host_permissions: ['<all_urls>'],
-    permissions: ['storage', 'scripting', 'tabs', 'activeTab', 'debugger', 'unlimitedStorage', 'webNavigation'],
-    options_page: 'options/index.html',
-    background: {
-      service_worker: 'background.iife.js',
-      type: 'module',
-    },
-    action: {
-      default_icon: {
+  withTabGroups(
+    withSidePanel({
+      manifest_version: 3,
+      default_locale: 'en',
+      /**
+       * if you want to support multiple languages, you can use the following reference
+       * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Internationalization
+       */
+      name: '__MSG_app_metadata_name__',
+      version: packageJson.version,
+      description: '__MSG_app_metadata_description__',
+      host_permissions: ['<all_urls>'],
+      permissions: ['storage', 'scripting', 'tabs', 'activeTab', 'debugger', 'unlimitedStorage', 'webNavigation'],
+      options_page: 'options/index.html',
+      background: {
+        service_worker: 'background.iife.js',
+        type: 'module',
+      },
+      action: {
+        default_icon: {
+          16: 'icon-16.png',
+          32: 'icon-32.png',
+          48: 'icon-48.png',
+          128: 'icon-128.png',
+        },
+      },
+      icons: {
         16: 'icon-16.png',
         32: 'icon-32.png',
         48: 'icon-48.png',
         128: 'icon-128.png',
       },
-    },
-    icons: {
-      16: 'icon-16.png',
-      32: 'icon-32.png',
-      48: 'icon-48.png',
-      128: 'icon-128.png',
-    },
-    content_scripts: [
-      {
-        matches: ['http://*/*', 'https://*/*', '<all_urls>'],
-        all_frames: true,
-        js: ['content/index.iife.js'],
-      },
-    ],
-    web_accessible_resources: [
-      {
-        resources: [
-          '*.js',
-          '*.css',
-          '*.svg',
-          'icon-128.png',
-          'icon-32.png',
-          'permission/index.html',
-          'permission/permission.js',
-        ],
-        matches: ['*://*/*'],
-      },
-    ],
-  }),
+      content_scripts: [
+        {
+          matches: ['http://*/*', 'https://*/*', '<all_urls>'],
+          all_frames: true,
+          js: ['content/index.iife.js'],
+        },
+      ],
+      web_accessible_resources: [
+        {
+          resources: [
+            '*.js',
+            '*.css',
+            '*.svg',
+            'icon-128.png',
+            'icon-32.png',
+            'permission/index.html',
+            'permission/permission.js',
+          ],
+          matches: ['*://*/*'],
+        },
+      ],
+    }),
+  ),
 );
 
 export default manifest;
