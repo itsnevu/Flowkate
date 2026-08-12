@@ -37,3 +37,9 @@ The build is fully static and `vite.config.ts` sets `base: './'`, so it works fr
 root or any subpath. Point a static host (Netlify, Vercel, Cloudflare Pages, GitHub Pages,
 plain nginx) at `landing/dist`, with `landing` as the base directory and
 `pnpm install && pnpm build` as the build command. There is nothing server-side to run.
+
+On Vercel, set the project's Root Directory to `landing`. Vercel still sees the `turbo.json`
+at the repository root and would otherwise default the build command to `turbo run build`,
+which fails here — `landing/` is its own workspace root with no `turbo.json` and no
+`packageManager` field. `landing/vercel.json` pins the install, build and output settings so
+that detection never applies.
