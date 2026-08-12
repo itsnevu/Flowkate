@@ -149,7 +149,7 @@ export const ModelSettings = () => {
     const loadProviders = async () => {
       try {
         const allProviders = await llmProviderStore.getAllProviders();
-        console.log('allProviders', allProviders);
+        // Never log allProviders: every entry carries an apiKey in plain text.
 
         // Track which providers are from storage
         const fromStorage = new Set(Object.keys(allProviders));
@@ -614,8 +614,6 @@ export const ModelSettings = () => {
     // modelValue will be in format "provider>model"
     const [provider, model] = modelValue.split('>');
 
-    console.log(`[handleModelChange] Setting ${agentName} model: provider=${provider}, model=${model}`);
-
     // Set parameters based on provider type
     const newParameters = getDefaultAgentModelParams(provider, agentName);
 
@@ -632,13 +630,6 @@ export const ModelSettings = () => {
 
     try {
       if (model) {
-        const providerConfig = providers[provider];
-
-        // For Azure, verify the model is in the deployment names list
-        if (providerConfig && providerConfig.type === ProviderTypeEnum.AzureOpenAI) {
-          console.log(`[handleModelChange] Azure model selected: ${model}`);
-        }
-
         // Reset reasoning effort if switching models
         if (isOpenAIReasoningModel(modelValue)) {
           // Set default reasoning effort based on agent type
@@ -1240,10 +1231,7 @@ export const ModelSettings = () => {
                           type="text"
                           placeholder={t('options_models_providers_custom_name_placeholder')}
                           value={providerConfig.name || ''}
-                          onChange={e => {
-                            console.log('Name input changed:', e.target.value);
-                            handleNameChange(providerId, e.target.value);
-                          }}
+                          onChange={e => handleNameChange(providerId, e.target.value)}
                           className={FIELD_WELL}
                         />
                         {nameErrors[providerId] ? (

@@ -276,7 +276,7 @@ export const llmProviderStore: LLMProviderStorage = {
           }),
     };
 
-    console.log(`[llmProviderStore.setProvider] Saving config for ${providerId}:`, JSON.stringify(completeConfig));
+    // Never log completeConfig: it carries the provider's apiKey in plain text.
 
     const current = (await storage.get()) || { providers: {} };
     await storage.set({

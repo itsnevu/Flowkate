@@ -31,7 +31,8 @@ declare global {
 
 const X_URL = 'https://x.com/flowkite';
 // TODO: point this at the landing site once it is deployed.
-const QUICK_START_URL = 'https://github.com/itsnevu/Flowkite?tab=readme-ov-file#-quick-start';
+// Anchor must track the README heading: it is "## Install", so the fragment is #install.
+const QUICK_START_URL = 'https://github.com/itsnevu/Flowkite?tab=readme-ov-file#install';
 
 /** Icon button recipe: a small pale key extruded from the canvas. */
 const iconButtonClass =
@@ -144,8 +145,6 @@ const SidePanel = () => {
 
     // Use provided sessionId if available, otherwise fall back to sessionIdRef.current
     const effectiveSessionId = sessionId !== undefined ? sessionId : sessionIdRef.current;
-
-    console.log('sessionId', effectiveSessionId);
 
     // Save message to storage if we have a session and it's not a progress message
     if (effectiveSessionId && !isProgressMessage) {
@@ -379,14 +378,14 @@ const SidePanel = () => {
             timestamp: Date.now(),
           });
           setIsProcessingSpeech(false);
-        } else if (message && message.type === 'heartbeat_ack') {
-          console.log('Heartbeat acknowledged');
         }
       });
 
       portRef.current.onDisconnect.addListener(() => {
         const error = chrome.runtime.lastError;
-        console.log('Connection disconnected', error ? `Error: ${error.message}` : '');
+        if (error) {
+          console.warn('Connection to the background worker dropped:', error.message);
+        }
         portRef.current = null;
         if (heartbeatIntervalRef.current) {
           clearInterval(heartbeatIntervalRef.current);
@@ -481,7 +480,6 @@ const SidePanel = () => {
 
       // Create a new chat session for this replay task
       const newSession = await chatHistoryStore.createSession(`Replay of ${historySessionId.substring(0, 20)}...`);
-      console.log('newSession for replay', newSession);
 
       // Store the new session ID in both state and ref
       const newTaskId = newSession.id;
@@ -596,8 +594,6 @@ const SidePanel = () => {
   };
 
   const handleSendMessage = async (text: string, displayText?: string) => {
-    console.log('handleSendMessage', text);
-
     // Trim the input text first
     const trimmedText = text.trim();
 
@@ -612,7 +608,6 @@ const SidePanel = () => {
 
     // Block sending messages in historical sessions
     if (isHistoricalSession) {
-      console.log('Cannot send messages in historical sessions');
       return;
     }
 
@@ -633,7 +628,6 @@ const SidePanel = () => {
         const newSession = await chatHistoryStore.createSession(
           titleText.substring(0, 50) + (titleText.length > 50 ? '...' : ''),
         );
-        console.log('newSession', newSession);
 
         // Store the session ID in both state and ref
         const sessionId = newSession.id;
@@ -664,7 +658,6 @@ const SidePanel = () => {
           taskId: sessionIdRef.current,
           tabId,
         });
-        console.log('follow_up_task sent', text, tabId, sessionIdRef.current);
       } else {
         // Send as new task
         await sendMessage({
@@ -673,7 +666,6 @@ const SidePanel = () => {
           taskId: sessionIdRef.current,
           tabId,
         });
-        console.log('new_task sent', text, tabId, sessionIdRef.current);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -807,7 +799,6 @@ const SidePanel = () => {
         setMessages(fullSession.messages);
         setIsFollowUpMode(false);
         setIsHistoricalSession(true); // Mark this as a historical session
-        console.log('history session selected', sessionId);
       }
       setShowHistory(false);
     } catch (error) {

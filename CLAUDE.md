@@ -34,6 +34,7 @@ Flowkite is an open-source AI web automation Chrome extension that runs multi-ag
 - Prefer workspace-scoped commands over root-wide runs when possible.
 
 Targeted examples (fast path):
+
 - `pnpm -F pages/side-panel build` — build only the side panel
 - `pnpm -F chrome-extension dev` — dev-watch background/service worker
 - `pnpm -F packages/storage type-check` — TS checks for storage package
@@ -118,14 +119,16 @@ Agent logic is under `chrome-extension/src/background/agent/`.
 - Content scripts inject into web pages for DOM access
 - Multi-agent coordination happens through Chrome messaging APIs
 - Distribution zips are written to `dist-zip/`
-- Build flags: set `__DEV__=true` for watch builds; 
+- Build flags: set `__DEV__=true` for watch builds;
 - Do not edit generated outputs: `dist/**`, `build/**`, `packages/i18n/lib/**`
 
 ## Unit Tests
 
 - Framework: Vitest
-- Location/naming: `chrome-extension/src/**/__tests__` with `*.test.ts`
-- Run: `pnpm -F chrome-extension test`
+- Location/naming: `__tests__` directories with `*.test.ts`, in
+  `chrome-extension/src/**` (48 tests) and `packages/storage/**` (15 tests)
+- Run everything: `pnpm test` — 63 tests across both workspaces
+- Run one workspace: `pnpm -F chrome-extension test`
 - Targeted example: `pnpm -F chrome-extension test -- -t "Sanitizer"`
 - Prefer fast, deterministic tests; mock network/browser APIs
 
@@ -180,10 +183,10 @@ Follow the structured naming pattern: `component_category_specificAction_state`
 import { t } from '@extension/i18n';
 
 // Simple message
-t('bg_errors_noTabId')
+t('bg_errors_noTabId');
 
 // With placeholders
-t('act_click_ok', ['5', 'Submit Button'])
+t('act_click_ok', ['5', 'Submit Button']);
 ```
 
 ### Placeholders
@@ -263,33 +266,34 @@ Use Chrome i18n placeholder format with proper definitions:
 - **XSS Prevention**: Sanitize content before rendering, especially when injecting into web pages
 - **URL Validation**: Validate and restrict navigation to prevent malicious redirects
 - **Error Handling**: Avoid exposing sensitive information in error messages or logs
- - **Secrets/Config**: Use `.env.local` (git‑ignored) and prefix variables with `VITE_`.
-   Example: `VITE_POSTHOG_API_KEY`. Vite in `chrome-extension/vite.config.mts` loads
-   `VITE_*` from the parent directory.
+- **Secrets/Config**: Use `.env.local` (git‑ignored) and prefix variables with `VITE_`.
+  Example: `VITE_POSTHOG_API_KEY`. Vite in `chrome-extension/vite.config.mts` loads
+  `VITE_*` from the parent directory.
 
 ## Important Reminders
 
 - Always use `pnpm` package manager (required for this project)
-- Node.js version: follow `.nvmrc` and `package.json` engines
+- Node.js version: follow `.nvmrc` (22.12.0) and `package.json` engines (>=22.12.0)
 - Use `nvm use` to match `.nvmrc` before installing
-- `engine-strict=true` is enabled in `.npmrc`; non-matching engines fail install
+- There is no `.npmrc`, so a mismatched Node version only warns on install rather
+  than failing it. Match `.nvmrc` yourself; CI pins the version via `.nvmrc`
 - Turbo manages task dependencies and caching across workspaces
 - Extension builds to `dist/` directory which is loaded as unpacked extension
 - Zipped distributions are written to `dist-zip/`
-- Only supports Chrome/Edge 
+- Only supports Chrome/Edge
 - Keep diffs minimal and scoped; avoid mass refactors or reformatting unrelated files
 - Do not modify generated artifacts (`dist/**`, `build/**`, `packages/i18n/lib/**`)
   or workspace/global configs (`turbo.json`, `pnpm-workspace.yaml`, `tsconfig*`)
   without approval
- - Prefer workspace-scoped checks:
-   `pnpm -F <workspace> type-check`, `pnpm -F <workspace> lint`,
-   `pnpm -F <workspace> prettier -- <changed-file>`, and build if applicable
+- Prefer workspace-scoped checks:
+  `pnpm -F <workspace> type-check`, `pnpm -F <workspace> lint`,
+  `pnpm -F <workspace> prettier -- <changed-file>`, and build if applicable
 - Vite aliases: pages use `@src` for page `src/`; the extension uses
   `@root`, `@src`, `@assets` (see `chrome-extension/vite.config.mts`). Use
   `packages/vite-config`’s `withPageConfig` for page workspaces.
- - Only use scripts defined in `package.json`; do not invent new commands
- - Change policy: ask first for new deps, file renames/moves/deletes, or
-   global/workspace config changes; allowed without asking: read/list files,
-   workspace‑scoped lint/format/type-check/build, and small focused patches
- - Reuse existing building blocks: `packages/ui` components and
-   `packages/tailwind-config` tokens instead of re-implementing
+- Only use scripts defined in `package.json`; do not invent new commands
+- Change policy: ask first for new deps, file renames/moves/deletes, or
+  global/workspace config changes; allowed without asking: read/list files,
+  workspace‑scoped lint/format/type-check/build, and small focused patches
+- Reuse existing building blocks: `packages/ui` components and
+  `packages/tailwind-config` tokens instead of re-implementing
