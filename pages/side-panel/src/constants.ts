@@ -1,6 +1,7 @@
 /** Values shared by the panel shell and the pieces it renders. */
 
-export const X_URL = 'https://x.com/flowkite';
+// @Flowkiteai, confirmed by the owner - x.com/flowkite belongs to an unrelated account.
+export const X_URL = 'https://x.com/Flowkiteai';
 
 // The landing site, now that it is deployed. Anchor must track the section id in
 // landing/index.html, which is `id="quickstart"` - renaming that section breaks this link
