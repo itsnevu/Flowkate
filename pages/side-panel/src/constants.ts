@@ -2,9 +2,10 @@
 
 export const X_URL = 'https://x.com/flowkite';
 
-// TODO: point this at the landing site once it is deployed.
-// Anchor must track the README heading: it is "## Install", so the fragment is #install.
-export const QUICK_START_URL = 'https://github.com/itsnevu/Flowkite?tab=readme-ov-file#install';
+// The landing site, now that it is deployed. Anchor must track the section id in
+// landing/index.html, which is `id="quickstart"` - renaming that section breaks this link
+// silently, because a missing fragment just lands the reader at the top of the page.
+export const QUICK_START_URL = 'https://flowkate.vercel.app/#quickstart';
 
 /**
  * Sentinel content for the transient "working on it" row. It is matched by value in two

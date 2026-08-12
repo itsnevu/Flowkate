@@ -59,8 +59,11 @@ describe('outbound links', () => {
     }
   });
 
-  // The anchor tracks a README heading; GitHub derives `#install` from `## Install`.
-  it('points the quick start at the README install section', () => {
-    expect(new URL(QUICK_START_URL).hash).toBe('#install');
+  // The anchor tracks `id="quickstart"` in landing/index.html. A fragment that no longer matches
+  // any element does not error - it just drops the reader at the top of the page - so pin it here.
+  it('points the quick start at the landing site quickstart section', () => {
+    const url = new URL(QUICK_START_URL);
+    expect(url.host).toBe('flowkate.vercel.app');
+    expect(url.hash).toBe('#quickstart');
   });
 });
