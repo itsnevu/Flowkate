@@ -7,10 +7,7 @@ import {
   type ProtocolType,
   type KeyInput,
 } from 'puppeteer-core/lib/esm/puppeteer/puppeteer-core-browser.js';
-import type { Browser } from 'puppeteer-core/lib/esm/puppeteer/api/Browser.js';
-import type { Page as PuppeteerPage } from 'puppeteer-core/lib/esm/puppeteer/api/Page.js';
-import type { ElementHandle } from 'puppeteer-core/lib/esm/puppeteer/api/ElementHandle.js';
-import type { Frame } from 'puppeteer-core/lib/esm/puppeteer/api/Frame.js';
+import { createLogger } from '@src/background/log';
 import {
   getClickableElements as _getClickableElements,
   removeHighlights as _removeHighlights,
@@ -18,9 +15,12 @@ import {
 } from './dom/service';
 import { DOMElementNode, type DOMState } from './dom/views';
 import { type BrowserContextConfig, DEFAULT_BROWSER_CONTEXT_CONFIG, type PageState, URLNotAllowedError } from './views';
-import { createLogger } from '@src/background/log';
 import { ClickableElementProcessor } from './dom/clickable/service';
 import { isUrlAllowed } from './util';
+import type { Browser } from 'puppeteer-core/lib/esm/puppeteer/api/Browser.js';
+import type { Page as PuppeteerPage } from 'puppeteer-core/lib/esm/puppeteer/api/Page.js';
+import type { ElementHandle } from 'puppeteer-core/lib/esm/puppeteer/api/ElementHandle.js';
+import type { Frame } from 'puppeteer-core/lib/esm/puppeteer/api/Frame.js';
 
 const logger = createLogger('Page');
 

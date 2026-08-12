@@ -4,7 +4,7 @@ This file provides guidance to AI coding assistants (e.g., Claude Code, GitHub C
 
 ## Project Overview
 
-Flowkate is an open-source AI web automation Chrome extension that runs multi-agent systems locally in the browser. It's a free alternative to OpenAI Operator with support for multiple LLM providers (OpenAI, Anthropic, Gemini, Ollama, etc.).
+Flowkite is an open-source AI web automation Chrome extension that runs multi-agent systems locally in the browser. It's a free alternative to OpenAI Operator with support for multiple LLM providers (OpenAI, Anthropic, Gemini, Ollama, etc.).
 
 ## Development Commands
 
@@ -59,7 +59,7 @@ This is a **monorepo** using **Turbo** for build orchestration and **pnpm worksp
 
 - `chrome-extension/` - Main Chrome extension manifest and background scripts
   - `src/background/` - Background service worker with multi-agent system
-  - `src/background/agent/` - AI agent implementations (Navigator, Planner, Validator)
+  - `src/background/agent/` - AI agent implementations (Navigator, Planner)
   - `src/background/browser/` - Browser automation and DOM manipulation
 
 **UI Pages** (`pages/`):
@@ -80,11 +80,15 @@ This is a **monorepo** using **Turbo** for build orchestration and **pnpm worksp
 
 ### Multi-Agent System
 
-The core AI system consists of three specialized agents:
+The core AI system consists of two specialized agents:
 
+- **Planner** - High-level task planning and strategy; produces the plan the user
+  approves before execution
 - **Navigator** - Handles DOM interactions and web navigation
-- **Planner** - High-level task planning and strategy
-- **Validator** - Validates task completion and results
+
+`AgentNameEnum` also carries a **Fast** entry. It is not a third agent: it is an
+optional cheaper model the Navigator routes routine steps to, falling back to the
+Navigator's own model when unconfigured.
 
 Agent logic is under `chrome-extension/src/background/agent/`.
 

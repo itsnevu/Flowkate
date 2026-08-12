@@ -1,6 +1,6 @@
-# Contributing to Flowkate
+# Contributing to Flowkite
 
-We deeply appreciate your interest in contributing to Flowkate! Every contribution helps make Flowkate more powerful and accessible for everyone.
+We deeply appreciate your interest in contributing to Flowkite! Every contribution helps make Flowkite more powerful and accessible for everyone.
 
 ## Quick Start
 

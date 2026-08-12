@@ -17,7 +17,7 @@ const defaultFavoritePrompts = [
   {
     title: '🌟 Star us on GitHub!',
     content:
-      "Open the Flowkate repository at https://github.com/itsnevu/Flowkate and check if you've already starred it. If not, please support us by giving us a star!",
+      "Open the Flowkite repository at https://github.com/itsnevu/Flowkite and check if you've already starred it. If not, please support us by giving us a star!",
   },
 ];
 

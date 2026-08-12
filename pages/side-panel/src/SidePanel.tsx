@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { RxDiscordLogo } from 'react-icons/rx';
+import { FaXTwitter } from 'react-icons/fa6';
 import { FiSettings } from 'react-icons/fi';
 import { PiPlusBold } from 'react-icons/pi';
 import { GrHistory } from 'react-icons/gr';
@@ -29,6 +29,17 @@ declare global {
   }
 }
 
+const X_URL = 'https://x.com/flowkite';
+// TODO: point this at the landing site once it is deployed.
+const QUICK_START_URL = 'https://github.com/itsnevu/Flowkite?tab=readme-ov-file#-quick-start';
+
+/** Icon button recipe: a small pale key extruded from the canvas. */
+const iconButtonClass =
+  'grid size-9 shrink-0 place-items-center rounded-soft bg-canvas-raised text-ink-soft shadow-neu-sm transition-all duration-150 ease-press hover:text-ink active:shadow-neu-inset-sm';
+
+/** Quiet footer link on the pale ground. */
+const quietLinkClass = 'text-ink-faint underline-offset-4 transition-colors hover:text-ink hover:underline';
+
 const SidePanel = () => {
   const progressMessage = 'Showing progress...';
   const [messages, setMessages] = useState<Message[]>([]);
@@ -39,7 +50,6 @@ const SidePanel = () => {
   const [chatSessions, setChatSessions] = useState<Array<{ id: string; title: string; createdAt: number }>>([]);
   const [isFollowUpMode, setIsFollowUpMode] = useState(false);
   const [isHistoricalSession, setIsHistoricalSession] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [favoritePrompts, setFavoritePrompts] = useState<FavoritePrompt[]>([]);
   const [hasConfiguredModels, setHasConfiguredModels] = useState<boolean | null>(null); // null = loading, false = no models, true = has models
   const [isRecording, setIsRecording] = useState(false);
@@ -58,19 +68,6 @@ const SidePanel = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<number | null>(null);
-
-  // Check for dark mode preference
-  useEffect(() => {
-    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDarkMode(darkModeMediaQuery.matches);
-
-    const handleChange = (e: MediaQueryListEvent) => {
-      setIsDarkMode(e.matches);
-    };
-
-    darkModeMediaQuery.addEventListener('change', handleChange);
-    return () => darkModeMediaQuery.removeEventListener('change', handleChange);
-  }, []);
 
   // Check if models are configured
   const checkModelConfiguration = useCallback(async () => {
@@ -1103,201 +1100,124 @@ const SidePanel = () => {
   };
 
   return (
-    <div>
-      <div
-        className={`flex h-screen flex-col ${isDarkMode ? 'bg-slate-900' : "bg-[url('/bg.jpg')] bg-cover bg-no-repeat"} overflow-hidden border ${isDarkMode ? 'border-sky-800' : 'border-[rgb(186,230,253)]'} rounded-2xl`}>
-        <header className="header relative">
-          <div className="header-logo">
-            {showHistory ? (
-              <button
-                type="button"
-                onClick={() => handleBackToChat(false)}
-                className={`${isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-400 hover:text-sky-500'} cursor-pointer`}
-                aria-label={t('nav_back_a11y')}>
-                {t('nav_back')}
-              </button>
-            ) : (
-              <img src="/icon-128.png" alt="Extension Logo" className="size-6" />
-            )}
-          </div>
-          <div className="header-icons">
-            {!showHistory && (
-              <>
-                <button
-                  type="button"
-                  onClick={handleNewChat}
-                  onKeyDown={e => e.key === 'Enter' && handleNewChat()}
-                  className={`header-icon ${isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-400 hover:text-sky-500'} cursor-pointer`}
-                  aria-label={t('nav_newChat_a11y')}
-                  tabIndex={0}>
-                  <PiPlusBold size={20} />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleLoadHistory}
-                  onKeyDown={e => e.key === 'Enter' && handleLoadHistory()}
-                  className={`header-icon ${isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-400 hover:text-sky-500'} cursor-pointer`}
-                  aria-label={t('nav_loadHistory_a11y')}
-                  tabIndex={0}>
-                  <GrHistory size={20} />
-                </button>
-              </>
-            )}
-            <a
-              href="https://discord.gg/NN3ABHggMK"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`header-icon ${isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-400 hover:text-sky-500'}`}>
-              <RxDiscordLogo size={20} />
-            </a>
+    <div className="flex h-screen flex-col overflow-hidden bg-canvas">
+      {/* Header: a raised bar floating on the canvas, lit from the top-left. */}
+      <header className="relative z-10 m-2 flex shrink-0 items-center justify-between gap-2 rounded-slab bg-canvas-raised px-2.5 py-2 shadow-neu">
+        <div className="flex min-w-0 items-center gap-2">
+          {showHistory ? (
             <button
               type="button"
-              onClick={() => chrome.runtime.openOptionsPage()}
-              onKeyDown={e => e.key === 'Enter' && chrome.runtime.openOptionsPage()}
-              className={`header-icon ${isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-400 hover:text-sky-500'} cursor-pointer`}
-              aria-label={t('nav_settings_a11y')}
-              tabIndex={0}>
-              <FiSettings size={20} />
+              onClick={() => handleBackToChat(false)}
+              className="rounded-soft bg-canvas-raised px-3 py-1.5 text-sm font-medium text-ink shadow-neu-sm transition-all duration-150 ease-press hover:shadow-neu active:shadow-neu-inset-sm"
+              aria-label={t('nav_back_a11y')}>
+              {t('nav_back')}
             </button>
-          </div>
-        </header>
-        {showHistory ? (
-          <div className="flex-1 overflow-hidden">
-            <ChatHistoryList
-              sessions={chatSessions}
-              onSessionSelect={handleSessionSelect}
-              onSessionDelete={handleSessionDelete}
-              onSessionBookmark={handleSessionBookmark}
-              visible={true}
-              isDarkMode={isDarkMode}
-            />
-          </div>
-        ) : (
-          <>
-            {/* Show loading state while checking model configuration */}
-            {hasConfiguredModels === null && (
-              <div
-                className={`flex flex-1 items-center justify-center p-8 ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>
-                <div className="text-center">
-                  <div className="mx-auto mb-4 size-8 animate-spin rounded-full border-2 border-sky-400 border-t-transparent"></div>
-                  <p>{t('status_checkingConfig')}</p>
+          ) : (
+            <>
+              <img src="mark.png" alt="" className="size-6 shrink-0" />
+              <span className="truncate text-sm font-semibold tracking-tight text-ink">Flowkite</span>
+            </>
+          )}
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          {!showHistory && (
+            <>
+              <button
+                type="button"
+                onClick={handleNewChat}
+                onKeyDown={e => e.key === 'Enter' && handleNewChat()}
+                className={iconButtonClass}
+                aria-label={t('nav_newChat_a11y')}
+                tabIndex={0}>
+                <PiPlusBold size={17} />
+              </button>
+              <button
+                type="button"
+                onClick={handleLoadHistory}
+                onKeyDown={e => e.key === 'Enter' && handleLoadHistory()}
+                className={iconButtonClass}
+                aria-label={t('nav_loadHistory_a11y')}
+                tabIndex={0}>
+                <GrHistory size={16} />
+              </button>
+            </>
+          )}
+          <a
+            href={X_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={iconButtonClass}
+            aria-label={t('nav_followX_a11y')}>
+            <FaXTwitter size={16} />
+          </a>
+          <button
+            type="button"
+            onClick={() => chrome.runtime.openOptionsPage()}
+            onKeyDown={e => e.key === 'Enter' && chrome.runtime.openOptionsPage()}
+            className={iconButtonClass}
+            aria-label={t('nav_settings_a11y')}
+            tabIndex={0}>
+            <FiSettings size={17} />
+          </button>
+        </div>
+      </header>
+      {showHistory ? (
+        <div className="flex-1 overflow-hidden">
+          <ChatHistoryList
+            sessions={chatSessions}
+            onSessionSelect={handleSessionSelect}
+            onSessionDelete={handleSessionDelete}
+            onSessionBookmark={handleSessionBookmark}
+            visible={true}
+          />
+        </div>
+      ) : (
+        <>
+          {/* Show loading state while checking model configuration */}
+          {hasConfiguredModels === null && (
+            <div className="flex flex-1 items-center justify-center p-6">
+              <div className="flex flex-col items-center rounded-slab bg-canvas-raised px-8 py-7 text-center shadow-neu">
+                <div className="mb-4 size-8 animate-spin rounded-pill border-2 border-graphite-200 border-t-graphite-800" />
+                <p className="text-sm text-ink-soft">{t('status_checkingConfig')}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Show setup message when no models are configured */}
+          {hasConfiguredModels === false && (
+            <div className="flex flex-1 items-center justify-center overflow-y-auto p-4">
+              <div className="max-w-md animate-rise rounded-slab bg-canvas-raised px-6 py-8 text-center shadow-neu">
+                <img src="mark.png" alt="Flowkite" className="mx-auto mb-5 size-14" />
+                <h3 className="mb-2 text-lg font-semibold tracking-tight text-ink">{t('welcome_title')}</h3>
+                <p className="mb-6 text-sm leading-relaxed text-ink-soft">{t('welcome_instruction')}</p>
+                <button
+                  type="button"
+                  onClick={() => chrome.runtime.openOptionsPage()}
+                  className="rounded-soft bg-graphite px-5 py-2.5 text-sm font-medium text-graphite-50 shadow-key transition-all duration-150 ease-press hover:bg-graphite-hover active:translate-y-px active:bg-graphite-active active:shadow-key-pressed">
+                  {t('welcome_openSettings')}
+                </button>
+                <div className="mt-8 h-px bg-gradient-to-r from-transparent via-black/10 to-transparent" />
+                <div className="mt-4 flex items-center justify-center gap-3 text-xs">
+                  <a href={QUICK_START_URL} target="_blank" rel="noopener noreferrer" className={quietLinkClass}>
+                    {t('welcome_quickStart')}
+                  </a>
+                  <span aria-hidden="true" className="text-ink-faint">
+                    •
+                  </span>
+                  <a href={X_URL} target="_blank" rel="noopener noreferrer" className={quietLinkClass}>
+                    {t('welcome_joinCommunity')}
+                  </a>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Show setup message when no models are configured */}
-            {hasConfiguredModels === false && (
-              <div
-                className={`flex flex-1 items-center justify-center p-8 ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>
-                <div className="max-w-md text-center">
-                  <img src="/icon-128.png" alt="Flowkate Logo" className="mx-auto mb-4 size-12" />
-                  <h3 className={`mb-2 text-lg font-semibold ${isDarkMode ? 'text-sky-200' : 'text-sky-700'}`}>
-                    {t('welcome_title')}
-                  </h3>
-                  <p className="mb-4">{t('welcome_instruction')}</p>
-                  <button
-                    onClick={() => chrome.runtime.openOptionsPage()}
-                    className={`my-4 rounded-lg px-4 py-2 font-medium transition-colors ${
-                      isDarkMode ? 'bg-sky-600 text-white hover:bg-sky-700' : 'bg-sky-500 text-white hover:bg-sky-600'
-                    }`}>
-                    {t('welcome_openSettings')}
-                  </button>
-                  <div className="mt-4 text-sm opacity-75">
-                    <a
-                      href="https://github.com/itsnevu/Flowkate?tab=readme-ov-file#-quick-start"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`${isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-700 hover:text-sky-600'}`}>
-                      {t('welcome_quickStart')}
-                    </a>
-                    <span className="mx-2">•</span>
-                    <a
-                      href="https://discord.gg/NN3ABHggMK"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`${isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-700 hover:text-sky-600'}`}>
-                      {t('welcome_joinCommunity')}
-                    </a>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Show normal chat interface when models are configured */}
-            {hasConfiguredModels === true && (
-              <>
-                {messages.length === 0 && (
-                  <>
-                    <div
-                      className={`border-t ${isDarkMode ? 'border-sky-900' : 'border-sky-100'} mb-2 p-2 shadow-sm backdrop-blur-sm`}>
-                      <ChatInput
-                        onSendMessage={handleSendMessage}
-                        onStopTask={handleStopTask}
-                        onMicClick={handleMicClick}
-                        isRecording={isRecording}
-                        isProcessingSpeech={isProcessingSpeech}
-                        disabled={!inputEnabled || isHistoricalSession}
-                        showStopButton={showStopButton}
-                        setContent={setter => {
-                          setInputTextRef.current = setter;
-                        }}
-                        isDarkMode={isDarkMode}
-                        historicalSessionId={isHistoricalSession && replayEnabled ? currentSessionId : null}
-                        onReplay={handleReplay}
-                      />
-                    </div>
-                    <div className="flex-1 overflow-y-auto">
-                      <BookmarkList
-                        bookmarks={favoritePrompts}
-                        onBookmarkSelect={handleBookmarkSelect}
-                        onBookmarkUpdateTitle={handleBookmarkUpdateTitle}
-                        onBookmarkDelete={handleBookmarkDelete}
-                        onBookmarkReorder={handleBookmarkReorder}
-                        isDarkMode={isDarkMode}
-                      />
-                    </div>
-                  </>
-                )}
-                {messages.length > 0 && (
-                  <div
-                    className={`scrollbar-gutter-stable flex-1 overflow-x-hidden overflow-y-scroll scroll-smooth p-2 ${isDarkMode ? 'bg-slate-900/80' : ''}`}>
-                    <MessageList messages={messages} isDarkMode={isDarkMode} />
-                    <div ref={messagesEndRef} />
-                  </div>
-                )}
-                {pendingPlan && (
-                  <PlanReviewCard
-                    plan={pendingPlan}
-                    onApprove={() => handlePlanDecision(true)}
-                    onReject={() => handlePlanDecision(false)}
-                    isDarkMode={isDarkMode}
-                  />
-                )}
-                {pendingAction && (
-                  <ActionConfirmCard
-                    request={pendingAction}
-                    onConfirm={() => handleActionDecision(true)}
-                    onDecline={() => handleActionDecision(false)}
-                    isDarkMode={isDarkMode}
-                  />
-                )}
-                {canUndo && !pendingPlan && !pendingAction && !isHistoricalSession && (
-                  <div className="px-4 pb-1">
-                    <button
-                      type="button"
-                      onClick={handleUndo}
-                      className={`w-full rounded border px-3 py-1.5 text-xs font-medium ${
-                        isDarkMode
-                          ? 'border-slate-600 text-slate-300 hover:bg-slate-700'
-                          : 'border-slate-300 text-slate-600 hover:bg-slate-100'
-                      }`}>
-                      ↩ {t('chat_undo')}
-                    </button>
-                  </div>
-                )}
-                {messages.length > 0 && (
-                  <div
-                    className={`border-t ${isDarkMode ? 'border-sky-900' : 'border-sky-100'} p-2 shadow-sm backdrop-blur-sm`}>
+          {/* Show normal chat interface when models are configured */}
+          {hasConfiguredModels === true && (
+            <>
+              {messages.length === 0 && (
+                <>
+                  <div className="shrink-0 px-3 pb-2">
                     <ChatInput
                       onSendMessage={handleSendMessage}
                       onStopTask={handleStopTask}
@@ -1309,17 +1229,73 @@ const SidePanel = () => {
                       setContent={setter => {
                         setInputTextRef.current = setter;
                       }}
-                      isDarkMode={isDarkMode}
                       historicalSessionId={isHistoricalSession && replayEnabled ? currentSessionId : null}
                       onReplay={handleReplay}
                     />
                   </div>
-                )}
-              </>
-            )}
-          </>
-        )}
-      </div>
+                  <div className="flex-1 overflow-y-auto px-1 pb-2">
+                    <BookmarkList
+                      bookmarks={favoritePrompts}
+                      onBookmarkSelect={handleBookmarkSelect}
+                      onBookmarkUpdateTitle={handleBookmarkUpdateTitle}
+                      onBookmarkDelete={handleBookmarkDelete}
+                      onBookmarkReorder={handleBookmarkReorder}
+                    />
+                  </div>
+                </>
+              )}
+              {messages.length > 0 && (
+                <div className="scrollbar-gutter-stable flex-1 overflow-x-hidden overflow-y-scroll scroll-smooth px-3 py-1">
+                  <MessageList messages={messages} />
+                  <div ref={messagesEndRef} />
+                </div>
+              )}
+              {pendingPlan && (
+                <PlanReviewCard
+                  plan={pendingPlan}
+                  onApprove={() => handlePlanDecision(true)}
+                  onReject={() => handlePlanDecision(false)}
+                />
+              )}
+              {pendingAction && (
+                <ActionConfirmCard
+                  request={pendingAction}
+                  onConfirm={() => handleActionDecision(true)}
+                  onDecline={() => handleActionDecision(false)}
+                />
+              )}
+              {canUndo && !pendingPlan && !pendingAction && !isHistoricalSession && (
+                <div className="shrink-0 px-3 pb-1 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleUndo}
+                    className="w-full rounded-soft bg-canvas-raised px-3 py-2 text-xs font-medium text-ink-soft shadow-neu-sm transition-all duration-150 ease-press hover:text-ink hover:shadow-neu active:shadow-neu-inset-sm">
+                    ↩ {t('chat_undo')}
+                  </button>
+                </div>
+              )}
+              {messages.length > 0 && (
+                <div className="shrink-0 px-3 pb-3 pt-2">
+                  <ChatInput
+                    onSendMessage={handleSendMessage}
+                    onStopTask={handleStopTask}
+                    onMicClick={handleMicClick}
+                    isRecording={isRecording}
+                    isProcessingSpeech={isProcessingSpeech}
+                    disabled={!inputEnabled || isHistoricalSession}
+                    showStopButton={showStopButton}
+                    setContent={setter => {
+                      setInputTextRef.current = setter;
+                    }}
+                    historicalSessionId={isHistoricalSession && replayEnabled ? currentSessionId : null}
+                    onReplay={handleReplay}
+                  />
+                </div>
+              )}
+            </>
+          )}
+        </>
+      )}
     </div>
   );
 };

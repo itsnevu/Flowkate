@@ -7,37 +7,35 @@ interface PlanReviewCardProps {
   plan: PlanReviewPayload;
   onApprove: () => void;
   onReject: () => void;
-  isDarkMode?: boolean;
 }
 
 /**
  * Blocking review card shown before the agent is allowed to act. The agent is parked on a promise
  * in the background until one of these buttons is pressed, so this is the user's real veto point.
+ * Every section is rendered verbatim: the user must approve the planner's own words, not a rewrite.
  */
-const PlanReviewCard: React.FC<PlanReviewCardProps> = ({ plan, onApprove, onReject, isDarkMode = false }) => {
-  const sections: Array<{ label: string; value: string }> = [
-    { label: t('planReview_steps'), value: plan.nextSteps },
+const PlanReviewCard: React.FC<PlanReviewCardProps> = ({ plan, onApprove, onReject }) => {
+  const sections: Array<{ label: string; value: string; well?: boolean }> = [
+    { label: t('planReview_steps'), value: plan.nextSteps, well: true },
     { label: t('planReview_observation'), value: plan.observation },
     { label: t('planReview_reasoning'), value: plan.reasoning },
   ];
 
   return (
-    <div
-      className={`mx-4 my-2 rounded-lg border p-3 ${
-        isDarkMode ? 'border-sky-700 bg-slate-800' : 'border-sky-300 bg-sky-50'
-      }`}>
-      <h3 className={`mb-2 text-sm font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-800'}`}>
-        {t('planReview_title')}
-      </h3>
+    <div className="mx-3 my-2 animate-rise rounded-slab bg-canvas-raised p-4 shadow-neu-lg">
+      <h3 className="text-sm font-semibold text-ink">{t('planReview_title')}</h3>
 
       {sections
         .filter(section => section.value?.trim())
         .map(section => (
-          <div key={section.label} className="mb-2">
-            <div className={`text-xs font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-              {section.label}
-            </div>
-            <p className={`whitespace-pre-wrap text-sm ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+          <div key={section.label} className="mt-3">
+            <div className="mb-1 text-[11px] uppercase tracking-wide text-ink-faint">{section.label}</div>
+            <p
+              className={
+                section.well
+                  ? 'whitespace-pre-wrap break-words rounded-soft bg-canvas-sunk p-3 text-sm text-ink shadow-neu-inset'
+                  : 'whitespace-pre-wrap break-words text-sm text-ink-soft'
+              }>
               {section.value}
             </p>
           </div>
@@ -45,36 +43,28 @@ const PlanReviewCard: React.FC<PlanReviewCardProps> = ({ plan, onApprove, onReje
 
       {plan.challenges?.trim() && (
         <div
-          className={`mb-2 flex gap-2 rounded p-2 ${isDarkMode ? 'bg-amber-900/40' : 'bg-amber-100'}`}
+          className="mt-3 flex gap-2.5 rounded-soft bg-canvas-sunk p-3 shadow-neu-inset"
           data-testid="plan-review-challenges">
-          <FaExclamationTriangle className={`mt-0.5 shrink-0 ${isDarkMode ? 'text-amber-400' : 'text-amber-600'}`} />
-          <div>
-            <div className={`text-xs font-medium ${isDarkMode ? 'text-amber-400' : 'text-amber-700'}`}>
-              {t('planReview_challenges')}
-            </div>
-            <p className={`whitespace-pre-wrap text-sm ${isDarkMode ? 'text-amber-100' : 'text-amber-900'}`}>
-              {plan.challenges}
-            </p>
+          <FaExclamationTriangle className="mt-0.5 shrink-0 text-signal-warn" />
+          <div className="min-w-0">
+            <div className="text-[11px] uppercase tracking-wide text-ink-faint">{t('planReview_challenges')}</div>
+            <p className="mt-0.5 whitespace-pre-wrap break-words text-sm text-ink">{plan.challenges}</p>
           </div>
         </div>
       )}
 
-      <div className="mt-3 flex gap-2">
+      <div className="mt-4 flex gap-2">
         <button
           type="button"
           onClick={onApprove}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-700">
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-soft bg-graphite px-3 py-2 text-sm font-medium text-graphite-50 shadow-key transition-all duration-150 ease-press hover:bg-graphite-hover active:translate-y-px active:bg-graphite-active active:shadow-key-pressed">
           <FaCheck size={12} />
           {t('planReview_approve')}
         </button>
         <button
           type="button"
           onClick={onReject}
-          className={`flex items-center justify-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium ${
-            isDarkMode
-              ? 'bg-slate-700 text-slate-200 hover:bg-slate-600'
-              : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-          }`}>
+          className="flex items-center justify-center gap-1.5 rounded-soft bg-canvas-raised px-3 py-2 text-sm font-medium text-ink shadow-neu-sm transition-all duration-150 ease-press hover:shadow-neu active:shadow-neu-inset-sm">
           <FaTimes size={12} />
           {t('planReview_reject')}
         </button>

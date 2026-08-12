@@ -1,6 +1,6 @@
-import type { CoordinateSet, HashedDomElement, ViewportInfo } from './history/view';
-import { HistoryTreeProcessor } from './history/service';
 import { capTextLength } from '../util';
+import { HistoryTreeProcessor } from './history/service';
+import type { CoordinateSet, HashedDomElement, ViewportInfo } from './history/view';
 
 export const DEFAULT_INCLUDE_ATTRIBUTES = [
   'title',

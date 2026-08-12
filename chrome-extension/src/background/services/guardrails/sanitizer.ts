@@ -2,9 +2,9 @@
  * Content sanitizer for removing malicious patterns from untrusted content
  */
 
-import type { SanitizationResult, ThreatType } from './types';
-import { getPatterns } from './patterns';
 import { createLogger } from '@src/background/log';
+import { getPatterns } from './patterns';
+import type { SanitizationResult, ThreatType } from './types';
 
 const logger = createLogger('SecuritySanitizer');
 

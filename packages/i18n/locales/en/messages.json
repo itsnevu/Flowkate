@@ -1,11 +1,11 @@
 {
   "app_metadata_description": {
     "description": "Extension description",
-    "message": "Automate web tasks with AI! Flowkate is an open-source browser extension that lets you extract data, fill forms, and more."
+    "message": "Automate web tasks with AI! Flowkite is an open-source browser extension that lets you extract data, fill forms, and more."
   },
   "app_metadata_name": {
     "description": "Extension name",
-    "message": "Flowkate: AI Web Agent & Automation"
+    "message": "Flowkite: AI Web Agent & Automation"
   },
   "errors_unknown": {
     "message": "Unknown error occurred"
@@ -28,6 +28,9 @@
   "nav_loadHistory_a11y": {
     "message": "Load History"
   },
+  "nav_followX_a11y": {
+    "message": "Follow Flowkite on X"
+  },
   "nav_settings_a11y": {
     "message": "Settings"
   },
@@ -38,7 +41,7 @@
     "message": "Back to chat"
   },
   "welcome_title": {
-    "message": "Welcome to Flowkate!"
+    "message": "Welcome to Flowkite!"
   },
   "welcome_instruction": {
     "message": "To get started, please configure your API keys in the settings page."
@@ -50,7 +53,7 @@
     "message": "Quick Start Guide"
   },
   "welcome_joinCommunity": {
-    "message": "Join Our Community"
+    "message": "Follow on X"
   },
   "status_checkingConfig": {
     "message": "Checking configuration..."
@@ -167,7 +170,7 @@
     "message": "Enable Voice Input"
   },
   "permissions_microphone_description": {
-    "message": "Flowkate needs microphone access to convert your speech to text."
+    "message": "Flowkite needs microphone access to convert your speech to text."
   },
   "permissions_microphone_grantButton": {
     "message": "Grant Microphone Permission"

@@ -1,13 +1,15 @@
-import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
-import { type ActionResult, AgentContext, type AgentOptions, type AgentOutput } from './types';
 import { t } from '@extension/i18n';
+import { createLogger } from '@src/background/log';
+import { chatHistoryStore } from '@extension/storage/lib/chat';
+import { memoryStore } from '@extension/storage';
+import { URLNotAllowedError } from '../browser/views';
+import { analytics } from '../services/analytics';
+import { type ActionResult, AgentContext, type AgentOptions, type AgentOutput } from './types';
 import { NavigatorAgent, NavigatorActionRegistry } from './agents/navigator';
 import { PlannerAgent, type PlannerOutput } from './agents/planner';
 import { NavigatorPrompt } from './prompts/navigator';
 import { PlannerPrompt } from './prompts/planner';
-import { createLogger } from '@src/background/log';
 import MessageManager from './messages/service';
-import type BrowserContext from '../browser/context';
 import { ActionBuilder } from './actions/builder';
 import { EventManager } from './event/manager';
 import { Actors, type EventCallback, EventType, ExecutionState } from './event/types';
@@ -20,13 +22,11 @@ import {
   MaxStepsReachedError,
   MaxFailuresReachedError,
 } from './agents/errors';
-import { URLNotAllowedError } from '../browser/views';
-import { chatHistoryStore } from '@extension/storage/lib/chat';
+import { routeStep, ModelTier } from './routing';
+import type BrowserContext from '../browser/context';
 import type { AgentStepHistory } from './history';
 import type { GeneralSettingsConfig } from '@extension/storage';
-import { analytics } from '../services/analytics';
-import { memoryStore } from '@extension/storage';
-import { routeStep, ModelTier } from './routing';
+import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 
 const logger = createLogger('Executor');
 

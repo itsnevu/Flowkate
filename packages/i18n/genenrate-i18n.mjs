@@ -1,4 +1,6 @@
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 
 /**
  * @url https://developer.chrome.com/docs/extensions/reference/api/i18n#support_multiple_languages
@@ -61,9 +63,6 @@ const SUPPORTED_LANGUAGES = {
   zh_TW: 'Chinese (Taiwan)',
 };
 
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const locales = fs.readdirSync(path.join(__dirname, 'locales'));
@@ -94,7 +93,7 @@ export type DevLocale = ${locales.map(locale => `'${locale}'`).join(' | ')};
 
 function makeGetMessageFromLocaleFile(locales) {
   const defaultLocaleCode = `(() => {
-  const locales = ${JSON.stringify(locales).replace(/"/g, "'" ).replace(/,/g, ', ' )};
+  const locales = ${JSON.stringify(locales).replace(/"/g, "'").replace(/,/g, ', ')};
   const firstLocale = locales[0];
   const defaultLocale = Intl.DateTimeFormat().resolvedOptions().locale.replace('-', '_');
   if (locales.includes(defaultLocale)) {

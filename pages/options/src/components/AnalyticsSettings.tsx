@@ -1,13 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { analyticsSettingsStore } from '@extension/storage';
-
+import { Toggle } from './controls';
 import type { AnalyticsSettingsConfig } from '@extension/storage';
 
-interface AnalyticsSettingsProps {
-  isDarkMode: boolean;
-}
-
-export const AnalyticsSettings: React.FC<AnalyticsSettingsProps> = ({ isDarkMode }) => {
+export const AnalyticsSettings = () => {
   const [settings, setSettings] = useState<AnalyticsSettingsConfig | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -46,14 +42,11 @@ export const AnalyticsSettings: React.FC<AnalyticsSettingsProps> = ({ isDarkMode
   if (loading) {
     return (
       <section className="space-y-6">
-        <div
-          className={`rounded-lg border ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-blue-100 bg-gray-50'} p-6 text-left shadow-sm`}>
-          <h2 className={`mb-4 text-xl font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-            Analytics Settings
-          </h2>
-          <div className="animate-pulse">
-            <div className={`mb-2 h-4 w-3/4 rounded ${isDarkMode ? 'bg-slate-600' : 'bg-gray-200'}`}></div>
-            <div className={`h-4 w-1/2 rounded ${isDarkMode ? 'bg-slate-600' : 'bg-gray-200'}`}></div>
+        <div className="text-left">
+          <h2 className="text-lg font-semibold tracking-tight text-ink">Analytics Settings</h2>
+          <div className="mt-4 animate-pulse-soft space-y-2">
+            <div className="h-4 w-3/4 rounded-pill bg-canvas-sunk shadow-neu-inset-sm" />
+            <div className="h-4 w-1/2 rounded-pill bg-canvas-sunk shadow-neu-inset-sm" />
           </div>
         </div>
       </section>
@@ -63,12 +56,9 @@ export const AnalyticsSettings: React.FC<AnalyticsSettingsProps> = ({ isDarkMode
   if (!settings) {
     return (
       <section className="space-y-6">
-        <div
-          className={`rounded-lg border ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-blue-100 bg-gray-50'} p-6 text-left shadow-sm`}>
-          <h2 className={`mb-4 text-xl font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-            Analytics Settings
-          </h2>
-          <p className={`${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>Failed to load analytics settings.</p>
+        <div className="text-left">
+          <h2 className="text-lg font-semibold tracking-tight text-ink">Analytics Settings</h2>
+          <p className="mt-4 text-sm text-signal-bad">Failed to load analytics settings.</p>
         </div>
       </section>
     );
@@ -76,82 +66,83 @@ export const AnalyticsSettings: React.FC<AnalyticsSettingsProps> = ({ isDarkMode
 
   return (
     <section className="space-y-6">
-      <div
-        className={`rounded-lg border ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-blue-100 bg-gray-50'} p-6 text-left shadow-sm`}>
-        <h2 className={`mb-4 text-xl font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-          Analytics Settings
-        </h2>
+      <div className="text-left">
+        <h2 className="text-lg font-semibold tracking-tight text-ink">Analytics Settings</h2>
 
-        <div className="space-y-6">
+        <div className="mt-6 space-y-6">
           {/* Main toggle */}
-          <div
-            className={`my-6 rounded-lg border p-4 ${isDarkMode ? 'border-slate-700 bg-slate-700' : 'border-gray-200 bg-gray-100'}`}>
-            <div className="flex items-center justify-between">
-              <label
-                htmlFor="analytics-enabled"
-                className={`text-base font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                Help improve Flowkate
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <label htmlFor="analytics-enabled" className="cursor-pointer text-base font-medium text-ink">
+                Help improve Flowkite
               </label>
-              <div className="relative inline-block w-12 select-none">
-                <input
-                  type="checkbox"
-                  checked={settings.enabled}
-                  onChange={e => handleToggleAnalytics(e.target.checked)}
-                  className="sr-only"
-                  id="analytics-enabled"
-                />
-                <label
-                  htmlFor="analytics-enabled"
-                  className={`block h-6 cursor-pointer overflow-hidden rounded-full ${
-                    settings.enabled ? 'bg-blue-500' : isDarkMode ? 'bg-gray-600' : 'bg-gray-300'
-                  }`}>
-                  <span className="sr-only">Toggle analytics</span>
-                  <span
-                    className={`block size-6 rounded-full bg-white shadow transition-transform ${
-                      settings.enabled ? 'translate-x-6' : 'translate-x-0'
-                    }`}
-                  />
-                </label>
-              </div>
+              <p className="mt-1 text-sm text-ink-soft">Share anonymous usage data to help us improve the extension</p>
             </div>
-            <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Share anonymous usage data to help us improve the extension
-            </p>
+            <Toggle
+              id="analytics-enabled"
+              label="Toggle analytics"
+              checked={settings.enabled}
+              onChange={handleToggleAnalytics}
+            />
           </div>
 
+          <div className="h-px bg-gradient-to-r from-transparent via-black/10 to-transparent" />
+
           {/* Information about what we collect */}
-          <div
-            className={`rounded-md border p-4 ${isDarkMode ? 'border-slate-600 bg-slate-700' : 'border-gray-200 bg-gray-100'}`}>
-            <h3 className={`text-base font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'} mb-4`}>
-              What we collect:
-            </h3>
-            <ul
-              className={`list-disc space-y-2 pl-5 text-left text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-              <li>Task execution metrics (start, completion, failure counts and duration)</li>
-              <li>Domain names of websites visited (e.g., &quot;amazon.com&quot;, not full URLs)</li>
-              <li>Error categories for failed tasks (no sensitive details)</li>
-              <li>Anonymous usage statistics</li>
+          <div className="rounded-soft bg-canvas-sunk p-5 shadow-neu-inset">
+            <h3 className="text-base font-medium text-ink">What we collect:</h3>
+            <ul className="mt-3 space-y-2 text-left text-sm text-ink-soft">
+              <li className="flex gap-3">
+                <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-info" aria-hidden="true" />
+                <span>Task execution metrics (start, completion, failure counts and duration)</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-info" aria-hidden="true" />
+                <span>Domain names of websites visited (e.g., &quot;amazon.com&quot;, not full URLs)</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-info" aria-hidden="true" />
+                <span>Error categories for failed tasks (no sensitive details)</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-info" aria-hidden="true" />
+                <span>Anonymous usage statistics</span>
+              </li>
             </ul>
 
-            <h3 className={`mb-4 mt-6 text-base font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-              What we DON&apos;T collect:
-            </h3>
-            <ul
-              className={`list-disc space-y-2 pl-5 text-left text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-              <li>Personal information or login credentials</li>
-              <li>Full URLs or page content</li>
-              <li>Task instructions or user prompts</li>
-              <li>Screen recordings or screenshots</li>
-              <li>Any sensitive or private data</li>
+            <div className="my-5 h-px bg-gradient-to-r from-transparent via-black/10 to-transparent" />
+
+            <h3 className="text-base font-medium text-ink">What we DON&apos;T collect:</h3>
+            <ul className="mt-3 space-y-2 text-left text-sm text-ink-soft">
+              <li className="flex gap-3">
+                <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-bad" aria-hidden="true" />
+                <span>Personal information or login credentials</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-bad" aria-hidden="true" />
+                <span>Full URLs or page content</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-bad" aria-hidden="true" />
+                <span>Task instructions or user prompts</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-bad" aria-hidden="true" />
+                <span>Screen recordings or screenshots</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-bad" aria-hidden="true" />
+                <span>Any sensitive or private data</span>
+              </li>
             </ul>
           </div>
 
           {/* Opt-out message */}
           {!settings.enabled && (
-            <div
-              className={`rounded-md border p-4 ${isDarkMode ? 'border-yellow-700 bg-yellow-900/20' : 'border-yellow-200 bg-yellow-50'}`}>
-              <p className={`text-sm ${isDarkMode ? 'text-yellow-300' : 'text-yellow-700'}`}>
-                Analytics disabled. You can re-enable it anytime to help improve Flowkate.
+            <div className="flex gap-3 rounded-soft bg-canvas-sunk p-4 shadow-neu-inset-sm">
+              <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-warn" aria-hidden="true" />
+              <p className="text-sm text-signal-warn">
+                Analytics disabled. You can re-enable it anytime to help improve Flowkite.
               </p>
             </div>
           )}

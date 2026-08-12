@@ -5,15 +5,39 @@ import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { ChatXAI } from '@langchain/xai';
 import { ChatGroq } from '@langchain/groq';
 import { ChatCerebras } from '@langchain/cerebras';
-import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { ChatOllama } from '@langchain/ollama';
 import { ChatDeepSeek } from '@langchain/deepseek';
+import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 
 const maxTokens = 1024 * 4;
 
+/** The subset of the Llama API response this module reads. */
+type LlamaCompletionResponse = {
+  id?: string;
+  metrics?: Array<{ metric: string; value: number }>;
+  completion_message: {
+    content: { text: string };
+    stop_reason?: string;
+  };
+};
+
+/** The OpenAI-shaped completion LangChain's ChatOpenAI expects back. */
+type OpenAIChatCompletion = {
+  id: string;
+  object: 'chat.completion';
+  created: number;
+  model: string;
+  choices: Array<{
+    index: number;
+    message: { role: 'assistant'; content: string };
+    finish_reason: string;
+  }>;
+  usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+};
+
 /** Reshape a Llama API response into the OpenAI shape LangChain expects. */
-function toOpenAIChatCompletion(response: any, model: string): any {
-  const metric = (name: string) => response.metrics?.find((m: any) => m.metric === name)?.value || 0;
+function toOpenAIChatCompletion(response: LlamaCompletionResponse, model: string): OpenAIChatCompletion {
+  const metric = (name: string) => response.metrics?.find(m => m.metric === name)?.value || 0;
   return {
     id: response.id || 'llama-response',
     object: 'chat.completion',
@@ -45,23 +69,36 @@ function toOpenAIChatCompletion(response: any, model: string): any {
  * `completionWithRetry` method defined here is never called. Patching the delegate is what keeps the
  * conversion on the path the request actually takes.
  */
+/**
+ * The private delegate ChatOpenAI routes generation through. It is not part of the
+ * published type surface, so it is described here rather than imported.
+ */
+type CompletionsDelegate = {
+  completionWithRetry: (request: { model: string }, options?: unknown) => Promise<unknown>;
+};
+
+/** Narrow an unknown response to the Llama shape without asserting it. */
+function isLlamaCompletion(value: unknown): value is LlamaCompletionResponse {
+  return typeof (value as LlamaCompletionResponse | null)?.completion_message?.content?.text === 'string';
+}
+
 class ChatLlama extends ChatOpenAI {
-  constructor(args: any) {
+  constructor(args: ConstructorParameters<typeof ChatOpenAI>[0]) {
     super(args);
 
     // `completions` is the delegate ChatOpenAI routes every request through
-    const completions = (this as any).completions;
+    const completions = (this as unknown as { completions?: Partial<CompletionsDelegate> }).completions;
     if (!completions || typeof completions.completionWithRetry !== 'function') {
       console.error('[ChatLlama] Could not install the Llama response transform: no completions delegate found');
       return;
     }
 
-    const original = completions.completionWithRetry.bind(completions);
-    completions.completionWithRetry = async (request: any, options?: any): Promise<any> => {
+    const original = completions.completionWithRetry.bind(completions) as CompletionsDelegate['completionWithRetry'];
+    completions.completionWithRetry = async (request, options) => {
       try {
         const response = await original(request, options);
-        return response?.completion_message?.content?.text ? toOpenAIChatCompletion(response, request.model) : response;
-      } catch (error: any) {
+        return isLlamaCompletion(response) ? toOpenAIChatCompletion(response, request.model) : response;
+      } catch (error) {
         console.error('[ChatLlama] Error during API call:', error);
         throw error;
       }
@@ -78,27 +115,6 @@ function isOpenAIReasoningModel(modelName: string): boolean {
   return (
     modelNameWithoutProvider.startsWith('o') ||
     (modelNameWithoutProvider.startsWith('gpt-5') && !modelNameWithoutProvider.startsWith('gpt-5-chat'))
-  );
-}
-
-// Function to check if a model is an Anthropic Opus model
-function isAnthropicOpusModel(modelName: string): boolean {
-  // Extract the model name without provider prefix if present
-  let modelNameWithoutProvider = modelName;
-  if (modelName.startsWith('anthropic/')) {
-    modelNameWithoutProvider = modelName.substring(10);
-  }
-  return modelNameWithoutProvider.startsWith('claude-opus');
-}
-
-// check if a model is sonnet-4-5 or haiku-4-5
-function isAnthropic4_5Model(modelName: string): boolean {
-  let modelNameWithoutProvider = modelName;
-  if (modelName.startsWith('anthropic/')) {
-    modelNameWithoutProvider = modelName.substring(10);
-  }
-  return (
-    modelNameWithoutProvider.startsWith('claude-sonnet-4-5') || modelNameWithoutProvider.startsWith('claude-haiku-4-5')
   );
 }
 
@@ -361,8 +377,8 @@ export function createChatModel(providerConfig: ProviderConfig, modelConfig: Mod
       console.log('[createChatModel] Calling createOpenAIChatModel for OpenRouter');
       return createOpenAIChatModel(providerConfig, modelConfig, {
         headers: {
-          'HTTP-Referer': 'https://github.com/itsnevu/Flowkate',
-          'X-Title': 'Flowkate',
+          'HTTP-Referer': 'https://github.com/itsnevu/Flowkite',
+          'X-Title': 'Flowkite',
         },
       });
     }

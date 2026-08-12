@@ -1,7 +1,7 @@
-import type { WebSocket } from 'ws';
 import { WebSocketServer } from 'ws';
 import { BUILD_COMPLETE, DO_UPDATE, DONE_UPDATE, LOCAL_RELOAD_SOCKET_PORT, LOCAL_RELOAD_SOCKET_URL } from '../constant';
 import MessageInterpreter from '../interpreter';
+import type { WebSocket } from 'ws';
 
 const clientsThatNeedToUpdate: Set<WebSocket> = new Set();
 

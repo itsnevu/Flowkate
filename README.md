@@ -1,4 +1,4 @@
-<h1 align="center">Flowkate</h1>
+<h1 align="center">Flowkite</h1>
 
 <p align="center">
   An open-source AI browser agent that runs entirely in your browser — and asks before it does anything that matters.
@@ -6,24 +6,24 @@
 
 <div align="center">
 
-[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/itsnevu/Flowkate)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/itsnevu/Flowkite)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge)](LICENSE)
 
 </div>
 
-> **Status:** Flowkate is not on the Chrome Web Store yet. Install it from a [release](https://github.com/itsnevu/Flowkate/releases) or [build it from source](#build-from-source).
+> **Status:** Flowkite is not on the Chrome Web Store yet. Install it from a [release](https://github.com/itsnevu/Flowkite/releases) or [build it from source](#build-from-source).
 
 ---
 
 ## What it is
 
-You type a task in plain language — *"find the cheapest flight to Tokyo next month"* — and Flowkate carries it out in your browser. A **Planner** agent works out the approach, a **Navigator** agent clicks, types and scrolls, and you watch the whole thing happen in a side panel.
+You type a task in plain language — *"find the cheapest flight to Tokyo next month"* — and Flowkite carries it out in your browser. A **Planner** agent works out the approach, a **Navigator** agent clicks, types and scrolls, and you watch the whole thing happen in a side panel.
 
-Everything runs locally. You bring your own LLM API key, and page data goes straight from your browser to the provider you chose. There is no Flowkate server, no Flowkate account, and nothing to sign up for.
+Everything runs locally. You bring your own LLM API key, and page data goes straight from your browser to the provider you chose. There is no Flowkite server, no Flowkite account, and nothing to sign up for.
 
 ## Why another browser agent
 
-Most browser agents ask you to trust them with your logged-in browser session and then act. Flowkate is built the other way round: **the interesting parts are the places it stops.**
+Most browser agents ask you to trust them with your logged-in browser session and then act. Flowkite is built the other way round: **the interesting parts are the places it stops.**
 
 ### It asks before it acts
 
@@ -37,7 +37,7 @@ The agent can remember preferences you tell it, so they carry across sessions. M
 
 ### It handles pages that fight back
 
-- An empty DOM parse is ambiguous: it means either *"nothing here"* or *"React hasn't mounted yet"*. Flowkate retries on escalating delays before concluding a page is empty, and if the DOM still yields nothing it attaches a **screenshot** automatically — even with vision off — rather than telling the model the page is blank and watching it give up.
+- An empty DOM parse is ambiguous: it means either *"nothing here"* or *"React hasn't mounted yet"*. Flowkite retries on escalating delays before concluding a page is empty, and if the DOM still yields nothing it attaches a **screenshot** automatically — even with vision off — rather than telling the model the page is blank and watching it give up.
 - Cross-origin iframes are read too, so embedded checkout and login widgets aren't invisible.
 - If a page re-renders between reading the element list and clicking, the action is retried once against fresh state.
 
@@ -62,11 +62,11 @@ Independent lookups — the same product across three shops — run concurrently
 
 ### From a release
 
-1. Download `flowkate.zip` from the [releases page](https://github.com/itsnevu/Flowkate/releases) and unzip it.
+1. Download `flowkite.zip` from the [releases page](https://github.com/itsnevu/Flowkite/releases) and unzip it.
 2. Open `chrome://extensions/`, turn on **Developer mode** (top right).
 3. Click **Load unpacked** and select the unzipped folder.
 
-To upgrade, download the new zip, replace the folder, then hit refresh on the Flowkate card in `chrome://extensions/`.
+To upgrade, download the new zip, replace the folder, then hit refresh on the Flowkite card in `chrome://extensions/`.
 
 ### Build from source
 
@@ -74,8 +74,8 @@ To upgrade, download the new zip, replace the folder, then hit refresh on the Fl
 
 ```bash
 # Node.js >= 22.12.0 and pnpm >= 9.15.1
-git clone https://github.com/itsnevu/Flowkate.git
-cd Flowkate
+git clone https://github.com/itsnevu/Flowkite.git
+cd Flowkite
 pnpm install
 pnpm build          # output lands in dist/
 ```
@@ -137,11 +137,11 @@ Page content is treated as untrusted input and wrapped in explicit delimiters be
 
 Bug reports and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Please run `pnpm type-check && pnpm test` before opening a PR. Security issues: see [SECURITY.md](SECURITY.md).
 
-Questions and ideas belong in [Discussions](https://github.com/itsnevu/Flowkate/discussions).
+Questions and ideas belong in [Discussions](https://github.com/itsnevu/Flowkite/discussions).
 
 ## Credits
 
-Flowkate is a fork of [Nanobrowser](https://github.com/nanobrowser/nanobrowser) by alexchenzl and contributors, licensed under Apache-2.0. The multi-agent architecture and browser automation layer come from that project; this fork adds the human-in-the-loop controls, on-device memory, grounding retries, hybrid model routing and parallel research described above.
+Flowkite is a fork of [Nanobrowser](https://github.com/nanobrowser/nanobrowser) by alexchenzl and contributors, licensed under Apache-2.0. The multi-agent architecture and browser automation layer come from that project; this fork adds the human-in-the-loop controls, on-device memory, grounding retries, hybrid model routing and parallel research described above.
 
 It also stands on:
 

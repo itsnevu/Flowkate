@@ -3,10 +3,10 @@
  * Provides content sanitization and basic security checks
  */
 
-import { sanitizeContent, detectThreats, cleanEmptyTags } from './sanitizer';
-import type { SanitizationResult, ValidationResult } from './types';
-import { ThreatType } from './types';
 import { createLogger } from '@src/background/log';
+import { sanitizeContent, detectThreats, cleanEmptyTags } from './sanitizer';
+import { ThreatType } from './types';
+import type { SanitizationResult, ValidationResult } from './types';
 
 const logger = createLogger('SecurityGuardrails');
 

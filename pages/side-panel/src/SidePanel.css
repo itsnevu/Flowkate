@@ -1,165 +1,91 @@
-/* Add this at the top of the file */
+/**
+ * Base layer for the side panel.
+ *
+ * Component styling lives in the JSX as Tailwind utilities built from the shared
+ * design tokens (see packages/tailwind-config/tailwind.config.ts). Only the things
+ * utilities cannot reach — the document ground, scrollbars, selection, native
+ * control chrome — are declared here.
+ */
+
+:root {
+  color-scheme: light;
+}
+
+html,
 body {
-  border-color: rgb(159, 6, 11) !important; /* sky-200 color */
+  height: 100%;
+  background: #eef0f4;
 }
 
-/* Remove unused classes: .App, .App-logo, .App-header */
+body {
+  margin: 0;
+  color: #14161a;
+  font-family:
+    ui-sans-serif,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Inter',
+    'Segoe UI',
+    system-ui,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
 
+::selection {
+  background: rgba(20, 22, 26, 0.88);
+  color: #f5f6f8;
+}
+
+/* Inline code inside assistant messages — a shallow inset chip on the pale ground. */
 code {
-  background: rgba(186, 230, 253, 0.4);
-  border-radius: 0.25rem;
-  padding: 0.2rem 0.5rem;
-  color: #0369a1;
+  background: #e6e9ee;
+  border-radius: 0.375rem;
+  padding: 0.1rem 0.35rem;
+  color: #23262b;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+  font-size: 0.9em;
+  box-shadow:
+    inset 1px 1px 3px rgba(159, 167, 183, 0.5),
+    inset -1px -1px 3px rgba(255, 255, 255, 0.9);
 }
 
-/* Dark mode support for code */
-@media (prefers-color-scheme: dark) {
-  code {
-    background: rgba(30, 58, 138, 0.4);
-    color: #7dd3fc;
-  }
-}
-
-/* Scrollbar styles */
+/* Scrollbars: a graphite thumb riding in a milled channel. */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #e9ecf1;
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #0ea5e9;
-  border-radius: 4px;
+  background: linear-gradient(160deg, #4a505a 0%, #23262b 100%);
+  border-radius: 999px;
+  border: 2px solid #e9ecf1;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #0284c7;
+  background: linear-gradient(160deg, #5b626d 0%, #2c3037 100%);
 }
 
-/* Dark mode scrollbar */
-@media (prefers-color-scheme: dark) {
-  ::-webkit-scrollbar-track {
-    background: #1e293b;
-  }
-  
-  ::-webkit-scrollbar-thumb {
-    background: #0ea5e9;
-  }
-  
-  ::-webkit-scrollbar-thumb:hover {
-    background: #38bdf8;
-  }
-}
-
-/* Used classes from the component */
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem;
-  background-color: transparent;
-  border-bottom: 1px solid rgba(14, 165, 233, 0.2);
-}
-
-/* Dark mode header border */
-@media (prefers-color-scheme: dark) {
-  .header {
-    border-bottom: 1px solid rgba(14, 165, 233, 0.3);
-  }
-}
-
-.header-logo {
-  display: flex;
-  align-items: center;
-}
-
-.header-icons {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-.header-icon {
-  color: #19C2FF;
-  cursor: pointer;
-  transition: color 0.2s ease;
-  opacity: 0.8;
-}
-
-.header-icon:hover {
-  color: #0073DC;
-  opacity: 1;
-}
-
-.send-button {
-  color: #19C2FF;
-  cursor: pointer;
-  transition: color 0.2s ease;
-  opacity: 0.8;
-}
-
-.send-button:hover {
-  color: #0073DC;
-  opacity: 1;
-}
-
-.send-button:disabled {
-  color: #CBD5E1;
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-/* Add these styles to your existing CSS */
 .scrollbar-gutter-stable {
   scrollbar-gutter: stable;
 }
 
-/* Optional: Style the scrollbar for webkit browsers */
-.scrollbar-gutter-stable::-webkit-scrollbar {
-  width: 8px;
+/* Keyboard focus has to survive on both pale and graphite surfaces. */
+:focus-visible {
+  outline: 2px solid rgba(20, 22, 26, 0.55);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
 }
 
-.scrollbar-gutter-stable::-webkit-scrollbar-track {
-  background: #f1f5f9;  /* sky-50 */
-}
-
-.scrollbar-gutter-stable::-webkit-scrollbar-thumb {
-  background: #7dd3fc;  /* sky-300 - very light blue */
-  border-radius: 4px;
-}
-
-.scrollbar-gutter-stable::-webkit-scrollbar-thumb:hover {
-  background: #38bdf8;  /* sky-400 - slightly darker on hover */
-}
-
-/* Dark mode scrollbar for scrollbar-gutter-stable */
-@media (prefers-color-scheme: dark) {
-  .scrollbar-gutter-stable::-webkit-scrollbar-track {
-    background: #1e293b;  /* slate-800 */
-  }
-  
-  .scrollbar-gutter-stable::-webkit-scrollbar-thumb {
-    background: #0ea5e9;  /* sky-500 */
-  }
-  
-  .scrollbar-gutter-stable::-webkit-scrollbar-thumb:hover {
-    background: #38bdf8;  /* sky-400 */
-  }
-}
-
-/* Dark mode text and background colors */
-@media (prefers-color-scheme: dark) {
-  .dark-mode-text {
-    color: #e2e8f0 !important; /* slate-200 */
-  }
-  
-  .dark-mode-bg {
-    background-color: #1e293b !important; /* slate-800 */
-  }
-  
-  .dark-mode-border {
-    border-color: #475569 !important; /* slate-600 */
-  }
+/* Autofill in Chrome repaints inputs a hard yellow, which shatters the pale ground. */
+input:-webkit-autofill,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill {
+  -webkit-text-fill-color: #14161a;
+  -webkit-box-shadow: 0 0 0 1000px #e6e9ee inset;
 }

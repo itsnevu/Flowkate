@@ -1,0 +1,4 @@
+# Sentinel: this file makes landing/ its own pnpm workspace root, so pnpm stops walking up
+# and installing the repo root workspace instead — which keeps three.js and Lenis out of the
+# extension's dependency tree. The empty list means landing/ has no child packages.
+packages: []

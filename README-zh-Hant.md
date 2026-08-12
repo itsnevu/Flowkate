@@ -9,24 +9,24 @@
 
 </div>
 
-## 🌐 Flowkate
+## 🌐 Flowkite
 
-Flowkate 是一款在瀏覽器中執行的開放原始碼 AI 網頁自動化工具。作為 OpenAI Operator 的免費替代方案，提供彈性的 LLM 選項與多代理系統。
+Flowkite 是一款在瀏覽器中執行的開放原始碼 AI 網頁自動化工具。作為 OpenAI Operator 的免費替代方案，提供彈性的 LLM 選項與多代理系統。
 
-⬇️ 尚未上架 Chrome 線上應用程式商店 — 請下載最新[版本](https://github.com/itsnevu/Flowkate/releases)或自行從原始碼建置
+⬇️ 尚未上架 Chrome 線上應用程式商店 — 請下載最新[版本](https://github.com/itsnevu/Flowkite/releases)或自行從原始碼建置
 
-👏 加入我們的 [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) 社群
+👏 加入我們的 [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions) 社群
 
-❤️ 喜歡 Flowkate 嗎？請給我們一顆星星 🌟 並協助分享！
+❤️ 喜歡 Flowkite 嗎？請給我們一顆星星 🌟 並協助分享！
 
 <div align="center">
-<img src="https://github.com/user-attachments/assets/112c4385-7b03-4b81-a352-4f348093351b" width="600" alt="Flowkate Demo GIF" />
-<p><em>Flowkate 的多代理系統即時分析 HuggingFace，其中 Planner 會在遇到障礙時自行修正，並動態指示 Navigator 調整做法——這一切都在本機瀏覽器中執行。</em></p>
+<img src="https://github.com/user-attachments/assets/112c4385-7b03-4b81-a352-4f348093351b" width="600" alt="Flowkite Demo GIF" />
+<p><em>Flowkite 的多代理系統即時分析 HuggingFace，其中 Planner 會在遇到障礙時自行修正，並動態指示 Navigator 調整做法——這一切都在本機瀏覽器中執行。</em></p>
 </div>
 
-## 🔥 為什麼選擇 Flowkate？
+## 🔥 為什麼選擇 Flowkite？
 
-正在尋找功能強大的 AI 瀏覽器代理，卻不想每月為 OpenAI Operator 支付 200 美元嗎？**Flowkate** 作為一款 Chrome 擴充功能，提供進階的網頁自動化能力，同時讓您保有完全的掌控權：
+正在尋找功能強大的 AI 瀏覽器代理，卻不想每月為 OpenAI Operator 支付 200 美元嗎？**Flowkite** 作為一款 Chrome 擴充功能，提供進階的網頁自動化能力，同時讓您保有完全的掌控權：
 
 - **100% 免費** - 無訂閱費或隱藏成本。安裝後使用自己的 API 金鑰，只需支付給供應商的 API 使用費。
 - **注重隱私** - 所有處理都在本機瀏覽器內完成。您的認證資訊會儲存在本機，絕不會與任何雲端服務分享。
@@ -55,16 +55,16 @@ Flowkate 是一款在瀏覽器中執行的開放原始碼 AI 網頁自動化工�
 **不支援：**
 - Firefox、Safari，以及其他 Chromium 衍生瀏覽器 (Opera、Arc 等)
 
-> **注意**：雖然 Flowkate 可能可在其他 Chromium 系瀏覽器上運作，我們仍建議使用 Chrome 或 Edge，以獲得最佳體驗並確保相容性。
+> **注意**：雖然 Flowkite 可能可在其他 Chromium 系瀏覽器上運作，我們仍建議使用 Chrome 或 Edge，以獲得最佳體驗並確保相容性。
 
 
 ## 🚀 快速入門
 
 1. **安裝擴充功能**：
-   * Flowkate 尚未上架 Chrome 線上應用程式商店，請依照下方的 [「手動安裝最新版本」](#-手動安裝最新版本) 從[版本發布頁](https://github.com/itsnevu/Flowkate/releases)安裝，或自行從原始碼建置。
+   * Flowkite 尚未上架 Chrome 線上應用程式商店，請依照下方的 [「手動安裝最新版本」](#-手動安裝最新版本) 從[版本發布頁](https://github.com/itsnevu/Flowkite/releases)安裝，或自行從原始碼建置。
 
 2. **設定代理模型**：
-   * 按一下工具列中的 Flowkate 圖示以開啟側邊面板
+   * 按一下工具列中的 Flowkite 圖示以開啟側邊面板
    * 按一下右上角的 `設定` 圖示
    * 新增 LLM API 金鑰
    * 為不同代理 (Navigator、Planner) 選擇要使用的模型
@@ -74,29 +74,29 @@ Flowkate 是一款在瀏覽器中執行的開放原始碼 AI 網頁自動化工�
 若要取得包含所有最新功能的版本：
 
 1. **下載**
-    * 從官方 GitHub 的 [版本頁面](https://github.com/itsnevu/Flowkate/releases) 下載最新的 `flowkate.zip` 檔案。
+    * 從官方 GitHub 的 [版本頁面](https://github.com/itsnevu/Flowkite/releases) 下載最新的 `flowkite.zip` 檔案。
 
 2. **安裝**：
-    * 解壓縮 `flowkate.zip`。
+    * 解壓縮 `flowkite.zip`。
     * 在 Chrome 中開啟 `chrome://extensions/`
     * 啟用 `開發人員模式` (右上角)
     * 按一下 `載入未封裝的擴充功能` (左上角)
-    * 選擇已解壓縮的 `flowkate` 資料夾。
+    * 選擇已解壓縮的 `flowkite` 資料夾。
 
 3. **設定代理模型**
-    * 按一下工具列中的 Flowkate 圖示以開啟側邊面板
+    * 按一下工具列中的 Flowkite 圖示以開啟側邊面板
     * 按一下右上角的 `設定` 圖示。
     * 新增 LLM API 金鑰。
     * 為不同代理 (Navigator、Planner) 選擇要使用的模型。
 
 4. **升級**：
-    * 從版本頁面下載最新的 `flowkate.zip` 檔案。
-    * 解壓縮並用新檔案覆寫您現有的 Flowkate 檔案。
-    * 前往 Chrome 的 `chrome://extensions/` 頁面，然後在 Flowkate 卡片上按一下重新整理圖示。
+    * 從版本頁面下載最新的 `flowkite.zip` 檔案。
+    * 解壓縮並用新檔案覆寫您現有的 Flowkite 檔案。
+    * 前往 Chrome 的 `chrome://extensions/` 頁面，然後在 Flowkite 卡片上按一下重新整理圖示。
 
 ## 🛠️ 從原始碼建置
 
-如果您偏好自行建置 Flowkate，請依照以下步驟操作：
+如果您偏好自行建置 Flowkite，請依照以下步驟操作：
 
 1. **先決條件**：
    * [Node.js](https://nodejs.org/) (v22.12.0 或更高版本)
@@ -104,8 +104,8 @@ Flowkate 是一款在瀏覽器中執行的開放原始碼 AI 網頁自動化工�
 
 2. **複製儲存庫**：
    ```bash
-   git clone https://github.com/itsnevu/Flowkate.git
-   cd flowkate
+   git clone https://github.com/itsnevu/Flowkite.git
+   cd flowkite
    ```
 
 3. **安裝相依套件**：
@@ -129,7 +129,7 @@ Flowkate 是一款在瀏覽器中執行的開放原始碼 AI 網頁自動化工�
 
 ## 🤖 選擇您的模型
 
-Flowkate 允許您為每個代理設定不同的 LLM 模型，以平衡效能與成本。以下是建議的設定：
+Flowkite 允許您為每個代理設定不同的 LLM 模型，以平衡效能與成本。以下是建議的設定：
 
 ### 追求高效能
 - **Planner**：Claude Sonnet 4
@@ -157,7 +157,7 @@ Flowkate 允許您為每個代理設定不同的 LLM 模型，以平衡效能與
   - **Qwen 2.5 Coder 14B**
   - **Mistral Small 24B**
   - [社群最新測試結果](https://gist.github.com/maximus2600/75d60bf3df62986e2254d5166e2524cb)
-  - 歡迎社群成員在我們的 [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) 分享其他本機模型的使用經驗
+  - 歡迎社群成員在我們的 [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions) 分享其他本機模型的使用經驗
 
 - **提示詞工程**：
   - 本機模型通常需要更具體、清楚的提示詞
@@ -167,7 +167,7 @@ Flowkate 允許您為每個代理設定不同的 LLM 模型，以平衡效能與
 
 > **請注意**：講求成本效益的設定可能會產生較不穩定的輸出，且處理複雜任務時可能需要更多次的迭代。
 
-> **提示**：歡迎盡情嘗試自己的模型設定！找到絕佳組合了嗎？到我們的 [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) 與社群分享，幫助大家最佳化設定。
+> **提示**：歡迎盡情嘗試自己的模型設定！找到絕佳組合了嗎？到我們的 [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions) 與社群分享，幫助大家最佳化設定。
 
 ## 💡 實際應用案例
 
@@ -184,19 +184,19 @@ Flowkate 允許您為每個代理設定不同的 LLM 模型，以平衡效能與
 
 ## 🛠️ 發展藍圖
 
-我們正積極開發 Flowkate，未來將有更多令人期待的功能推出，歡迎加入我們！
+我們正積極開發 Flowkite，未來將有更多令人期待的功能推出，歡迎加入我們！
 
-請至我們的 [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions/85) 查看詳細的發展藍圖與即將推出的功能。
+請至我們的 [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions/85) 查看詳細的發展藍圖與即將推出的功能。
 
 ## 🤝 如何貢獻
 
-**我們需要您的幫助，讓 Flowkate 變得更好！** 我們歡迎各種形式的貢獻：
+**我們需要您的幫助，讓 Flowkite 變得更好！** 我們歡迎各種形式的貢獻：
 
 *  **分享提示詞與使用案例**
-   * 加入我們的 [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)。
-   * 分享您如何使用 Flowkate，協助我們建立實用的提示詞與實際應用案例資料庫。
+   * 加入我們的 [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions)。
+   * 分享您如何使用 Flowkite，協助我們建立實用的提示詞與實際應用案例資料庫。
 *  **提供回饋意見**
-   * 試用 Flowkate，並在我們的 [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) 上提供效能回饋或改進建議。
+   * 試用 Flowkite，並在我們的 [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions) 上提供效能回饋或改進建議。
 * **貢獻程式碼**
    * 請參閱我們的 [CONTRIBUTING.md](CONTRIBUTING.md)，瞭解如何為本專案貢獻程式碼的指南。
    * 針對錯誤修復、新功能或文件改進，提出 Pull Request。
@@ -209,21 +209,21 @@ Flowkate 允許您為每個代理設定不同的 LLM 模型，以平衡效能與
 
 如果您發現安全漏洞，請**不要**透過 Issues、Pull Request 或 Discussions 公開揭露。
 
-請建立一個 [GitHub Security Advisory](https://github.com/itsnevu/Flowkate/security/advisories/new) 來負責任地回報此漏洞。這讓我們能在漏洞被公開之前解決問題。
+請建立一個 [GitHub Security Advisory](https://github.com/itsnevu/Flowkite/security/advisories/new) 來負責任地回報此漏洞。這讓我們能在漏洞被公開之前解決問題。
 
-我們感謝您協助維護 Flowkate 及其使用者的安全！
+我們感謝您協助維護 Flowkite 及其使用者的安全！
 
 ## 💬 社群
 
 歡迎加入我們持續成長的開發者與使用者社群：
 
-- [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) - 與團隊及社群成員交流
-- [GitHub 版本發布](https://github.com/itsnevu/Flowkate/releases) - 追蹤最新的更新與公告
-- [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) - 分享您的想法並提出問題
+- [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions) - 與團隊及社群成員交流
+- [GitHub 版本發布](https://github.com/itsnevu/Flowkite/releases) - 追蹤最新的更新與公告
+- [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions) - 分享您的想法並提出問題
 
 ## 👏 致謝
 
-Flowkate 的開發建立在許多優秀的開放原始碼專案之上：
+Flowkite 的開發建立在許多優秀的開放原始碼專案之上：
 
 - [Browser Use](https://github.com/browser-use/browser-use)
 - [Puppeteer](https://github.com/EmergenceAI/Agent-E)
@@ -236,15 +236,15 @@ Flowkate 的開發建立在許多優秀的開放原始碼專案之上：
 
 本專案採用 Apache License 2.0 授權 - 詳情請參閱 [LICENSE](LICENSE) 檔案。
 
-由 Flowkate 團隊用 ❤️ 打造。
+由 Flowkite 團隊用 ❤️ 打造。
 
-喜歡 Flowkate 嗎？請給我們一顆星星 🌟 並加入我們的 [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)
+喜歡 Flowkite 嗎？請給我們一顆星星 🌟 並加入我們的 [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions)
 
 ## ⚠️ 衍生專案免責聲明
 
 **我們明確「不予背書、不提供支援、也不參與」任何** 基於本程式碼所打造、與加密貨幣、代幣、NFT 或其他區塊鏈相關應用有關的專案。
 
-**此類衍生專案與官方 Flowkate 專案或核心團隊** 「**沒有任何關聯**、**非由我們維護**、亦**未與我們有任何連結**」。
+**此類衍生專案與官方 Flowkite 專案或核心團隊** 「**沒有任何關聯**、**非由我們維護**、亦**未與我們有任何連結**」。
 
 **對於使用第三方衍生專案所造成的任何損失、損害或問題，我們概不負責。** 使用者與其互動時請自行承擔風險。
 

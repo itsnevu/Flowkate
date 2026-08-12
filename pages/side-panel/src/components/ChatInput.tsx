@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { FaMicrophone } from 'react-icons/fa';
+import { FaMicrophone, FaPaperclip, FaArrowUp, FaTimes } from 'react-icons/fa';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { t } from '@extension/i18n';
 
@@ -12,7 +12,6 @@ interface ChatInputProps {
   disabled: boolean;
   showStopButton: boolean;
   setContent?: (setter: (text: string) => void) => void;
-  isDarkMode?: boolean;
   // Historical session ID - if provided, shows replay button instead of send button
   historicalSessionId?: string | null;
   onReplay?: (sessionId: string) => void;
@@ -25,6 +24,19 @@ interface AttachedFile {
   type: string;
 }
 
+// Shared control recipes — graphite keys sit on the pale canvas, light from the top-left.
+// Each state string carries exactly one un-prefixed shadow so states never fight.
+const ICON_BUTTON =
+  'grid size-9 shrink-0 place-items-center rounded-soft bg-canvas-raised transition-all duration-150 ease-press';
+const ICON_BUTTON_IDLE = 'text-ink-soft shadow-neu-sm hover:text-ink active:shadow-neu-inset-sm';
+const ICON_BUTTON_PRESSED = 'text-signal-bad shadow-neu-inset-sm';
+const DISABLED_CONTROL = 'cursor-not-allowed text-ink-faint opacity-45 shadow-none';
+
+const GRAPHITE_KEY = 'bg-graphite text-graphite-50 transition-all duration-150 ease-press';
+const GRAPHITE_KEY_IDLE =
+  'shadow-key hover:bg-graphite-hover active:translate-y-px active:bg-graphite-active active:shadow-key-pressed';
+const GRAPHITE_KEY_DISABLED = 'cursor-not-allowed opacity-45 shadow-none';
+
 export default function ChatInput({
   onSendMessage,
   onStopTask,
@@ -34,7 +46,6 @@ export default function ChatInput({
   disabled,
   showStopButton,
   setContent,
-  isDarkMode = false,
   historicalSessionId,
   onReplay,
 }: ChatInputProps) {
@@ -91,14 +102,14 @@ export default function ChatInput({
           const fileContents = attachedFiles
             .map(file => {
               // Tag file content for background service to identify and sanitize
-              return `\n\n<flowkate_file_content type="file" name="${file.name}">\n${file.content}\n</flowkate_file_content>`;
+              return `\n\n<flowkite_file_content type="file" name="${file.name}">\n${file.content}\n</flowkite_file_content>`;
             })
             .join('\n');
 
           // Combine user message with tagged file content (for background service)
           messageContent = trimmedText
-            ? `${trimmedText}\n\n<flowkate_attached_files>${fileContents}</flowkate_attached_files>`
-            : `<flowkate_attached_files>${fileContents}</flowkate_attached_files>`;
+            ? `${trimmedText}\n\n<flowkite_attached_files>${fileContents}</flowkite_attached_files>`
+            : `<flowkite_attached_files>${fileContents}</flowkite_attached_files>`;
 
           // Create display version with only filenames (for UI)
           const fileList = attachedFiles.map(file => `📎 ${file.name}`).join('\n');
@@ -183,33 +194,27 @@ export default function ChatInput({
   }, []);
 
   return (
+    // The composer is a well pressed into the canvas; focusing it deepens the well.
     <form
       onSubmit={handleSubmit}
-      className={`overflow-hidden rounded-lg border transition-colors ${disabled ? 'cursor-not-allowed' : 'focus-within:border-sky-400 hover:border-sky-400'} ${isDarkMode ? 'border-slate-700' : ''}`}
+      className={`rounded-slab bg-canvas-sunk p-2.5 shadow-neu-inset-sm transition-shadow duration-200 ease-press focus-within:shadow-neu-inset ${disabled ? 'cursor-not-allowed' : ''}`}
       aria-label={t('chat_input_form')}>
-      <div className="flex flex-col">
+      <div className="flex flex-col gap-2">
         {/* File attachments display */}
         {attachedFiles.length > 0 && (
-          <div
-            className={`flex flex-wrap gap-2 border-b p-2 ${
-              isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-gray-50'
-            }`}>
+          <div className="flex flex-wrap gap-2 px-0.5">
             {attachedFiles.map((file, index) => (
               <div
                 key={index}
-                className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs ${
-                  isDarkMode ? 'bg-slate-700 text-gray-300' : 'bg-gray-200 text-gray-700'
-                }`}>
-                <span className="text-xs">📎</span>
+                className="flex items-center gap-1.5 rounded-pill bg-canvas-raised px-3 py-1 text-xs text-ink-soft shadow-neu-sm">
+                <FaPaperclip className="size-2.5 shrink-0 text-ink-faint" aria-hidden="true" />
                 <span className="max-w-[150px] truncate">{file.name}</span>
                 <button
                   type="button"
                   onClick={() => handleRemoveFile(index)}
-                  className={`ml-1 rounded-sm transition-colors ${
-                    isDarkMode ? 'hover:bg-slate-600' : 'hover:bg-gray-300'
-                  }`}
+                  className="grid size-4 shrink-0 place-items-center rounded-pill text-ink-faint transition-colors duration-150 ease-press hover:text-ink"
                   aria-label={`Remove ${file.name}`}>
-                  <span className="text-xs">✕</span>
+                  <FaTimes className="size-2.5" aria-hidden="true" />
                 </button>
               </div>
             ))}
@@ -224,24 +229,13 @@ export default function ChatInput({
           disabled={disabled}
           aria-disabled={disabled}
           rows={5}
-          className={`w-full resize-none border-none p-2 focus:outline-none ${
-            disabled
-              ? isDarkMode
-                ? 'cursor-not-allowed bg-slate-800 text-gray-400'
-                : 'cursor-not-allowed bg-gray-100 text-gray-500'
-              : isDarkMode
-                ? 'bg-slate-800 text-gray-200'
-                : 'bg-white'
-          }`}
+          className="w-full resize-none bg-transparent px-1.5 py-1 text-sm leading-relaxed text-ink placeholder:text-ink-faint focus:outline-none disabled:cursor-not-allowed disabled:text-ink-faint"
           placeholder={attachedFiles.length > 0 ? 'Add a message (optional)...' : t('chat_input_placeholder')}
           aria-label={t('chat_input_editor')}
         />
 
-        <div
-          className={`flex items-center justify-between px-2 py-1.5 ${
-            disabled ? (isDarkMode ? 'bg-slate-800' : 'bg-gray-100') : isDarkMode ? 'bg-slate-800' : 'bg-white'
-          }`}>
-          <div className="flex gap-2 text-gray-500">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
             {/* File attachment button */}
             <button
               type="button"
@@ -249,14 +243,8 @@ export default function ChatInput({
               disabled={disabled}
               aria-label="Attach files"
               title="Attach text files (txt, md, json, csv, etc.)"
-              className={`rounded-md p-1.5 transition-colors ${
-                disabled
-                  ? 'cursor-not-allowed opacity-50'
-                  : isDarkMode
-                    ? 'text-gray-400 hover:bg-slate-700 hover:text-gray-200'
-                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
-              }`}>
-              <span className="text-lg">📎</span>
+              className={`${ICON_BUTTON} ${disabled ? DISABLED_CONTROL : ICON_BUTTON_IDLE}`}>
+              <FaPaperclip className="size-4" aria-hidden="true" />
             </button>
 
             {/* Hidden file input */}
@@ -282,19 +270,17 @@ export default function ChatInput({
                       ? t('chat_stt_recording_stop')
                       : t('chat_stt_input_start')
                 }
-                className={`rounded-md p-1.5 transition-colors ${
+                className={`${ICON_BUTTON} ${
                   disabled || isProcessingSpeech
-                    ? 'cursor-not-allowed opacity-50'
+                    ? DISABLED_CONTROL
                     : isRecording
-                      ? 'bg-red-500 text-white hover:bg-red-600'
-                      : isDarkMode
-                        ? 'text-gray-400 hover:bg-slate-700 hover:text-gray-200'
-                        : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+                      ? ICON_BUTTON_PRESSED
+                      : ICON_BUTTON_IDLE
                 }`}>
                 {isProcessingSpeech ? (
-                  <AiOutlineLoading3Quarters className="size-4 animate-spin" />
+                  <AiOutlineLoading3Quarters className="size-4 animate-spin" aria-hidden="true" />
                 ) : (
-                  <FaMicrophone className={`size-4 ${isRecording ? 'animate-pulse' : ''}`} />
+                  <FaMicrophone className={`size-4 ${isRecording ? 'animate-pulse-soft' : ''}`} aria-hidden="true" />
                 )}
               </button>
             )}
@@ -304,7 +290,8 @@ export default function ChatInput({
             <button
               type="button"
               onClick={onStopTask}
-              className="rounded-md bg-red-500 px-3 py-1 text-white transition-colors hover:bg-red-600">
+              className={`flex h-9 shrink-0 items-center gap-2 rounded-pill px-4 text-xs font-medium ${GRAPHITE_KEY} ${GRAPHITE_KEY_IDLE}`}>
+              <span className="size-2 shrink-0 animate-pulse-soft rounded-pill bg-signal-bad" aria-hidden="true" />
               {t('chat_buttons_stop')}
             </button>
           ) : historicalSessionId ? (
@@ -313,7 +300,9 @@ export default function ChatInput({
               onClick={handleReplay}
               disabled={!historicalSessionId}
               aria-disabled={!historicalSessionId}
-              className={`rounded-md bg-green-500 px-3 py-1 text-white transition-colors hover:enabled:bg-green-600 ${!historicalSessionId ? 'cursor-not-allowed opacity-50' : ''}`}>
+              className={`flex h-9 shrink-0 items-center rounded-pill px-4 text-xs font-medium ${GRAPHITE_KEY} ${
+                !historicalSessionId ? GRAPHITE_KEY_DISABLED : GRAPHITE_KEY_IDLE
+              }`}>
               {t('chat_buttons_replay')}
             </button>
           ) : (
@@ -321,8 +310,12 @@ export default function ChatInput({
               type="submit"
               disabled={isSendButtonDisabled}
               aria-disabled={isSendButtonDisabled}
-              className={`rounded-md bg-[#19C2FF] px-3 py-1 text-white transition-colors hover:enabled:bg-[#0073DC] ${isSendButtonDisabled ? 'cursor-not-allowed opacity-50' : ''}`}>
-              {t('chat_buttons_send')}
+              aria-label={t('chat_buttons_send')}
+              title={t('chat_buttons_send')}
+              className={`grid size-9 shrink-0 place-items-center rounded-pill ${GRAPHITE_KEY} ${
+                isSendButtonDisabled ? GRAPHITE_KEY_DISABLED : GRAPHITE_KEY_IDLE
+              }`}>
+              <FaArrowUp className="size-3.5" aria-hidden="true" />
             </button>
           )}
         </div>

@@ -9,24 +9,24 @@
 
 </div>
 
-## 🌐 Flowkate
+## 🌐 Flowkite
 
-Flowkate es una herramienta de automatización web con IA que se ejecuta en tu navegador. Es una alternativa gratuita a OpenAI Operator, con opciones flexibles de modelos de lenguaje (LLM) y un sistema multiagente.
+Flowkite es una herramienta de automatización web con IA que se ejecuta en tu navegador. Es una alternativa gratuita a OpenAI Operator, con opciones flexibles de modelos de lenguaje (LLM) y un sistema multiagente.
 
-⬇️ Todavía no está en Chrome Web Store — descarga la última [versión](https://github.com/itsnevu/Flowkate/releases) o compílalo desde el código fuente
+⬇️ Todavía no está en Chrome Web Store — descarga la última [versión](https://github.com/itsnevu/Flowkite/releases) o compílalo desde el código fuente
 
-👏 Únete a la comunidad en [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)
+👏 Únete a la comunidad en [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions)
 
-❤️ ¿Te encanta Flowkate? ¡Danos una estrella 🌟 y ayúdanos a correr la voz!
+❤️ ¿Te encanta Flowkite? ¡Danos una estrella 🌟 y ayúdanos a correr la voz!
 
 <div align="center">
-<img src="https://github.com/user-attachments/assets/112c4385-7b03-4b81-a352-4f348093351b" width="600" alt="Flowkate Demo GIF" />
-<p><em>El sistema multiagente de Flowkate analizando HuggingFace en tiempo real, con el Planner autocorrigiéndose de forma inteligente al enfrentar obstáculos e instruyendo dinámicamente al Navigator para ajustar su enfoque, todo ejecutándose localmente en tu navegador.</em></p>
+<img src="https://github.com/user-attachments/assets/112c4385-7b03-4b81-a352-4f348093351b" width="600" alt="Flowkite Demo GIF" />
+<p><em>El sistema multiagente de Flowkite analizando HuggingFace en tiempo real, con el Planner autocorrigiéndose de forma inteligente al enfrentar obstáculos e instruyendo dinámicamente al Navigator para ajustar su enfoque, todo ejecutándose localmente en tu navegador.</em></p>
 </div>
 
-## 🔥 ¿Por qué usar Flowkate?
+## 🔥 ¿Por qué usar Flowkite?
 
-¿Buscas un potente agente de navegador con IA sin el precio de $200/mes de OpenAI Operator? **Flowkate**, como extensión de Chrome, ofrece capacidades avanzadas de automatización web mientras tú tienes el control total.
+¿Buscas un potente agente de navegador con IA sin el precio de $200/mes de OpenAI Operator? **Flowkite**, como extensión de Chrome, ofrece capacidades avanzadas de automatización web mientras tú tienes el control total.
 
 - **100% Gratis** - Sin suscripciones ni costos ocultos. Solo instala y usa tus propias claves de API, pagando únicamente por lo que tú consumas.
 - **Enfoque En Privacidad** - Todo se ejecuta en tu navegador local. Tus credenciales permanecen contigo y nunca se comparten con ningún servicio en la nube.
@@ -49,10 +49,10 @@ Flowkate es una herramienta de automatización web con IA que se ejecuta en tu n
 ## 🚀 Inicio Rápido
 
 1. **Instala la extensión**:
-   * Flowkate aún no está publicado en Chrome Web Store, así que instálalo desde una [versión](https://github.com/itsnevu/Flowkate/releases) siguiendo ["Instalar Última Versión Manualmente"](#-instalar-última-versión-manualmente) abajo, o compílalo desde el código fuente.
+   * Flowkite aún no está publicado en Chrome Web Store, así que instálalo desde una [versión](https://github.com/itsnevu/Flowkite/releases) siguiendo ["Instalar Última Versión Manualmente"](#-instalar-última-versión-manualmente) abajo, o compílalo desde el código fuente.
 
 2. **Configurar Modelos de Agente**:
-   * Haz clic en el icono de Flowkate ubicado en la barra de herramientas para abrir el panel lateral
+   * Haz clic en el icono de Flowkite ubicado en la barra de herramientas para abrir el panel lateral
    * Haz clic en el icono de `Settings` (arriba a la derecha)
    * Agrega tus claves de API del LLM
    * Elige qué modelo usar para cada agente (Navigator, Planner)
@@ -62,29 +62,29 @@ Flowkate es una herramienta de automatización web con IA que se ejecuta en tu n
 Para obtener la versión más reciente con todas las funciones nuevas:
 
 1. **Descargar**
-    * Descarga el archivo `flowkate.zip` más reciente desde la [página de lanzamientos](https://github.com/itsnevu/Flowkate/releases) oficial en GitHub.
+    * Descarga el archivo `flowkite.zip` más reciente desde la [página de lanzamientos](https://github.com/itsnevu/Flowkite/releases) oficial en GitHub.
 
 2. **Instalar**:
-    * Extrae el archivo `flowkate.zip`.
+    * Extrae el archivo `flowkite.zip`.
     * Abre `chrome://extensions/` en Chrome
     * Habilita el `Modo de desarrollador` (arriba a la derecha)
     * Haz clic en `Cargar extensión sin empaquetar` (arriba a la izquierda)
-    * Selecciona la carpeta descomprimida de `flowkate`.
+    * Selecciona la carpeta descomprimida de `flowkite`.
 
 3. **Configurar Modelos de Agente**
-    * Haz clic en el icono de Flowkate en la barra de herramientas para abrir el panel lateral
+    * Haz clic en el icono de Flowkite en la barra de herramientas para abrir el panel lateral
     * Haz clic en el icono de `Settings` (arriba a la derecha).
     * Agrega tus claves de API del LLM
     * Elige qué modelo usar para cada agente (Navigator, Planner)
 
 4. **Actualizar**:
-    * Descarga el archivo `flowkate.zip` más reciente desde la página de lanzamientos.
-    * Extrae y reemplaza los archivos existentes de Flowkate con los nuevos.
-    * Ve a `chrome://extensions/` en Chrome y haz clic en el icono de actualizar en la tarjeta de Flowkate.
+    * Descarga el archivo `flowkite.zip` más reciente desde la página de lanzamientos.
+    * Extrae y reemplaza los archivos existentes de Flowkite con los nuevos.
+    * Ve a `chrome://extensions/` en Chrome y haz clic en el icono de actualizar en la tarjeta de Flowkite.
 
 ## 🛠️ Compilar desde el Código Fuente
 
-Si prefieres compilar Flowkate por ti mismo, sigue estos pasos:
+Si prefieres compilar Flowkite por ti mismo, sigue estos pasos:
 
 1. **Requisitos Previos**:
    * [Node.js](https://nodejs.org/) (v22.12.0 o superior)
@@ -92,8 +92,8 @@ Si prefieres compilar Flowkate por ti mismo, sigue estos pasos:
 
 2. **Clonar el Repositorio**:
    ```bash
-   git clone https://github.com/itsnevu/Flowkate.git
-   cd flowkate
+   git clone https://github.com/itsnevu/Flowkite.git
+   cd flowkite
    ```
 
 3. **Instalar Dependencias**:
@@ -117,7 +117,7 @@ Si prefieres compilar Flowkate por ti mismo, sigue estos pasos:
 
 ## 🤖 Eligiendo tus Modelos
 
-Flowkate te permite configurar distintos modelos LLM para cada agente para equilibrar costo y rendimiento. Aquí están las configuraciones recomendadas:
+Flowkite te permite configurar distintos modelos LLM para cada agente para equilibrar costo y rendimiento. Aquí están las configuraciones recomendadas:
 
 ### Mejor Rendimiento
 - **Planner**: Claude Sonnet 4
@@ -145,7 +145,7 @@ Flowkate te permite configurar distintos modelos LLM para cada agente para equil
   - **Qwen 2.5 Coder 14B**
   - **Mistral Small 24B**
   - [Últimos resultados de pruebas de la comunidad](https://gist.github.com/maximus2600/75d60bf3df62986e2254d5166e2524cb)
-  - Te invitamos a compartir tu experiencia con otros modelos locales en nuestro [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)
+  - Te invitamos a compartir tu experiencia con otros modelos locales en nuestro [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions)
 
 - **Ingeniería de Prompts**:
   - Los modelos locales requieren prompts más específicos y claros
@@ -155,7 +155,7 @@ Flowkate te permite configurar distintos modelos LLM para cada agente para equil
 
 > **Nota**: La configuración económica puede producir resultados menos estables y requerir más iteraciones para tareas complejas.
 
-> **Consejo**: ¡Siéntete libre de experimentar con tus propias configuraciones de modelos! ¿Encontraste una combinación excelente? Compártela con la comunidad en nuestro [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) para ayudar a otros a optimizar sus configuraciones.
+> **Consejo**: ¡Siéntete libre de experimentar con tus propias configuraciones de modelos! ¿Encontraste una combinación excelente? Compártela con la comunidad en nuestro [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions) para ayudar a otros a optimizar sus configuraciones.
 
 ## 💡 Velo en Acción
 
@@ -172,19 +172,19 @@ Aquí tienes algunas tareas poderosas que puedes realizar con solo una frase:
 
 ## 🛠️ Hoja de Ruta
 
-Estamos desarrollando activamente Flowkate con características emocionantes en el horizonte. ¡Te invitamos a unirte!
+Estamos desarrollando activamente Flowkite con características emocionantes en el horizonte. ¡Te invitamos a unirte!
 
-Consulta nuestra hoja de ruta detallada y las características próximas en nuestras [Discusiones de GitHub](https://github.com/itsnevu/Flowkate/discussions/85). 
+Consulta nuestra hoja de ruta detallada y las características próximas en nuestras [Discusiones de GitHub](https://github.com/itsnevu/Flowkite/discussions/85). 
 
 ## 🤝 Contribuciones
 
-**Necesitamos tu ayuda para hacer que Flowkate sea aún mejor!**  Se aceptan contribuciones de todo tipo:
+**Necesitamos tu ayuda para hacer que Flowkite sea aún mejor!**  Se aceptan contribuciones de todo tipo:
 
 *  **Comparte Prompts y Casos de Uso** 
-   * Únete a nuestro [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions).
-   * Comparte cómo estás usando Flowkate. Ayúdanos a construir una biblioteca de prompts útiles y casos de uso reales.
+   * Únete a nuestro [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions).
+   * Comparte cómo estás usando Flowkite. Ayúdanos a construir una biblioteca de prompts útiles y casos de uso reales.
 *  **Proporciona Retroalimentación** 
-   * Prueba Flowkate y danos tu opinión sobre su rendimiento o sugiere mejoras en nuestro [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions).
+   * Prueba Flowkite y danos tu opinión sobre su rendimiento o sugiere mejoras en nuestro [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions).
 * **Contribuye con Código**
    * Consulta nuestro [CONTRIBUTING.md](CONTRIBUTING.md) para conocer las pautas sobre cómo contribuir con código al proyecto.
    * Envía pull requests para corrección de errores, funciones, o mejoras en la documentación.
@@ -197,21 +197,21 @@ Creemos en el poder del código abierto y la colaboración comunitaria. ¡Únete
 
 Si descubres una vulnerabilidad de seguridad, por favor **NO** la divulgues públicamente a través de issues, pull requests, o discusiones.
 
-En su lugar, por favor crea un [GitHub Security Advisory](https://github.com/itsnevu/Flowkate/security/advisories/new) para reportar la vulnerabilidad de forma responsable. Esto nos permite abordar el problema antes de que se divulgue públicamente.
+En su lugar, por favor crea un [GitHub Security Advisory](https://github.com/itsnevu/Flowkite/security/advisories/new) para reportar la vulnerabilidad de forma responsable. Esto nos permite abordar el problema antes de que se divulgue públicamente.
 
-¡Agradecemos tu ayuda para mantener Flowkate y sus usuarios seguros!
+¡Agradecemos tu ayuda para mantener Flowkite y sus usuarios seguros!
 
 ## 💬 Comunidad
 
 Únete a nuestra creciente comunidad de desarrolladores y usuarios:
 
-- [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) - Habla con el equipo y la comunidad
-- [Versiones de GitHub](https://github.com/itsnevu/Flowkate/releases) - Síguenos para actualizaciones y anuncios
-- [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) - Comparte ideas y realiza preguntas
+- [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions) - Habla con el equipo y la comunidad
+- [Versiones de GitHub](https://github.com/itsnevu/Flowkite/releases) - Síguenos para actualizaciones y anuncios
+- [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions) - Comparte ideas y realiza preguntas
 
 ## 👏 Agradecimientos
 
-Flowkate se construye sobre otros increíbles proyectos de código abierto:
+Flowkite se construye sobre otros increíbles proyectos de código abierto:
 
 - [Browser Use](https://github.com/browser-use/browser-use)
 - [Puppeteer](https://github.com/EmergenceAI/Agent-E)
@@ -225,6 +225,6 @@ Flowkate se construye sobre otros increíbles proyectos de código abierto:
 
 Este proyecto está bajo la Licencia Apache 2.0 - consulta el archivo [LICENSE](LICENSE) para más detalles.
 
-Hecho con ❤️ por el equipo de Flowkate.
+Hecho con ❤️ por el equipo de Flowkite.
 
-¿Te gusta Flowkate? ¡Danos una estrella 🌟 y únete a nosotros en [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)
+¿Te gusta Flowkite? ¡Danos una estrella 🌟 y únete a nosotros en [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions)

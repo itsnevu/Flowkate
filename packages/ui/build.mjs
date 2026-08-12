@@ -1,6 +1,6 @@
 import fs from 'node:fs';
-import { replaceTscAliasPaths } from 'tsc-alias';
 import { resolve } from 'node:path';
+import { replaceTscAliasPaths } from 'tsc-alias';
 import esbuild from 'esbuild';
 
 /**

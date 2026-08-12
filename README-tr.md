@@ -8,24 +8,24 @@
 
 </div>
 
-## 🌐 Flowkate
+## 🌐 Flowkite
 
-Flowkate, tarayıcınızda çalışan açık kaynaklı bir yapay zeka tarayıcı otomasyon aracıdır. Esnek LLM seçenekleri ve çoklu ajan sistemiyle birlikte OpenAI Operator’a ücretsiz bir alternatiftir.
+Flowkite, tarayıcınızda çalışan açık kaynaklı bir yapay zeka tarayıcı otomasyon aracıdır. Esnek LLM seçenekleri ve çoklu ajan sistemiyle birlikte OpenAI Operator’a ücretsiz bir alternatiftir.
 
-⬇️ Henüz Chrome Web Mağazası’nda değil — en son [sürümü](https://github.com/itsnevu/Flowkate/releases) indirin veya kaynaktan derleyin
+⬇️ Henüz Chrome Web Mağazası’nda değil — en son [sürümü](https://github.com/itsnevu/Flowkite/releases) indirin veya kaynaktan derleyin
 
-👏 Topluluğa katılın: [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)
+👏 Topluluğa katılın: [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions)
 
-❤️ Flowkate’ı sevdiniz mi? Bize bir yıldız ⭐ verin ve yayılmasına yardımcı olun!
+❤️ Flowkite’ı sevdiniz mi? Bize bir yıldız ⭐ verin ve yayılmasına yardımcı olun!
 
 <div align="center">
-<img src="https://github.com/user-attachments/assets/112c4385-7b03-4b81-a352-4f348093351b" width="600" alt="Flowkate Demo GIF" />
-<p><em>Flowkate’ın çoklu ajan sistemi, HuggingFace'i gerçek zamanlı analiz ederken; Planner engellerle karşılaştığında akıllıca kendi kendini düzeltir ve Navigator’a yaklaşımını dinamik olarak ayarlamasını söyler—tüm bunlar yerel olarak tarayıcınızda gerçekleşir.</em></p>
+<img src="https://github.com/user-attachments/assets/112c4385-7b03-4b81-a352-4f348093351b" width="600" alt="Flowkite Demo GIF" />
+<p><em>Flowkite’ın çoklu ajan sistemi, HuggingFace'i gerçek zamanlı analiz ederken; Planner engellerle karşılaştığında akıllıca kendi kendini düzeltir ve Navigator’a yaklaşımını dinamik olarak ayarlamasını söyler—tüm bunlar yerel olarak tarayıcınızda gerçekleşir.</em></p>
 </div>
 
-## 🔥Neden Flowkate?
+## 🔥Neden Flowkite?
 
-OpenAI Operator'ın aylık 200 dolarlık ücretinden kurtulmak mı istiyorsunuz? **Flowkate**, bir Chrome uzantısı olarak size premium tarayıcı otomasyonu yetenekleri sunar ve tam kontrolü elinizde tutmanızı sağlar:
+OpenAI Operator'ın aylık 200 dolarlık ücretinden kurtulmak mı istiyorsunuz? **Flowkite**, bir Chrome uzantısı olarak size premium tarayıcı otomasyonu yetenekleri sunar ve tam kontrolü elinizde tutmanızı sağlar:
 
 - **%100 Ücretsiz** - Abonelik ücreti veya gizli maliyetler yok. Sadece yükleyin ve kendi API anahtarlarınızı kullanın, ne kadar kullanırsanız o kadar ödersiniz.
 - **Gizlilik Odaklı** - Her şey yerel tarayıcınızda çalışır. Kimlik bilgileriniz yalnızca sizde kalır, bulut hizmetleriyle paylaşılmaz.
@@ -52,15 +52,15 @@ OpenAI Operator'ın aylık 200 dolarlık ücretinden kurtulmak mı istiyorsunuz?
 **Desteklenmeyenler:**
 - Firefox, Safari ve diğer Chromium türevleri (Opera, Arc vb.)
 
-> **Not**: Flowkate diğer Chromium tabanlı tarayıcılarda çalışabilir, ancak en iyi deneyim ve garantili uyumluluk için Chrome veya Edge öneriyoruz.
+> **Not**: Flowkite diğer Chromium tabanlı tarayıcılarda çalışabilir, ancak en iyi deneyim ve garantili uyumluluk için Chrome veya Edge öneriyoruz.
 
 ## 🚀 Hızlı Başlangıç
 
 1. **Eklentiyi kurun**:
-   * Flowkate henüz Chrome Web Mağazası’nda yayınlanmadı. Aşağıdaki ["En Son Sürümü Manuel Kur"](#-en-son-sürümü-manuel-kur) adımlarını izleyerek bir [sürümden](https://github.com/itsnevu/Flowkate/releases) kurun veya kaynaktan derleyin.
+   * Flowkite henüz Chrome Web Mağazası’nda yayınlanmadı. Aşağıdaki ["En Son Sürümü Manuel Kur"](#-en-son-sürümü-manuel-kur) adımlarını izleyerek bir [sürümden](https://github.com/itsnevu/Flowkite/releases) kurun veya kaynaktan derleyin.
 
 2. **Ajan Modellerini Yapılandırın**:
-   * Araç çubuğundaki Flowkate simgesine tıklayın
+   * Araç çubuğundaki Flowkite simgesine tıklayın
    * Sağ üstteki `Ayarlar` simgesine tıklayın
    * LLM API anahtarlarınızı ekleyin
    * Farklı ajanlar (Navigator, Planner) için hangi modelin kullanılacağını seçin
@@ -70,29 +70,29 @@ OpenAI Operator'ın aylık 200 dolarlık ücretinden kurtulmak mı istiyorsunuz?
 En yeni özellikleri içeren en güncel sürümü kurmak için:
 
 1. **İndirin**
-    * Resmi Github [sürüm sayfasından](https://github.com/itsnevu/Flowkate/releases) en güncel `flowkate.zip` dosyasını indirin
+    * Resmi Github [sürüm sayfasından](https://github.com/itsnevu/Flowkite/releases) en güncel `flowkite.zip` dosyasını indirin
 
 2. **Kurulum**:
-    * `flowkate.zip` dosyasını çıkarın
+    * `flowkite.zip` dosyasını çıkarın
     * Chrome'da `chrome://extensions/` adresine gidin
     * Sağ üstten `Geliştirici modu`nu etkinleştirin
     * Sol üstte `Paketlenmemişi yükle`ye tıklayın
-    * Çıkardığınız `flowkate` klasörünü seçin
+    * Çıkardığınız `flowkite` klasörünü seçin
 
 3. **Ajan Modellerini Yapılandırın**
-    * Flowkate simgesine tıklayarak yan paneli açın
+    * Flowkite simgesine tıklayarak yan paneli açın
     * Sağ üstteki `Ayarlar` simgesine tıklayın
     * API anahtarlarınızı ekleyin
     * Ajanlara model atayın (Navigator, Planner)
 
 4. **Güncelleme**:
-    * Yeni `flowkate.zip` dosyasını indirin
-    * Mevcut Flowkate dosyalarını yenileriyle değiştirin
-    * `chrome://extensions/` sayfasına gidip Flowkate kartındaki yenile simgesine tıklayın
+    * Yeni `flowkite.zip` dosyasını indirin
+    * Mevcut Flowkite dosyalarını yenileriyle değiştirin
+    * `chrome://extensions/` sayfasına gidip Flowkite kartındaki yenile simgesine tıklayın
 
 ## 🛠️ Kaynaktan Derleme
 
-Flowkate’ı kendiniz derlemek isterseniz şu adımları izleyin:
+Flowkite’ı kendiniz derlemek isterseniz şu adımları izleyin:
 
 1. **Gereksinimler**:
    * [Node.js](https://nodejs.org/) (v22.12.0 veya üstü)
@@ -100,8 +100,8 @@ Flowkate’ı kendiniz derlemek isterseniz şu adımları izleyin:
 
 2. **Depoyu Klonlayın**:
    ```bash
-   git clone https://github.com/itsnevu/Flowkate.git
-   cd flowkate
+   git clone https://github.com/itsnevu/Flowkite.git
+   cd flowkite
    ```
 
 3. **Bağımlılıkları Yükleyin**:
@@ -129,7 +129,7 @@ Flowkate’ı kendiniz derlemek isterseniz şu adımları izleyin:
 
 ## 🤖 Model Seçimi
 
-Flowkate, her ajan için farklı LLM modelleri ayarlamanıza olanak tanır. Böylece performans ve maliyet arasında denge kurabilirsiniz. İşte önerilen yapılandırmalar:
+Flowkite, her ajan için farklı LLM modelleri ayarlamanıza olanak tanır. Böylece performans ve maliyet arasında denge kurabilirsiniz. İşte önerilen yapılandırmalar:
 
 ### Daha Yüksek Performans
 
@@ -166,7 +166,7 @@ Flowkate, her ajan için farklı LLM modelleri ayarlamanıza olanak tanır. Böy
   * **Qwen 2.5 Coder 14B**
   * **Mistral Small 24B**
   * [Topluluktan en son test sonuçları](https://gist.github.com/maximus2600/75d60bf3df62986e2254d5166e2524cb)
-  * Diğer yerel modellerle deneyimlerinizi [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)'da paylaşabilirsiniz
+  * Diğer yerel modellerle deneyimlerinizi [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions)'da paylaşabilirsiniz
 
 * **Prompt Mühendisliği**:
 
@@ -177,7 +177,7 @@ Flowkate, her ajan için farklı LLM modelleri ayarlamanıza olanak tanır. Böy
 
 > **Not**: Ucuz yapılandırmalar daha az kararlı çıktı verebilir ve karmaşık görevlerde daha fazla yineleme gerekebilir.
 
-> **İpucu**: Kendi model yapılandırmalarınızı denemekten çekinmeyin! Harika bir kombinasyon buldunuz mu? [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)'da toplulukla paylaşın.
+> **İpucu**: Kendi model yapılandırmalarınızı denemekten çekinmeyin! Harika bir kombinasyon buldunuz mu? [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions)'da toplulukla paylaşın.
 
 ## 💡 Uygulamalı Örnekler
 
@@ -197,21 +197,21 @@ Sadece bir cümleyle gerçekleştirebileceğiniz güçlü görevlerden bazılar�
 
 ## 🛠️ Yol Haritası
 
-Flowkate için heyecan verici yeni özellikler geliştiriyoruz, katılmak ister misiniz?
+Flowkite için heyecan verici yeni özellikler geliştiriyoruz, katılmak ister misiniz?
 
-Detaylı yol haritamıza ve gelecek özelliklere [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions/85) üzerinden göz atabilirsiniz.
+Detaylı yol haritamıza ve gelecek özelliklere [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions/85) üzerinden göz atabilirsiniz.
 
 ## 🤝 Katkıda Bulunun
 
-**Flowkate’ı daha iyi hale getirmemize yardım edin!** Her türden katkıya açığız:
+**Flowkite’ı daha iyi hale getirmemize yardım edin!** Her türden katkıya açığız:
 
 * **Prompt & Kullanım Senaryoları Paylaşın**
 
-  * [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) katılın
-  * Flowkate’ı nasıl kullandığınızı anlatın ve topluluk kütüphanemizi büyütün
+  * [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions) katılın
+  * Flowkite’ı nasıl kullandığınızı anlatın ve topluluk kütüphanemizi büyütün
 * **Geri Bildirim Verin**
 
-  * Flowkate’ı deneyin ve performansı hakkında önerilerinizi paylaşın
+  * Flowkite’ı deneyin ve performansı hakkında önerilerinizi paylaşın
 * **Kod Katkısı Yapın**
 
   * Kod katkısı için yönergeleri [CONTRIBUTING.md](CONTRIBUTING.md) dosyasında bulabilirsiniz
@@ -223,21 +223,21 @@ Açık kaynak ve topluluk iş birliğine inanıyoruz. Tarayıcı otomasyonunun g
 
 Bir güvenlik açığı keşfederseniz, lütfen bunu açık şekilde **issue, pull request veya discussion** yoluyla paylaşmayın.
 
-Bunun yerine, [GitHub Güvenlik Danışma Sayfası](https://github.com/itsnevu/Flowkate/security/advisories/new) üzerinden özel olarak bildirin. Böylece açığı kamuya açıklanmadan önce düzeltme şansı buluruz.
+Bunun yerine, [GitHub Güvenlik Danışma Sayfası](https://github.com/itsnevu/Flowkite/security/advisories/new) üzerinden özel olarak bildirin. Böylece açığı kamuya açıklanmadan önce düzeltme şansı buluruz.
 
-Flowkate’ı ve kullanıcılarını güvende tutmaya yardım ettiğiniz için teşekkür ederiz!
+Flowkite’ı ve kullanıcılarını güvende tutmaya yardım ettiğiniz için teşekkür ederiz!
 
 ## 💬 Topluluk
 
 Giderek büyüyen geliştirici ve kullanıcı topluluğumuza katılın:
 
-* [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) – Ekip ve toplulukla sohbet edin
-* [GitHub sürümleri](https://github.com/itsnevu/Flowkate/releases) – Güncellemeler ve duyurular
-* [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions) – Fikirlerinizi paylaşın ve sorular sorun
+* [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions) – Ekip ve toplulukla sohbet edin
+* [GitHub sürümleri](https://github.com/itsnevu/Flowkite/releases) – Güncellemeler ve duyurular
+* [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions) – Fikirlerinizi paylaşın ve sorular sorun
 
 ## 👏 Teşekkürler
 
-Flowkate, şu harika açık kaynak projeler üzerine inşa edilmiştir:
+Flowkite, şu harika açık kaynak projeler üzerine inşa edilmiştir:
 
 * [Browser Use](https://github.com/browser-use/browser-use)
 * [Puppeteer](https://github.com/EmergenceAI/Agent-E)
@@ -250,9 +250,9 @@ Tüm yaratıcılarına ve katkıda bulunanlara büyük teşekkürler!
 
 Bu proje Apache License 2.0 ile lisanslanmıştır – detaylar için [LICENSE](LICENSE) dosyasına bakın.
 
-Sevgiyle yapıldı ❤️ Flowkate Ekibi tarafından.
+Sevgiyle yapıldı ❤️ Flowkite Ekibi tarafından.
 
-Flowkate’ı sevdiniz mi? Bize bir yıldız 🌟 verin ve topluluğumuza katılın: [GitHub Discussions](https://github.com/itsnevu/Flowkate/discussions)
+Flowkite’ı sevdiniz mi? Bize bir yıldız 🌟 verin ve topluluğumuza katılın: [GitHub Discussions](https://github.com/itsnevu/Flowkite/discussions)
 
 ---
 

@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { BasePrompt } from './base';
 import { type HumanMessage, SystemMessage } from '@langchain/core/messages';
-import type { AgentContext } from '@src/background/agent/types';
 import { createLogger } from '@src/background/log';
+import { BasePrompt } from './base';
 import { navigatorSystemPromptTemplate } from './templates/navigator';
+import type { AgentContext } from '@src/background/agent/types';
 
 const logger = createLogger('agent/prompts/navigator');
 

@@ -1,5 +1,17 @@
 import { ActionResult, type AgentContext } from '@src/background/agent/types';
 import { t } from '@extension/i18n';
+import { z } from 'zod';
+import { createLogger } from '@src/background/log';
+import { memoryStore, MemoryScope } from '@extension/storage';
+import { wrapUntrustedContent } from '../messages/utils';
+import { ExecutionState, Actors } from '../event/types';
+import {
+  runSubtasksInParallel,
+  summarizeSubtaskResults,
+  MAX_PARALLEL_SUBTASKS,
+  type SubtaskRunnerOptions,
+} from '../parallel/subtaskRunner';
+import { READ_ONLY_ACTION_NAMES } from './readOnlyActions';
 import {
   clickElementActionSchema,
   doneActionSchema,
@@ -25,19 +37,7 @@ import {
   scrollToTopActionSchema,
   scrollToBottomActionSchema,
 } from './schemas';
-import { z } from 'zod';
-import { createLogger } from '@src/background/log';
-import { ExecutionState, Actors } from '../event/types';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
-import { wrapUntrustedContent } from '../messages/utils';
-import { memoryStore, MemoryScope } from '@extension/storage';
-import { READ_ONLY_ACTION_NAMES } from './readOnlyActions';
-import {
-  runSubtasksInParallel,
-  summarizeSubtaskResults,
-  MAX_PARALLEL_SUBTASKS,
-  type SubtaskRunnerOptions,
-} from '../parallel/subtaskRunner';
 
 const logger = createLogger('Action');
 

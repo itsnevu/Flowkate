@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { type GeneralSettingsConfig, generalSettingsStore, DEFAULT_GENERAL_SETTINGS } from '@extension/storage';
 import { t } from '@extension/i18n';
+import { Divider, SettingRow, Toggle } from './controls';
 
-interface GeneralSettingsProps {
-  isDarkMode?: boolean;
-}
+/** Number fields are milled into the card: a sunken well, no border anywhere. */
+const numberFieldClass =
+  'w-24 rounded-soft bg-canvas-sunk px-3 py-2 text-right text-sm font-semibold text-ink shadow-neu-inset';
 
-export const GeneralSettings = ({ isDarkMode = false }: GeneralSettingsProps) => {
+export const GeneralSettings = () => {
   const [settings, setSettings] = useState<GeneralSettingsConfig>(DEFAULT_GENERAL_SETTINGS);
 
   useEffect(() => {
@@ -30,257 +31,160 @@ export const GeneralSettings = ({ isDarkMode = false }: GeneralSettingsProps) =>
   };
 
   return (
-    <section className="space-y-6">
-      <div
-        className={`rounded-lg border ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-blue-100 bg-white'} p-6 text-left shadow-sm`}>
-        <h2 className={`mb-4 text-left text-xl font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-          {t('options_general_header')}
-        </h2>
+    <section className="text-left">
+      <h2 className="text-lg font-semibold tracking-tight text-ink">{t('options_general_header')}</h2>
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className={`text-base font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                {t('options_general_maxSteps')}
-              </h3>
-              <p className={`text-sm font-normal ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                {t('options_general_maxSteps_desc')}
-              </p>
-            </div>
-            <label htmlFor="maxSteps" className="sr-only">
-              {t('options_general_maxSteps')}
-            </label>
-            <input
-              id="maxSteps"
-              type="number"
-              min={1}
-              max={50}
-              value={settings.maxSteps}
-              onChange={e => updateSetting('maxSteps', Number.parseInt(e.target.value, 10))}
-              className={`w-20 rounded-md border ${isDarkMode ? 'border-slate-600 bg-slate-700 text-gray-200' : 'border-gray-300 bg-white text-gray-700'} px-3 py-2`}
-            />
-          </div>
+      <div className="mt-4">
+        <SettingRow title={t('options_general_maxSteps')} description={t('options_general_maxSteps_desc')}>
+          <label htmlFor="maxSteps" className="sr-only">
+            {t('options_general_maxSteps')}
+          </label>
+          <input
+            id="maxSteps"
+            type="number"
+            min={1}
+            max={50}
+            value={settings.maxSteps}
+            onChange={e => updateSetting('maxSteps', Number.parseInt(e.target.value, 10))}
+            className={numberFieldClass}
+          />
+        </SettingRow>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className={`text-base font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                {t('options_general_maxActions')}
-              </h3>
-              <p className={`text-sm font-normal ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                {t('options_general_maxActions_desc')}
-              </p>
-            </div>
-            <label htmlFor="maxActionsPerStep" className="sr-only">
-              {t('options_general_maxActions')}
-            </label>
-            <input
-              id="maxActionsPerStep"
-              type="number"
-              min={1}
-              max={50}
-              value={settings.maxActionsPerStep}
-              onChange={e => updateSetting('maxActionsPerStep', Number.parseInt(e.target.value, 10))}
-              className={`w-20 rounded-md border ${isDarkMode ? 'border-slate-600 bg-slate-700 text-gray-200' : 'border-gray-300 bg-white text-gray-700'} px-3 py-2`}
-            />
-          </div>
+        <Divider />
 
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className={`text-base font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                {t('options_general_maxFailures')}
-              </h3>
-              <p className={`text-sm font-normal ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                {t('options_general_maxFailures_desc')}
-              </p>
-            </div>
-            <label htmlFor="maxFailures" className="sr-only">
-              {t('options_general_maxFailures')}
-            </label>
-            <input
-              id="maxFailures"
-              type="number"
-              min={1}
-              max={10}
-              value={settings.maxFailures}
-              onChange={e => updateSetting('maxFailures', Number.parseInt(e.target.value, 10))}
-              className={`w-20 rounded-md border ${isDarkMode ? 'border-slate-600 bg-slate-700 text-gray-200' : 'border-gray-300 bg-white text-gray-700'} px-3 py-2`}
-            />
-          </div>
+        <SettingRow title={t('options_general_maxActions')} description={t('options_general_maxActions_desc')}>
+          <label htmlFor="maxActionsPerStep" className="sr-only">
+            {t('options_general_maxActions')}
+          </label>
+          <input
+            id="maxActionsPerStep"
+            type="number"
+            min={1}
+            max={50}
+            value={settings.maxActionsPerStep}
+            onChange={e => updateSetting('maxActionsPerStep', Number.parseInt(e.target.value, 10))}
+            className={numberFieldClass}
+          />
+        </SettingRow>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className={`text-base font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                {t('options_general_enableVision')}
-              </h3>
-              <p className={`text-sm font-normal ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                {t('options_general_enableVision_desc')}
-              </p>
-            </div>
-            <div className="relative inline-flex cursor-pointer items-center">
-              <input
-                id="useVision"
-                type="checkbox"
-                checked={settings.useVision}
-                onChange={e => updateSetting('useVision', e.target.checked)}
-                className="peer sr-only"
-              />
-              <label
-                htmlFor="useVision"
-                className={`peer h-6 w-11 rounded-full ${isDarkMode ? 'bg-slate-600' : 'bg-gray-200'} after:absolute after:left-[2px] after:top-[2px] after:size-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300`}>
-                <span className="sr-only">{t('options_general_enableVision')}</span>
-              </label>
-            </div>
-          </div>
+        <Divider />
 
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className={`text-base font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                {t('options_general_displayHighlights')}
-              </h3>
-              <p className={`text-sm font-normal ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                {t('options_general_displayHighlights_desc')}
-              </p>
-            </div>
-            <div className="relative inline-flex cursor-pointer items-center">
-              <input
-                id="displayHighlights"
-                type="checkbox"
-                checked={settings.displayHighlights}
-                onChange={e => updateSetting('displayHighlights', e.target.checked)}
-                className="peer sr-only"
-              />
-              <label
-                htmlFor="displayHighlights"
-                className={`peer h-6 w-11 rounded-full ${isDarkMode ? 'bg-slate-600' : 'bg-gray-200'} after:absolute after:left-[2px] after:top-[2px] after:size-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300`}>
-                <span className="sr-only">{t('options_general_displayHighlights')}</span>
-              </label>
-            </div>
-          </div>
+        <SettingRow title={t('options_general_maxFailures')} description={t('options_general_maxFailures_desc')}>
+          <label htmlFor="maxFailures" className="sr-only">
+            {t('options_general_maxFailures')}
+          </label>
+          <input
+            id="maxFailures"
+            type="number"
+            min={1}
+            max={10}
+            value={settings.maxFailures}
+            onChange={e => updateSetting('maxFailures', Number.parseInt(e.target.value, 10))}
+            className={numberFieldClass}
+          />
+        </SettingRow>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className={`text-base font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                {t('options_general_planningInterval')}
-              </h3>
-              <p className={`text-sm font-normal ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                {t('options_general_planningInterval_desc')}
-              </p>
-            </div>
-            <label htmlFor="planningInterval" className="sr-only">
-              {t('options_general_planningInterval')}
-            </label>
-            <input
-              id="planningInterval"
-              type="number"
-              min={1}
-              max={20}
-              value={settings.planningInterval}
-              onChange={e => updateSetting('planningInterval', Number.parseInt(e.target.value, 10))}
-              className={`w-20 rounded-md border ${isDarkMode ? 'border-slate-600 bg-slate-700 text-gray-200' : 'border-gray-300 bg-white text-gray-700'} px-3 py-2`}
-            />
-          </div>
+        <Divider />
 
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className={`text-base font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                {t('options_general_minWaitPageLoad')}
-              </h3>
-              <p className={`text-sm font-normal ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                {t('options_general_minWaitPageLoad_desc')}
-              </p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <label htmlFor="minWaitPageLoad" className="sr-only">
-                {t('options_general_minWaitPageLoad')}
-              </label>
-              <input
-                id="minWaitPageLoad"
-                type="number"
-                min={250}
-                max={5000}
-                step={50}
-                value={settings.minWaitPageLoad}
-                onChange={e => updateSetting('minWaitPageLoad', Number.parseInt(e.target.value, 10))}
-                className={`w-20 rounded-md border ${isDarkMode ? 'border-slate-600 bg-slate-700 text-gray-200' : 'border-gray-300 bg-white text-gray-700'} px-3 py-2`}
-              />
-            </div>
-          </div>
+        <SettingRow title={t('options_general_enableVision')} description={t('options_general_enableVision_desc')}>
+          <Toggle
+            id="useVision"
+            label={t('options_general_enableVision')}
+            checked={settings.useVision}
+            onChange={checked => updateSetting('useVision', checked)}
+          />
+        </SettingRow>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className={`text-base font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                {t('options_general_requirePlanApproval')}
-              </h3>
-              <p className={`text-sm font-normal ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                {t('options_general_requirePlanApproval_desc')}
-              </p>
-            </div>
-            <div className="relative inline-flex cursor-pointer items-center">
-              <input
-                id="requirePlanApproval"
-                type="checkbox"
-                checked={settings.requirePlanApproval}
-                onChange={e => updateSetting('requirePlanApproval', e.target.checked)}
-                className="peer sr-only"
-              />
-              <label
-                htmlFor="requirePlanApproval"
-                className={`peer h-6 w-11 rounded-full ${isDarkMode ? 'bg-slate-600' : 'bg-gray-200'} after:absolute after:left-[2px] after:top-[2px] after:size-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300`}>
-                <span className="sr-only">{t('options_general_requirePlanApproval')}</span>
-              </label>
-            </div>
-          </div>
+        <Divider />
 
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className={`text-base font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                {t('options_general_confirmSensitiveActions')}
-              </h3>
-              <p className={`text-sm font-normal ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                {t('options_general_confirmSensitiveActions_desc')}
-              </p>
-            </div>
-            <div className="relative inline-flex cursor-pointer items-center">
-              <input
-                id="confirmSensitiveActions"
-                type="checkbox"
-                checked={settings.confirmSensitiveActions}
-                onChange={e => updateSetting('confirmSensitiveActions', e.target.checked)}
-                className="peer sr-only"
-              />
-              <label
-                htmlFor="confirmSensitiveActions"
-                className={`peer h-6 w-11 rounded-full ${isDarkMode ? 'bg-slate-600' : 'bg-gray-200'} after:absolute after:left-[2px] after:top-[2px] after:size-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300`}>
-                <span className="sr-only">{t('options_general_confirmSensitiveActions')}</span>
-              </label>
-            </div>
-          </div>
+        <SettingRow
+          title={t('options_general_displayHighlights')}
+          description={t('options_general_displayHighlights_desc')}>
+          <Toggle
+            id="displayHighlights"
+            label={t('options_general_displayHighlights')}
+            checked={settings.displayHighlights}
+            onChange={checked => updateSetting('displayHighlights', checked)}
+          />
+        </SettingRow>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className={`text-base font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                {t('options_general_replayHistoricalTasks')}
-              </h3>
-              <p className={`text-sm font-normal ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                {t('options_general_replayHistoricalTasks_desc')}
-              </p>
-            </div>
-            <div className="relative inline-flex cursor-pointer items-center">
-              <input
-                id="replayHistoricalTasks"
-                type="checkbox"
-                checked={settings.replayHistoricalTasks}
-                onChange={e => updateSetting('replayHistoricalTasks', e.target.checked)}
-                className="peer sr-only"
-              />
-              <label
-                htmlFor="replayHistoricalTasks"
-                className={`peer h-6 w-11 rounded-full ${isDarkMode ? 'bg-slate-600' : 'bg-gray-200'} after:absolute after:left-[2px] after:top-[2px] after:size-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300`}>
-                <span className="sr-only">{t('options_general_replayHistoricalTasks')}</span>
-              </label>
-            </div>
-          </div>
-        </div>
+        <Divider />
+
+        <SettingRow
+          title={t('options_general_planningInterval')}
+          description={t('options_general_planningInterval_desc')}>
+          <label htmlFor="planningInterval" className="sr-only">
+            {t('options_general_planningInterval')}
+          </label>
+          <input
+            id="planningInterval"
+            type="number"
+            min={1}
+            max={20}
+            value={settings.planningInterval}
+            onChange={e => updateSetting('planningInterval', Number.parseInt(e.target.value, 10))}
+            className={numberFieldClass}
+          />
+        </SettingRow>
+
+        <Divider />
+
+        <SettingRow
+          title={t('options_general_minWaitPageLoad')}
+          description={t('options_general_minWaitPageLoad_desc')}>
+          <label htmlFor="minWaitPageLoad" className="sr-only">
+            {t('options_general_minWaitPageLoad')}
+          </label>
+          <input
+            id="minWaitPageLoad"
+            type="number"
+            min={250}
+            max={5000}
+            step={50}
+            value={settings.minWaitPageLoad}
+            onChange={e => updateSetting('minWaitPageLoad', Number.parseInt(e.target.value, 10))}
+            className={numberFieldClass}
+          />
+        </SettingRow>
+
+        <Divider />
+
+        <SettingRow
+          title={t('options_general_requirePlanApproval')}
+          description={t('options_general_requirePlanApproval_desc')}>
+          <Toggle
+            id="requirePlanApproval"
+            label={t('options_general_requirePlanApproval')}
+            checked={settings.requirePlanApproval}
+            onChange={checked => updateSetting('requirePlanApproval', checked)}
+          />
+        </SettingRow>
+
+        <Divider />
+
+        <SettingRow
+          title={t('options_general_confirmSensitiveActions')}
+          description={t('options_general_confirmSensitiveActions_desc')}>
+          <Toggle
+            id="confirmSensitiveActions"
+            label={t('options_general_confirmSensitiveActions')}
+            checked={settings.confirmSensitiveActions}
+            onChange={checked => updateSetting('confirmSensitiveActions', checked)}
+          />
+        </SettingRow>
+
+        <Divider />
+
+        <SettingRow
+          title={t('options_general_replayHistoricalTasks')}
+          description={t('options_general_replayHistoricalTasks_desc')}>
+          <Toggle
+            id="replayHistoricalTasks"
+            label={t('options_general_replayHistoricalTasks')}
+            checked={settings.replayHistoricalTasks}
+            onChange={checked => updateSetting('replayHistoricalTasks', checked)}
+          />
+        </SettingRow>
       </div>
     </section>
   );

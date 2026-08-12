@@ -5,7 +5,7 @@ Reference for the Chrome Web Store listing. Each permission declared in
 paste into the developer dashboard, and with where in the code it is actually used — so a reviewer
 can check the claim rather than take it on faith.
 
-Flowkate is an AI browser agent: the user types a task in natural language and the extension carries
+Flowkite is an AI browser agent: the user types a task in natural language and the extension carries
 it out in the browser on their behalf. Every permission below exists to serve that single purpose.
 
 ---
@@ -14,7 +14,7 @@ it out in the browser on their behalf. Every permission below exists to serve th
 
 **Justification for the listing:**
 
-> Flowkate drives the browser on the user's behalf to complete tasks they describe in natural
+> Flowkite drives the browser on the user's behalf to complete tasks they describe in natural
 > language. It attaches the Chrome DevTools Protocol to the single tab the user's task is running in,
 > and uses it to read the page's accessibility and DOM structure, capture screenshots for the vision
 > model, and dispatch clicks, typing and scrolling. The DevTools Protocol is used rather than content
@@ -145,5 +145,5 @@ the item's single purpose; data is not used to determine creditworthiness or for
 
 ## Single purpose statement
 
-> Flowkate performs web tasks in the browser on the user's behalf, following instructions the user
+> Flowkite performs web tasks in the browser on the user's behalf, following instructions the user
 > writes in natural language.

@@ -10,12 +10,12 @@
  * and then point CHROME_PATH at the binary it prints. This affects automation only; installing an
  * unpacked extension by hand through chrome://extensions works normally.
  */
-import puppeteer from 'puppeteer-core';
 import os from 'node:os';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { launch } from 'puppeteer-core';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const DIST = path.resolve(HERE, '..', '..', 'dist');
@@ -46,8 +46,8 @@ export async function launchWithExtension({ distPath = DIST, headless = false } 
     throw new Error(`No built extension at ${distPath}. Run \`pnpm build\` first.`);
   }
 
-  const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'flowkate-e2e-'));
-  const browser = await puppeteer.launch({
+  const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'flowkite-e2e-'));
+  const browser = await launch({
     executablePath,
     headless,
     userDataDir,

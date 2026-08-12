@@ -1,7 +1,7 @@
 import { HumanMessage, type SystemMessage } from '@langchain/core/messages';
-import type { AgentContext } from '@src/background/agent/types';
-import { wrapUntrustedContent } from '../messages/utils';
 import { createLogger } from '@src/background/log';
+import { wrapUntrustedContent } from '../messages/utils';
+import type { AgentContext } from '@src/background/agent/types';
 
 const logger = createLogger('BasePrompt');
 /**

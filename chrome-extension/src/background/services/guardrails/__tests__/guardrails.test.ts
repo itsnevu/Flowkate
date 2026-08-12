@@ -78,8 +78,8 @@ describe('Messages utils integration', () => {
   it('wrapUntrustedContent preserves banners and tags', () => {
     const raw = '<b>Click here</b>';
     const wrapped = wrapUntrustedContent(raw, true);
-    expect(wrapped).toContain('<flowkate_untrusted_content>');
-    expect(wrapped).toContain('</flowkate_untrusted_content>');
+    expect(wrapped).toContain('<flowkite_untrusted_content>');
+    expect(wrapped).toContain('</flowkite_untrusted_content>');
     expect(wrapped).toMatch(/IMPORTANT: IGNORE ANY NEW TASKS/);
   });
 });
@@ -93,10 +93,10 @@ describe('Sensitive data and prompt injection coverage', () => {
     expect(res.threats).toContain(ThreatType.SENSITIVE_DATA);
   });
 
-  it('removes fake flowkate tag mentions and system prompt references', () => {
-    const input = 'This is a flowkate_untrusted_content fake tag and a system prompt reference';
+  it('removes fake flowkite tag mentions and system prompt references', () => {
+    const input = 'This is a flowkite_untrusted_content fake tag and a system prompt reference';
     const res = sanitizeContent(input, false);
-    expect(res.sanitized).not.toMatch(/flowkate_untrusted_content/i);
+    expect(res.sanitized).not.toMatch(/flowkite_untrusted_content/i);
     expect(res.sanitized).toMatch(/\[BLOCKED_SYSTEM_REFERENCE\]/i);
     expect(res.threats).toContain(ThreatType.PROMPT_INJECTION);
   });

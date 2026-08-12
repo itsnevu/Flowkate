@@ -1,13 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
+import { FiX } from 'react-icons/fi';
 import { firewallStore } from '@extension/storage';
-import { Button } from '@extension/ui';
 import { t } from '@extension/i18n';
+import { Toggle } from './controls';
 
-interface FirewallSettingsProps {
-  isDarkMode: boolean;
-}
-
-export const FirewallSettings = ({ isDarkMode }: FirewallSettingsProps) => {
+export const FirewallSettings = () => {
   const [isEnabled, setIsEnabled] = useState(true);
   const [allowList, setAllowList] = useState<string[]>([]);
   const [denyList, setDenyList] = useState<string[]>([]);
@@ -53,79 +50,47 @@ export const FirewallSettings = ({ isDarkMode }: FirewallSettingsProps) => {
     await loadFirewallSettings();
   };
 
+  const isAllow = activeList === 'allow';
+  const visibleList = isAllow ? allowList : denyList;
+
+  // Segmented control: the selected side is a graphite key sunk into a pale well.
+  const tabClass = (selected: boolean) =>
+    selected
+      ? 'rounded-pill bg-graphite px-5 py-2 text-sm font-medium text-graphite-50 shadow-key-sm transition-all duration-150 ease-press hover:bg-graphite-hover active:translate-y-px active:bg-graphite-active active:shadow-key-pressed'
+      : 'rounded-pill px-5 py-2 text-sm font-medium text-ink-soft transition-all duration-150 ease-press hover:text-ink active:shadow-neu-inset-sm';
+
   return (
     <section className="space-y-6">
-      <div
-        className={`rounded-lg border ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-blue-100 bg-gray-50'} p-6 text-left shadow-sm`}>
-        <h2 className={`mb-4 text-xl font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-          {t('options_firewall_header')}
-        </h2>
+      <div className="text-left">
+        <h2 className="text-lg font-semibold tracking-tight text-ink">{t('options_firewall_header')}</h2>
 
-        <div className="space-y-6">
-          <div
-            className={`my-6 rounded-lg border p-4 ${isDarkMode ? 'border-slate-700 bg-slate-700' : 'border-gray-200 bg-gray-100'}`}>
-            <div className="flex items-center justify-between">
-              <label
-                htmlFor="toggle-firewall"
-                className={`text-base font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                {t('options_firewall_enableToggle')}
-              </label>
-              <div className="relative inline-block w-12 select-none">
-                <input
-                  type="checkbox"
-                  checked={isEnabled}
-                  onChange={handleToggleFirewall}
-                  className="sr-only"
-                  id="toggle-firewall"
-                />
-                <label
-                  htmlFor="toggle-firewall"
-                  className={`block h-6 cursor-pointer overflow-hidden rounded-full ${
-                    isEnabled ? 'bg-blue-500' : isDarkMode ? 'bg-gray-600' : 'bg-gray-300'
-                  }`}>
-                  <span className="sr-only">{t('options_firewall_toggleFirewall_a11y')}</span>
-                  <span
-                    className={`block size-6 rounded-full bg-white shadow transition-transform ${
-                      isEnabled ? 'translate-x-6' : 'translate-x-0'
-                    }`}
-                  />
-                </label>
-              </div>
-            </div>
+        <div className="mt-6 space-y-6">
+          <div className="flex items-center justify-between gap-4">
+            <label htmlFor="toggle-firewall" className="cursor-pointer text-base font-medium text-ink">
+              {t('options_firewall_enableToggle')}
+            </label>
+            <Toggle
+              id="toggle-firewall"
+              label={t('options_firewall_toggleFirewall_a11y')}
+              checked={isEnabled}
+              onChange={handleToggleFirewall}
+            />
           </div>
 
-          <div className="mb-6 mt-10 flex items-center justify-between">
-            <div className="flex space-x-2">
-              <Button
-                onClick={() => setActiveList('allow')}
-                className={`px-4 py-2 text-base ${
-                  activeList === 'allow'
-                    ? isDarkMode
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-blue-500 text-white'
-                    : isDarkMode
-                      ? 'bg-slate-700 text-gray-200'
-                      : 'bg-gray-200 text-gray-700'
-                }`}>
+          <div className="h-px bg-gradient-to-r from-transparent via-black/10 to-transparent" />
+
+          <div className="flex items-center justify-between gap-4">
+            <div className="inline-flex rounded-pill bg-canvas-sunk p-1 shadow-neu-inset-sm">
+              <button type="button" onClick={() => setActiveList('allow')} className={tabClass(isAllow)}>
                 {t('options_firewall_allowList_header')}
-              </Button>
-              <Button
-                onClick={() => setActiveList('deny')}
-                className={`px-4 py-2 text-base ${
-                  activeList === 'deny'
-                    ? isDarkMode
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-blue-500 text-white'
-                    : isDarkMode
-                      ? 'bg-slate-700 text-gray-200'
-                      : 'bg-gray-200 text-gray-700'
-                }`}>
+              </button>
+              <button type="button" onClick={() => setActiveList('deny')} className={tabClass(!isAllow)}>
                 {t('options_firewall_denyList_header')}
-              </Button>
+              </button>
             </div>
           </div>
 
-          <div className="mb-4 flex space-x-2">
+          <div className="flex items-center gap-3">
             <input
               id="url-input"
               type="text"
@@ -137,85 +102,59 @@ export const FirewallSettings = ({ isDarkMode }: FirewallSettingsProps) => {
                 }
               }}
               placeholder={t('options_firewall_placeholders_domainUrl')}
-              className={`flex-1 rounded-md border px-3 py-2 text-sm ${
-                isDarkMode ? 'border-gray-600 bg-slate-700 text-white' : 'border-gray-300 bg-white text-gray-700'
-              }`}
+              className="min-w-0 flex-1 rounded-soft bg-canvas-sunk px-4 py-2.5 text-sm text-ink shadow-neu-inset outline-none placeholder:text-ink-faint"
             />
-            <Button
+            <button
+              type="button"
               onClick={handleAddUrl}
-              className={`px-4 py-2 text-sm ${
-                isDarkMode ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'
-              }`}>
+              disabled={!newUrl.trim()}
+              className="shrink-0 rounded-soft bg-graphite px-5 py-2.5 text-sm font-medium text-graphite-50 shadow-key transition-all duration-150 ease-press hover:bg-graphite-hover active:translate-y-px active:bg-graphite-active active:shadow-key-pressed disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none">
               {t('options_firewall_btnAdd')}
-            </Button>
+            </button>
           </div>
 
-          <div className="max-h-64 overflow-y-auto">
-            {activeList === 'allow' ? (
-              allowList.length > 0 ? (
-                <ul className="space-y-2">
-                  {allowList.map(url => (
-                    <li
-                      key={url}
-                      className={`flex items-center justify-between rounded-md p-2 pr-0 ${
-                        isDarkMode ? 'bg-slate-700' : 'bg-gray-100'
-                      }`}>
-                      <span className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{url}</span>
-                      <Button
-                        onClick={() => handleRemoveUrl(url, 'allow')}
-                        className={`rounded-l-none px-2 py-1 text-xs ${
-                          isDarkMode
-                            ? 'bg-red-600 text-white hover:bg-red-700'
-                            : 'bg-red-500 text-white hover:bg-red-600'
-                        }`}>
-                        {t('options_firewall_btnRemove')}
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className={`text-center text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  {t('options_firewall_allowList_empty')}
-                </p>
-              )
-            ) : denyList.length > 0 ? (
-              <ul className="space-y-2">
-                {denyList.map(url => (
+          <div className="max-h-64 overflow-y-auto rounded-soft bg-canvas-sunk p-3 shadow-neu-inset">
+            {visibleList.length > 0 ? (
+              <ul className="flex flex-wrap gap-2">
+                {visibleList.map(url => (
                   <li
                     key={url}
-                    className={`flex items-center justify-between rounded-md p-2 pr-0 ${
-                      isDarkMode ? 'bg-slate-700' : 'bg-gray-100'
-                    }`}>
-                    <span className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>{url}</span>
-                    <Button
-                      onClick={() => handleRemoveUrl(url, 'deny')}
-                      className={`rounded-l-none px-2 py-1 text-xs ${
-                        isDarkMode ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'
-                      }`}>
-                      Remove
-                    </Button>
+                    className="inline-flex max-w-full items-center gap-2 rounded-pill bg-canvas-raised py-1 pl-3 pr-1 shadow-neu-sm">
+                    <span
+                      className={`size-1.5 shrink-0 rounded-pill ${isAllow ? 'bg-signal-ok' : 'bg-signal-bad'}`}
+                      aria-hidden="true"
+                    />
+                    <span className={`truncate text-sm ${isAllow ? 'text-signal-ok' : 'text-signal-bad'}`}>{url}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveUrl(url, activeList)}
+                      aria-label={t('options_firewall_btnRemove')}
+                      title={t('options_firewall_btnRemove')}
+                      className="grid size-6 shrink-0 place-items-center rounded-pill text-ink-faint transition-all duration-150 ease-press hover:text-ink active:shadow-neu-inset-sm">
+                      <FiX size={13} />
+                    </button>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className={`text-center text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                {t('options_firewall_denyList_empty')}
+              <p className="py-4 text-center text-sm text-ink-faint">
+                {isAllow ? t('options_firewall_allowList_empty') : t('options_firewall_denyList_empty')}
               </p>
             )}
           </div>
         </div>
       </div>
 
-      <div
-        className={`rounded-lg border ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-blue-100 bg-gray-50'} p-6 text-left shadow-sm`}>
-        <h2 className={`mb-4 text-xl font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-          {t('options_firewall_howItWorks_header')}
-        </h2>
-        <ul className={`list-disc space-y-2 pl-5 text-left text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+      <div className="text-left">
+        <h2 className="text-lg font-semibold tracking-tight text-ink">{t('options_firewall_howItWorks_header')}</h2>
+        <ul className="mt-4 space-y-3 text-left text-sm text-ink-soft">
           {t('options_firewall_howItWorks')
             .split('\n')
             .map((rule, index) => (
-              <li key={index}>{rule}</li>
+              <li key={index} className="flex gap-3">
+                <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-ink-faint" aria-hidden="true" />
+                <span>{rule}</span>
+              </li>
             ))}
         </ul>
       </div>

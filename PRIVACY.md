@@ -1,16 +1,16 @@
-# Privacy Policy for Flowkate
+# Privacy Policy for Flowkite
 
 ## Introduction
 
-[Flowkate](https://github.com/itsnevu/Flowkate) is an open-source AI web automation Chrome extension. This Privacy Policy explains how your data is handled.
+[Flowkite](https://github.com/itsnevu/Flowkite) is an open-source AI web automation Chrome extension. This Privacy Policy explains how your data is handled.
 
 ## Open Source
 
-Flowkate is licensed under Apache License 2.0. All source code is publicly available in the [GitHub repository](https://github.com/itsnevu/Flowkate), so every claim below can be checked against the code.
+Flowkite is licensed under Apache License 2.0. All source code is publicly available in the [GitHub repository](https://github.com/itsnevu/Flowkite), so every claim below can be checked against the code.
 
 ## Where your data lives
 
-Flowkate has no backend. There is no Flowkate account, no Flowkate server, and nothing you do is uploaded to us. Everything the extension stores lives in your browser's local extension storage (`chrome.storage.local`) and is removed when you uninstall the extension.
+Flowkite has no backend. There is no Flowkite account, no Flowkite server, and nothing you do is uploaded to us. Everything the extension stores lives in your browser's local extension storage (`chrome.storage.local`) and is removed when you uninstall the extension.
 
 That covers:
 
@@ -23,7 +23,7 @@ None of this is synced across your devices, and none of it leaves your machine e
 
 ## Remembered preferences (Memory)
 
-Flowkate can remember preferences you tell it, so they carry across sessions — for example a delivery address preference or a unit preference.
+Flowkite can remember preferences you tell it, so they carry across sessions — for example a delivery address preference or a unit preference.
 
 - Memories are stored **on this device only**, in `chrome.storage.local`. They are never sent to a server and never synced.
 - The agent only writes a memory when it decides you told it a preference directly. It is instructed not to store passwords, card numbers or other secrets, and not to store things it merely read on a page.
@@ -31,7 +31,7 @@ Flowkate can remember preferences you tell it, so they carry across sessions —
 
 ## What is sent to your LLM provider
 
-To do anything useful, Flowkate sends page context to whichever LLM provider **you** configured, using **your** API key. Depending on your settings, that includes:
+To do anything useful, Flowkite sends page context to whichever LLM provider **you** configured, using **your** API key. Depending on your settings, that includes:
 
 - A text description of the page's interactive elements
 - The page URL and title
@@ -39,27 +39,27 @@ To do anything useful, Flowkate sends page context to whichever LLM provider **y
 - Your task instructions and the conversation so far
 - Your remembered preferences, when memory is enabled
 
-This data goes directly from your browser to your provider. It does not pass through any Flowkate infrastructure. **Once it reaches your provider, their privacy policy governs it, not this one.** If a page contains sensitive information and you run a task on it, that information may be included in what is sent.
+This data goes directly from your browser to your provider. It does not pass through any Flowkite infrastructure. **Once it reaches your provider, their privacy policy governs it, not this one.** If a page contains sensitive information and you run a task on it, that information may be included in what is sent.
 
 Page content is treated as untrusted input and is wrapped in explicit delimiters before being given to the model, so that text on a page is not able to act as an instruction to the agent.
 
 ## Browser access and permissions
 
-Flowkate requests broad browser access because a web automation agent cannot work without it. Specifically:
+Flowkite requests broad browser access because a web automation agent cannot work without it. Specifically:
 
-- **`debugger`** — Flowkate attaches Chrome's debugger to the tab it is working on. This is how it reads the page structure, takes screenshots, and performs clicks and typing reliably across sites. Chrome shows a visible "Flowkate started debugging this browser" banner the whole time it is attached. The debugger is detached when a task finishes, when a task fails, and when you close the side panel.
+- **`debugger`** — Flowkite attaches Chrome's debugger to the tab it is working on. This is how it reads the page structure, takes screenshots, and performs clicks and typing reliably across sites. Chrome shows a visible "Flowkite started debugging this browser" banner the whole time it is attached. The debugger is detached when a task finishes, when a task fails, and when you close the side panel.
 - **`tabs`** and **`activeTab`** — to see the current page and to open, switch and close tabs. Parallel research tasks open additional tabs and close them again when they finish.
 - **`scripting`** — to inject the script that reads a page's interactive elements into the page being worked on.
 - **`webNavigation`** — to know when a page has finished loading, so the agent acts on a settled page rather than a half-rendered one.
 - **`storage`** and **`unlimitedStorage`** — for everything described under "Where your data lives". Conversation history with long tasks can exceed the default extension storage quota.
 - **`sidePanel`** — to show the chat interface.
-- **Host permissions (`<all_urls>`)** — Flowkate cannot know in advance which sites you will ask it to work on, so it requests access to all of them. You can narrow this yourself with the firewall allow and deny lists under **Options → Firewall**.
+- **Host permissions (`<all_urls>`)** — Flowkite cannot know in advance which sites you will ask it to work on, so it requests access to all of them. You can narrow this yourself with the firewall allow and deny lists under **Options → Firewall**.
 
-Flowkate does not read your browsing history, and it does not act on pages outside the task you gave it.
+Flowkite does not read your browsing history, and it does not act on pages outside the task you gave it.
 
 ## Actions that need your permission
 
-Flowkate will not spend money, delete data, submit a form, download a file or type into a password field without stopping to ask you first. It also shows you its plan before it begins acting on a page. Both behaviours are on by default and can be turned off under **Options → General**, which is your decision to make.
+Flowkite will not spend money, delete data, submit a form, download a file or type into a password field without stopping to ask you first. It also shows you its plan before it begins acting on a page. Both behaviours are on by default and can be turned off under **Options → General**, which is your decision to make.
 
 ## Anonymous analytics (optional)
 
@@ -91,7 +91,7 @@ Analytics data is processed by PostHog and used solely to improve the extension.
 
 ## Children
 
-Flowkate is not directed at children and is not intended for use by anyone under 13.
+Flowkite is not directed at children and is not intended for use by anyone under 13.
 
 ## Changes to this Privacy Policy
 
@@ -99,6 +99,6 @@ This policy may be updated as the extension changes. Material changes will be no
 
 ## Contact
 
-Questions or concerns? Please open an issue at [github.com/itsnevu/Flowkate/issues](https://github.com/itsnevu/Flowkate/issues).
+Questions or concerns? Please open an issue at [github.com/itsnevu/Flowkite/issues](https://github.com/itsnevu/Flowkite/issues).
 
 Last Updated: August 11, 2026

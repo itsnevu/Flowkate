@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import '@src/Options.css';
-import { Button } from '@extension/ui';
 import { withErrorBoundary, withSuspense } from '@extension/shared';
 import { t } from '@extension/i18n';
 import { FiSettings, FiCpu, FiShield, FiTrendingUp, FiHelpCircle, FiDatabase } from 'react-icons/fi';
@@ -21,26 +20,23 @@ const TABS: { id: TabTypes; icon: React.ComponentType<{ className?: string }>; l
   { id: 'help', icon: FiHelpCircle, label: t('options_tabs_help') },
 ];
 
+/** Shared geometry for every rail tab; only the surface treatment differs by state. */
+const TAB_BASE =
+  'flex w-full items-center gap-2.5 rounded-soft px-4 py-2.5 text-left text-sm font-medium transition-all duration-150 ease-press';
+
+/** The selected pane is the graphite key: dark, lit rim, sitting proud of the canvas — and still pressable. */
+const TAB_ACTIVE =
+  'bg-graphite text-graphite-50 shadow-key hover:bg-graphite-hover active:translate-y-px active:bg-graphite-active active:shadow-key-pressed';
+
+/** Everything else is a secondary key — pale, flush, ready to be pushed. */
+const TAB_IDLE = 'bg-canvas-raised text-ink shadow-neu-sm hover:shadow-neu active:shadow-neu-inset-sm';
+
 const Options = () => {
   const [activeTab, setActiveTab] = useState<TabTypes>('models');
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  // Check for dark mode preference
-  useEffect(() => {
-    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDarkMode(darkModeMediaQuery.matches);
-
-    const handleChange = (e: MediaQueryListEvent) => {
-      setIsDarkMode(e.matches);
-    };
-
-    darkModeMediaQuery.addEventListener('change', handleChange);
-    return () => darkModeMediaQuery.removeEventListener('change', handleChange);
-  }, []);
 
   const handleTabClick = (tabId: TabTypes) => {
     if (tabId === 'help') {
-      window.open('https://github.com/itsnevu/Flowkate#readme', '_blank');
+      window.open('https://github.com/itsnevu/Flowkite#readme', '_blank');
     } else {
       setActiveTab(tabId);
     }
@@ -49,56 +45,70 @@ const Options = () => {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'general':
-        return <GeneralSettings isDarkMode={isDarkMode} />;
+        return <GeneralSettings />;
       case 'models':
-        return <ModelSettings isDarkMode={isDarkMode} />;
+        return <ModelSettings />;
       case 'firewall':
-        return <FirewallSettings isDarkMode={isDarkMode} />;
+        return <FirewallSettings />;
       case 'memory':
-        return <MemorySettings isDarkMode={isDarkMode} />;
+        return <MemorySettings />;
       case 'analytics':
-        return <AnalyticsSettings isDarkMode={isDarkMode} />;
+        return <AnalyticsSettings />;
       default:
         return null;
     }
   };
 
   return (
-    <div
-      className={`flex min-h-screen min-w-[768px] ${isDarkMode ? 'bg-slate-900' : "bg-[url('/bg.jpg')] bg-cover bg-center"} ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
-      {/* Vertical Navigation Bar */}
-      <nav
-        className={`w-48 border-r ${isDarkMode ? 'border-slate-700 bg-slate-800/80' : 'border-white/20 bg-[#0EA5E9]/10'} backdrop-blur-sm`}>
-        <div className="p-4">
-          <h1 className={`mb-6 text-xl font-bold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-            {t('options_nav_header')}
-          </h1>
-          <ul className="space-y-2">
-            {TABS.map(item => (
-              <li key={item.id}>
-                <Button
-                  onClick={() => handleTabClick(item.id)}
-                  className={`flex w-full items-center space-x-2 rounded-lg px-4 py-2 text-left text-base 
-                    ${
-                      activeTab !== item.id
-                        ? `${isDarkMode ? 'bg-slate-700/70 text-gray-300 hover:text-white' : 'bg-[#0EA5E9]/15 font-medium text-gray-700 hover:text-white'} backdrop-blur-sm`
-                        : `${isDarkMode ? 'bg-sky-800/50' : ''} text-white backdrop-blur-sm`
-                    }`}>
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-canvas text-ink">
+      <div className="mx-auto w-full max-w-screen-xl px-6 py-8 lg:px-10 lg:py-12">
+        {/* Masthead — mark and wordmark sit directly on the canvas, nothing under them. */}
+        <header className="mb-8 flex items-center gap-3">
+          <img src="mark.png" alt="" className="size-8 shrink-0" />
+          <div className="min-w-0">
+            <h1 className="text-xl font-semibold tracking-tight text-ink">Flowkite</h1>
+            <p className="text-sm text-ink-soft">
+              Local multi-agent web automation — tune the agents, their limits and their guardrails.
+            </p>
+          </div>
+        </header>
 
-      {/* Main Content Area */}
-      <main className={`flex-1 ${isDarkMode ? 'bg-slate-800/50' : 'bg-white/10'} p-8 backdrop-blur-sm`}>
-        <div className="mx-auto min-w-[512px] max-w-screen-lg">{renderTabContent()}</div>
-      </main>
+        <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
+          {/* Pane rail: a column of keys on wide screens, a wrapped row when space is tight. */}
+          <nav aria-label={t('options_nav_header')} className="lg:w-52 lg:shrink-0">
+            <h2 className="mb-3 px-1 text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">
+              {t('options_nav_header')}
+            </h2>
+            <ul className="flex flex-row flex-wrap gap-2 lg:flex-col">
+              {TABS.map(item => (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() => handleTabClick(item.id)}
+                    aria-current={activeTab === item.id ? 'page' : undefined}
+                    className={`${TAB_BASE} ${activeTab === item.id ? TAB_ACTIVE : TAB_IDLE}`}>
+                    <item.icon className="size-4 shrink-0" />
+                    <span>{item.label}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          {/* Content area: one large slab extruded from the canvas. */}
+          <main className="min-w-0 flex-1 rounded-slab bg-canvas-raised p-6 shadow-neu-lg lg:p-8">
+            {renderTabContent()}
+          </main>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default withErrorBoundary(withSuspense(Options, <div>Loading...</div>), <div>Error Occurred</div>);
+export default withErrorBoundary(
+  withSuspense(
+    Options,
+    <div className="grid min-h-screen place-items-center bg-canvas text-sm text-ink-soft">Loading...</div>,
+  ),
+  <div className="grid min-h-screen place-items-center bg-canvas text-sm text-ink-soft">Error Occurred</div>,
+);

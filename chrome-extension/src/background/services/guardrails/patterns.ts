@@ -3,8 +3,8 @@
  * These patterns are designed to be simple and effective
  */
 
-import type { SecurityPattern } from './types';
 import { ThreatType } from './types';
+import type { SecurityPattern } from './types';
 
 /**
  * Core security patterns for content sanitization
@@ -44,13 +44,13 @@ export const SECURITY_PATTERNS: SecurityPattern[] = [
     replacement: '[BLOCKED_SYSTEM_REFERENCE]',
   },
   {
-    pattern: /\bflowkate[-_ ]+untrusted[-_ ]+content\b/gi,
+    pattern: /\bflowkite[-_ ]+untrusted[-_ ]+content\b/gi,
     type: ThreatType.PROMPT_INJECTION,
     description: 'Attempt to fake untrusted content tags',
     replacement: '',
   },
   {
-    pattern: /\bflowkate[-_ ]+user[-_ ]+request\b/gi,
+    pattern: /\bflowkite[-_ ]+user[-_ ]+request\b/gi,
     type: ThreatType.PROMPT_INJECTION,
     description: 'Attempt to fake user request tags',
     replacement: '',
@@ -62,7 +62,7 @@ export const SECURITY_PATTERNS: SecurityPattern[] = [
     replacement: '',
   },
   {
-    pattern: /\bflowkate[-_]+attached[-_]+files\b/gi,
+    pattern: /\bflowkite[-_]+attached[-_]+files\b/gi,
     type: ThreatType.PROMPT_INJECTION,
     description: 'Reference to attached files',
     replacement: '',
@@ -141,10 +141,10 @@ export function getPatterns(strict: boolean = false): SecurityPattern[] {
  * Tags to preserve during sanitization (wrapped content tags)
  */
 export const PRESERVED_TAGS = [
-  'flowkate_untrusted_content',
-  'flowkate_user_request',
-  'flowkate_attached_files',
-  'flowkate_file_content',
+  'flowkite_untrusted_content',
+  'flowkite_user_request',
+  'flowkite_attached_files',
+  'flowkite_file_content',
 ];
 
 /**

@@ -1,13 +1,18 @@
 import { z } from 'zod';
 import { t } from '@extension/i18n';
-import { BaseAgent, type BaseAgentOptions, type ExtraAgentOptions } from './base';
 import { createLogger } from '@src/background/log';
-import { ActionResult, type AgentOutput } from '../types';
-import type { Action } from '../actions/builder';
-import { buildDynamicActionSchema } from '../actions/builder';
-import { agentBrainSchema } from '../types';
 import { type BaseMessage, HumanMessage } from '@langchain/core/messages';
+import { calcBranchPathHashSet, type DOMElementNode } from '@src/background/browser/dom/views';
+import { type BrowserState, BrowserStateHistory, URLNotAllowedError } from '@src/background/browser/views';
+import { convertZodToJsonSchema, repairJsonString } from '@src/background/utils';
+import { HistoryTreeProcessor } from '@src/background/browser/dom/history/service';
+import { type DOMHistoryElement } from '@src/background/browser/dom/history/view';
+import { AgentStepRecord } from '../history';
+import { classifySensitiveAction } from '../actions/sensitivity';
 import { Actors, ExecutionState } from '../event/types';
+import { agentBrainSchema } from '../types';
+import { buildDynamicActionSchema } from '../actions/builder';
+import { ActionResult, type AgentOutput } from '../types';
 import {
   ChatModelAuthError,
   ChatModelBadRequestError,
@@ -23,13 +28,8 @@ import {
   LLM_FORBIDDEN_ERROR_MESSAGE,
   RequestCancelledError,
 } from './errors';
-import { calcBranchPathHashSet, type DOMElementNode } from '@src/background/browser/dom/views';
-import { classifySensitiveAction } from '../actions/sensitivity';
-import { type BrowserState, BrowserStateHistory, URLNotAllowedError } from '@src/background/browser/views';
-import { convertZodToJsonSchema, repairJsonString } from '@src/background/utils';
-import { HistoryTreeProcessor } from '@src/background/browser/dom/history/service';
-import { AgentStepRecord } from '../history';
-import { type DOMHistoryElement } from '@src/background/browser/dom/history/view';
+import { BaseAgent, type BaseAgentOptions, type ExtraAgentOptions } from './base';
+import type { Action } from '../actions/builder';
 
 const logger = createLogger('NavigatorAgent');
 

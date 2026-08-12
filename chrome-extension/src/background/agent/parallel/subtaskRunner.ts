@@ -1,7 +1,5 @@
-import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { createLogger } from '@src/background/log';
 import BrowserContext from '../../browser/context';
-import type { BrowserContextConfig } from '../../browser/views';
 import { AgentContext, type AgentOptions } from '../types';
 import MessageManager from '../messages/service';
 import { EventManager } from '../event/manager';
@@ -9,11 +7,12 @@ import { ActionBuilder } from '../actions/builder';
 import { NavigatorAgent, NavigatorActionRegistry } from '../agents/navigator';
 import { NavigatorPrompt } from '../prompts/navigator';
 import { MAX_PARALLEL_SUBTASKS, MAX_SUBTASK_STEPS, type Subtask, type SubtaskResult } from './subtaskTypes';
+import type { BrowserContextConfig } from '../../browser/views';
+import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 
 export * from './subtaskTypes';
 
 const logger = createLogger('SubtaskRunner');
-
 
 export interface SubtaskRunnerOptions {
   navigatorLLM: BaseChatModel;
@@ -120,4 +119,3 @@ export async function runSubtasksInParallel(
   logger.info(`Running ${capped.length} subtask(s) in parallel`);
   return Promise.all(capped.map(subtask => runOne(subtask, options)));
 }
-
