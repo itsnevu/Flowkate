@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { DOMElementNode, DOMTextNode } from '../../../browser/dom/views';
-import { classifySensitiveAction, classifyManualAction, SensitiveActionKind, SILENT_ACTION_NAMES } from '../sensitivity';
+import {
+  classifySensitiveAction,
+  classifyManualAction,
+  SensitiveActionKind,
+  SILENT_ACTION_NAMES,
+} from '../sensitivity';
 
 /** Build a clickable element with the given visible text and attributes. */
 function element(text: string, attributes: Record<string, string> = {}, tagName = 'button'): DOMElementNode {

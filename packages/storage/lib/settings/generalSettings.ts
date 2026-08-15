@@ -56,6 +56,12 @@ export interface GeneralSettingsConfig {
   groupTaskTabs: boolean;
   /** Play a short chime when a task reaches a final state. */
   soundOnComplete: boolean;
+  /**
+   * Pause the task and ask once its estimated model spend reaches this many USD. 0 disables the
+   * brake. Only models whose price the user entered (modelPricing) count toward the estimate, so
+   * with no prices entered this never fires.
+   */
+  maxCostUsd: number;
 }
 
 export type GeneralSettingsStorage = BaseStorage<GeneralSettingsConfig> & {
@@ -81,6 +87,7 @@ export const DEFAULT_GENERAL_SETTINGS: GeneralSettingsConfig = {
   autoModeAcknowledged: false,
   groupTaskTabs: true,
   soundOnComplete: true,
+  maxCostUsd: 0,
 };
 
 /** The fields the current shape replaced, still sitting in storage on existing installs. */

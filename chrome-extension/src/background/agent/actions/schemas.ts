@@ -92,15 +92,16 @@ export const closeTabActionSchema: ActionSchema = {
   }),
 };
 
-// Content Actions, not used currently
-// export const extractContentActionSchema: ActionSchema = {
-//   name: 'extract_content',
-//   description:
-//     'Extract page content to retrieve specific information from the page, e.g. all company names, a specific description, all information about, links with companies in structured format or simply links',
-//   schema: z.object({
-//     goal: z.string(),
-//   }),
-// };
+// Content Actions
+export const extractContentActionSchema: ActionSchema = {
+  name: 'extract_content',
+  description:
+    'Extract specific information from the current page with a dedicated reader model, e.g. all product names with prices, every row of a listing, all links about a topic. State the goal precisely. Prefer this over reading the raw DOM when the answer is spread across a long page, and format tabular results as a markdown table.',
+  schema: z.object({
+    intent: z.string().default('').describe('purpose of this action'),
+    goal: z.string().describe('what to extract, stated precisely'),
+  }),
+};
 
 // Cache Actions
 export const cacheContentActionSchema: ActionSchema = {
@@ -109,6 +110,19 @@ export const cacheContentActionSchema: ActionSchema = {
   schema: z.object({
     intent: z.string().default('').describe('purpose of this action'),
     content: z.string().default('').describe('content to cache'),
+  }),
+};
+
+// Human handoff
+export const askUserActionSchema: ActionSchema = {
+  name: 'ask_user',
+  description:
+    'Hand the current tab to the user for one step only they can do: logging in, solving a captcha, entering a verification code, or making a choice only they can make. The task pauses until they confirm they are done, then you continue from the resulting page state. ALWAYS use this instead of asking for credentials in chat or typing a password yourself. Do not use it for steps you can do.',
+  schema: z.object({
+    intent: z.string().default('').describe('purpose of this action'),
+    instruction: z
+      .string()
+      .describe('what the user should do, in one or two plain sentences, e.g. "Please log in to your account"'),
   }),
 };
 

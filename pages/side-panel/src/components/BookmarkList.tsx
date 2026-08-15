@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { FaTrash, FaPen, FaCheck, FaTimes, FaGripVertical } from 'react-icons/fa';
 import { t } from '@extension/i18n';
+import { findPlaceholders } from '../templates';
 
 interface Bookmark {
   id: number;
@@ -146,10 +147,19 @@ const BookmarkList: React.FC<BookmarkListProps> = ({
                       onBookmarkSelect(bookmark.content);
                     }
                   }}
-                  className="min-w-0 text-left">
+                  className="flex min-w-0 items-center gap-1.5 text-left">
                   <div className="truncate text-sm text-ink-soft transition-colors group-hover:text-ink">
                     {bookmark.title}
                   </div>
+                  {/* Marks a template: picking this chip starts a fill-in, not a send. */}
+                  {findPlaceholders(bookmark.content).length > 0 && (
+                    <span
+                      className="shrink-0 rounded-pill bg-canvas-sunk px-1.5 py-0.5 font-mono text-[9px] font-semibold text-ink-faint shadow-neu-inset-sm"
+                      title={t('chat_bookmarks_template')}
+                      aria-label={t('chat_bookmarks_template')}>
+                      {'{ }'}
+                    </span>
+                  )}
                 </button>
 
                 {/* Rename */}

@@ -9,6 +9,11 @@ import type { BaseStorage } from '../base/types';
  * asks the agent to promote the project reads to the user as one of their own saved bookmarks,
  * because that is exactly what it becomes the moment it is seeded - renameable, deletable, and
  * indistinguishable from something they wrote. Shipping an ad in that disguise is not on.
+ *
+ * `{slot}` tokens make a prompt a template: the composer selects the first slot on pick, walks
+ * the rest with Tab, and holds send until none remain (see the side panel's templates.ts, which
+ * owns the token grammar). Two of the three seeds are templates on purpose - they demonstrate
+ * the fill-in flow itself, not just what a finished task looks like.
  */
 const defaultFavoritePrompts = [
   {
@@ -19,7 +24,12 @@ const defaultFavoritePrompts = [
   {
     title: '🛒 Compare prices across shops',
     content:
-      'Compare the current price of the Logitech MX Master 3S across Amazon, Best Buy and Walmart. Research all three at the same time, then tell me which is cheapest and what each one charges for shipping.',
+      'Compare the current price of {product} across Amazon, Best Buy and Walmart. Research all three at the same time, then tell me which is cheapest and what each one charges for shipping.',
+  },
+  {
+    title: '📰 Brief me on a topic',
+    content:
+      'Search the web for {topic}, open the three most relevant results, and give me a short brief: what happened, why it matters, and one link worth reading in full.',
   },
 ];
 

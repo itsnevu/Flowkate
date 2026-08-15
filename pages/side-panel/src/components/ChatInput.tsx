@@ -2,8 +2,10 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { FaMicrophone, FaPaperclip, FaArrowUp, FaTimes } from 'react-icons/fa';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { t } from '@extension/i18n';
+import { findPlaceholders, nextPlaceholder } from '../templates';
 import ApprovalModePicker from './ApprovalModePicker';
 import type { ApprovalMode } from '@extension/storage';
+import type { PlaceholderSpan } from '../templates';
 
 interface ChatInputProps {
   onSendMessage: (text: string, displayText?: string) => void;
@@ -58,9 +60,11 @@ export default function ChatInput({
 }: ChatInputProps) {
   const [text, setText] = useState('');
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  /** Unfilled template slots in the draft. While any remain, send is held and Tab walks them. */
+  const placeholders = useMemo(() => findPlaceholders(text), [text]);
   const isSendButtonDisabled = useMemo(
-    () => disabled || (text.trim() === '' && attachedFiles.length === 0),
-    [disabled, text, attachedFiles],
+    () => disabled || placeholders.length > 0 || (text.trim() === '' && attachedFiles.length === 0),
+    [disabled, placeholders, text, attachedFiles],
   );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -78,12 +82,44 @@ export default function ChatInput({
     }
   };
 
+  /** Select a template slot so the next keystroke types straight over it. */
+  const selectSpan = useCallback((span: PlaceholderSpan) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.focus();
+    textarea.setSelectionRange(span.start, span.end);
+  }, []);
+
+  /**
+   * Text arriving from outside the composer — a pinned prompt, a speech transcript. Unlike a
+   * keystroke it never passes through handleTextChange, so the resize is repeated here; and
+   * because the user's hands are not in the field yet, focus is placed for them: on the first
+   * template slot if the text is a template, at the end if it is not.
+   */
+  const applyExternalText = useCallback((newText: string) => {
+    setText(newText);
+    // After React has flushed the new value into the textarea; selection needs the real DOM text.
+    requestAnimationFrame(() => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+      textarea.style.height = 'auto';
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 100)}px`;
+      textarea.focus();
+      const first = findPlaceholders(newText)[0];
+      if (first) {
+        textarea.setSelectionRange(first.start, first.end);
+      } else {
+        textarea.setSelectionRange(newText.length, newText.length);
+      }
+    });
+  }, []);
+
   // Expose a method to set content from outside
   useEffect(() => {
     if (setContent) {
-      setContent(setText);
+      setContent(applyExternalText);
     }
-  }, [setContent]);
+  }, [setContent, applyExternalText]);
 
   // Initial resize when component mounts
   useEffect(() => {
@@ -98,6 +134,13 @@ export default function ChatInput({
     (e: React.FormEvent) => {
       e.preventDefault();
       const trimmedText = text.trim();
+
+      // A template with unfilled slots is not a task yet. Enter lands the user on the first
+      // blank instead of sending `{product}` to the agent as literal text.
+      if (placeholders.length > 0) {
+        selectSpan(placeholders[0]);
+        return;
+      }
 
       if (trimmedText || attachedFiles.length > 0) {
         let messageContent = trimmedText;
@@ -128,7 +171,7 @@ export default function ChatInput({
         setAttachedFiles([]);
       }
     },
-    [text, attachedFiles, onSendMessage],
+    [text, placeholders, selectSpan, attachedFiles, onSendMessage],
   );
 
   const handleKeyDown = useCallback(
@@ -136,9 +179,23 @@ export default function ChatInput({
       if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
         e.preventDefault();
         handleSubmit(e);
+        return;
+      }
+
+      // While template slots remain, Tab walks them (Shift+Tab walks back). Only then: an
+      // empty or slot-free draft leaves Tab as ordinary focus traversal for keyboard users.
+      if (e.key === 'Tab' && !e.altKey && !e.ctrlKey && !e.metaKey && placeholders.length > 0) {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+        const from = e.shiftKey ? textarea.selectionStart : textarea.selectionEnd;
+        const span = nextPlaceholder(text, from, e.shiftKey);
+        if (span) {
+          e.preventDefault();
+          selectSpan(span);
+        }
       }
     },
-    [handleSubmit],
+    [handleSubmit, placeholders, text, selectSpan],
   );
 
   const handleReplay = useCallback(() => {
@@ -241,6 +298,13 @@ export default function ChatInput({
             placeholder={attachedFiles.length > 0 ? 'Add a message (optional)...' : t('chat_input_placeholder')}
             aria-label={t('chat_input_editor')}
           />
+
+          {/* Visible exactly while send is held for unfilled slots, so the hold explains itself. */}
+          {placeholders.length > 0 && (
+            <p className="px-1.5 text-[10px] leading-tight text-ink-faint" role="note">
+              {t('chat_template_hint')}
+            </p>
+          )}
 
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">

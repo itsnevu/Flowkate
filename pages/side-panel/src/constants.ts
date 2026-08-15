@@ -6,4 +6,5 @@ export const X_URL = 'https://x.com/Flowkiteai';
 // The landing site, now that it is deployed. Anchor must track the section id in
 // landing/index.html, which is `id="quickstart"` - renaming that section breaks this link
 // silently, because a missing fragment just lands the reader at the top of the page.
-export const QUICK_START_URL = 'https://flowkate.vercel.app/#quickstart';
+// The host must exist as a domain on the Vercel project before this ships.
+export const QUICK_START_URL = 'https://flowkite.vercel.app/#quickstart';

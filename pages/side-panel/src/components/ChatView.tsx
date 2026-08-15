@@ -1,16 +1,25 @@
 import { t } from '@extension/i18n';
+import { estimateCostUsd } from '@extension/storage';
 import MessageList from './MessageList';
 import ChatInput from './ChatInput';
 import BookmarkList from './BookmarkList';
 import PlanReviewCard from './PlanReviewCard';
 import ActionConfirmCard from './ActionConfirmCard';
 import AutoModeNotice from './AutoModeNotice';
+import BudgetPauseCard from './BudgetPauseCard';
+import HandoffCard from './HandoffCard';
 import TokenUsageBar from './TokenUsageBar';
 import LiveStatusStrip from './LiveStatusStrip';
 import type { RefObject } from 'react';
-import type { ApprovalMode, Message, TrailStep } from '@extension/storage';
+import type { ApprovalMode, Message, ModelPricingConfig, TrailStep } from '@extension/storage';
 import type { FavoritePrompt } from '@extension/storage/lib/prompt/favorites';
-import type { ActionConfirmationPayload, PlanReviewPayload, TokenUsagePayload } from '../types/event';
+import type {
+  ActionConfirmationPayload,
+  BudgetPausePayload,
+  HandoffPayload,
+  PlanReviewPayload,
+  TokenUsagePayload,
+} from '../types/event';
 import type { LiveStatus } from '../types/status';
 
 interface ChatViewProps {
@@ -25,6 +34,10 @@ interface ChatViewProps {
   currentSessionId: string | null;
   pendingPlan: PlanReviewPayload | null;
   pendingAction: ActionConfirmationPayload | null;
+  /** the budget brake asking whether to keep spending, or null when it is not */
+  pendingBudget: BudgetPausePayload | null;
+  /** the step the agent asked the user to do by hand, or null when it did not */
+  pendingHandoff: HandoffPayload | null;
   canUndo: boolean;
   /** what the running task is doing right now, or null when nothing is running */
   liveStatus: LiveStatus | null;
@@ -43,7 +56,15 @@ interface ChatViewProps {
   onBookmarkReorder: (draggedId: number, targetId: number) => void;
   onPlanDecision: (approved: boolean) => void;
   onActionDecision: (approved: boolean) => void;
+  /** true continues past the budget, false stops the task */
+  onBudgetDecision: (keepGoing: boolean) => void;
+  /** true means the user finished the hands-on step, false stops the task */
+  onHandoffDecision: (done: boolean) => void;
   onUndo: () => void;
+  /** the user's own USD-per-MTok price entries, for the $ readouts */
+  modelPrices: ModelPricingConfig;
+  /** the per-task budget from settings; 0 means none */
+  budgetUsd: number;
   /** how much the user signs off on before the agent acts */
   approvalMode: ApprovalMode;
   onApprovalModeSelect: (mode: ApprovalMode) => void;
@@ -70,6 +91,8 @@ const ChatView = ({
   currentSessionId,
   pendingPlan,
   pendingAction,
+  pendingBudget,
+  pendingHandoff,
   canUndo,
   liveStatus,
   trail,
@@ -86,7 +109,11 @@ const ChatView = ({
   onBookmarkReorder,
   onPlanDecision,
   onActionDecision,
+  onBudgetDecision,
+  onHandoffDecision,
   onUndo,
+  modelPrices,
+  budgetUsd,
   approvalMode,
   onApprovalModeSelect,
   pendingAutoNotice,
@@ -135,6 +162,9 @@ const ChatView = ({
         plan={pendingPlan}
         onApprove={() => onPlanDecision(true)}
         onReject={() => onPlanDecision(false)}
+        spentUsd={tokenUsage ? estimateCostUsd(tokenUsage.byModel, modelPrices).usd : null}
+        spentIsFloor={tokenUsage ? estimateCostUsd(tokenUsage.byModel, modelPrices).unpricedModels.length > 0 : false}
+        budgetUsd={budgetUsd}
       />
     )}
     {pendingAction && (
@@ -144,7 +174,21 @@ const ChatView = ({
         onDecline={() => onActionDecision(false)}
       />
     )}
-    {canUndo && !pendingPlan && !pendingAction && !isHistoricalSession && (
+    {pendingBudget && !pendingPlan && !pendingAction && (
+      <BudgetPauseCard
+        pause={pendingBudget}
+        onContinue={() => onBudgetDecision(true)}
+        onStop={() => onBudgetDecision(false)}
+      />
+    )}
+    {pendingHandoff && !pendingPlan && !pendingAction && !pendingBudget && (
+      <HandoffCard
+        request={pendingHandoff}
+        onDone={() => onHandoffDecision(true)}
+        onStop={() => onHandoffDecision(false)}
+      />
+    )}
+    {canUndo && !pendingPlan && !pendingAction && !pendingBudget && !pendingHandoff && !isHistoricalSession && (
       <div className="shrink-0 px-3 pb-1 pt-2">
         <button
           type="button"
@@ -154,8 +198,13 @@ const ChatView = ({
         </button>
       </div>
     )}
-    {liveStatus && !pendingPlan && !pendingAction && <LiveStatusStrip status={liveStatus} trail={trail} />}
-    {tokenUsage && messages.length > 0 && !pendingPlan && !pendingAction && <TokenUsageBar usage={tokenUsage} />}
+    {liveStatus && !pendingPlan && !pendingAction && !pendingBudget && !pendingHandoff && (
+      <LiveStatusStrip status={liveStatus} trail={trail} />
+    )}
+    {/* Stays visible under the budget card on purpose: the spend it shows is that card's context. */}
+    {tokenUsage && messages.length > 0 && !pendingPlan && !pendingAction && (
+      <TokenUsageBar usage={tokenUsage} prices={modelPrices} />
+    )}
     {messages.length > 0 && (
       <div className="shrink-0 px-3 pb-3 pt-2">
         <ChatInput

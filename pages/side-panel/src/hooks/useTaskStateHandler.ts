@@ -6,7 +6,14 @@ import { playTaskChime } from '../chime';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import type { Message, TrailKind, TrailStep } from '@extension/storage';
 import type { LiveStatus } from '../types/status';
-import type { ActionConfirmationPayload, AgentEvent, PlanReviewPayload, TokenUsagePayload } from '../types/event';
+import type {
+  ActionConfirmationPayload,
+  AgentEvent,
+  BudgetPausePayload,
+  HandoffPayload,
+  PlanReviewPayload,
+  TokenUsagePayload,
+} from '../types/event';
 
 interface TaskStateHandlerProps {
   /** the one and only message a task is allowed to leave in the transcript */
@@ -23,6 +30,8 @@ interface TaskStateHandlerProps {
   setIsHistoricalSession: Dispatch<SetStateAction<boolean>>;
   setPendingPlan: Dispatch<SetStateAction<PlanReviewPayload | null>>;
   setPendingAction: Dispatch<SetStateAction<ActionConfirmationPayload | null>>;
+  setPendingBudget: Dispatch<SetStateAction<BudgetPausePayload | null>>;
+  setPendingHandoff: Dispatch<SetStateAction<HandoffPayload | null>>;
   setInputEnabled: Dispatch<SetStateAction<boolean>>;
   setShowStopButton: Dispatch<SetStateAction<boolean>>;
   setIsFollowUpMode: Dispatch<SetStateAction<boolean>>;
@@ -60,6 +69,8 @@ export const useTaskStateHandler = ({
   setIsHistoricalSession,
   setPendingPlan,
   setPendingAction,
+  setPendingBudget,
+  setPendingHandoff,
   setInputEnabled,
   setShowStopButton,
   setIsFollowUpMode,
@@ -112,6 +123,8 @@ export const useTaskStateHandler = ({
             case ExecutionState.PLAN_REJECTED:
               setPendingPlan(null);
               setPendingAction(null);
+              setPendingBudget(null);
+              setPendingHandoff(null);
               setInputEnabled(true);
               setShowStopButton(false);
               outcome = content || '';
@@ -119,6 +132,8 @@ export const useTaskStateHandler = ({
             case ExecutionState.TASK_OK:
               setPendingPlan(null);
               setPendingAction(null);
+              setPendingBudget(null);
+              setPendingHandoff(null);
               setIsFollowUpMode(true);
               setInputEnabled(true);
               setShowStopButton(false);
@@ -135,6 +150,8 @@ export const useTaskStateHandler = ({
             case ExecutionState.TASK_FAIL:
               setPendingPlan(null);
               setPendingAction(null);
+              setPendingBudget(null);
+              setPendingHandoff(null);
               setIsFollowUpMode(true);
               setInputEnabled(true);
               setShowStopButton(false);
@@ -147,18 +164,27 @@ export const useTaskStateHandler = ({
             case ExecutionState.TASK_CANCEL:
               setPendingPlan(null);
               setPendingAction(null);
+              setPendingBudget(null);
+              setPendingHandoff(null);
               setIsFollowUpMode(false);
               setInputEnabled(true);
               setShowStopButton(false);
               setIsReplaying(false);
               outcome = content || '';
               break;
-            case ExecutionState.TASK_PAUSE:
+            case ExecutionState.TASK_PAUSE: {
               // carries the pause reason, e.g. the confirmation that a step was undone. A pause is
               // not an outcome - the task can still be resumed - so it only updates the status.
+              // A budget pause additionally carries its numbers and raises the continue/stop card.
+              const pausePayload = data?.payload as BudgetPausePayload | undefined;
+              if (pausePayload?.kind === 'budget') {
+                setPendingBudget(pausePayload);
+              }
               status = content || null;
               break;
+            }
             case ExecutionState.TASK_RESUME:
+              setPendingBudget(null);
               break;
             default:
               console.error('Invalid task state', state);
@@ -236,9 +262,15 @@ export const useTaskStateHandler = ({
               setPendingAction((data?.payload as ActionConfirmationPayload) ?? null);
               setInputEnabled(false);
               return;
+            case ExecutionState.ACT_HANDOFF:
+              // the navigator parked itself and handed the tab to the user; the card takes the input
+              setPendingHandoff((data?.payload as HandoffPayload) ?? null);
+              setInputEnabled(false);
+              return;
             case ExecutionState.ACT_DECLINED:
               // The run continues after a decline, so this is a step, not an outcome.
               setPendingAction(null);
+              setPendingHandoff(null);
               status = content || null;
               trailKind = 'error';
               break;
@@ -300,6 +332,8 @@ export const useTaskStateHandler = ({
       setIsHistoricalSession,
       setPendingPlan,
       setPendingAction,
+      setPendingBudget,
+      setPendingHandoff,
       setInputEnabled,
       setShowStopButton,
       setIsFollowUpMode,

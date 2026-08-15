@@ -7,6 +7,8 @@ import {
 } from '@extension/storage';
 import { t } from '@extension/i18n';
 import { Divider, SettingRow, Toggle } from './controls';
+import { PricingSettings } from './PricingSettings';
+import { WebhookSettings } from './WebhookSettings';
 
 /** Number fields are milled into the card: a sunken well, no border anywhere. */
 const numberFieldClass =
@@ -160,6 +162,32 @@ export const GeneralSettings = () => {
             onChange={checked => updateSetting('soundOnComplete', checked)}
           />
         </SettingRow>
+
+        <Divider />
+
+        <SettingRow title={t('options_general_maxCostUsd')} description={t('options_general_maxCostUsd_desc')}>
+          <label htmlFor="maxCostUsd" className="sr-only">
+            {t('options_general_maxCostUsd')}
+          </label>
+          <input
+            id="maxCostUsd"
+            type="number"
+            min={0}
+            step={0.05}
+            value={settings.maxCostUsd}
+            onChange={e => {
+              const value = Number.parseFloat(e.target.value);
+              updateSetting('maxCostUsd', Number.isFinite(value) && value >= 0 ? value : 0);
+            }}
+            className={numberFieldClass}
+          />
+        </SettingRow>
+
+        <PricingSettings />
+
+        <Divider />
+
+        <WebhookSettings />
 
         <Divider />
 

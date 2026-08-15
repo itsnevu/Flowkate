@@ -106,6 +106,12 @@
   "chat_bookmarks_delete": {
     "message": "Excluir favorito"
   },
+  "chat_bookmarks_template": {
+    "message": "Modelo — tem lacunas a preencher"
+  },
+  "chat_template_hint": {
+    "message": "Um modelo: preencha cada {lacuna} — Tab pula para a próxima"
+  },
   "chat_replay_starting": {
     "message": "Iniciando reprodução da tarefa:\n\n\"$TASK$\"",
     "placeholders": {
@@ -261,6 +267,114 @@
   },
   "options_general_soundOnComplete_desc": {
     "message": "Toca um sinal curto quando a tarefa termina ou falha, para você poder desviar o olhar enquanto ela roda"
+  },
+  "options_general_maxCostUsd": {
+    "message": "Orçamento por tarefa (USD)"
+  },
+  "options_general_maxCostUsd_desc": {
+    "message": "Pausa e pergunta quando o gasto estimado da tarefa atinge este valor. 0 desativa; só contam modelos com preço abaixo."
+  },
+  "options_pricing_header": {
+    "message": "Preços dos modelos"
+  },
+  "options_pricing_desc": {
+    "message": "USD por 1 milhão de tokens, inserido por você — o Flowkite não traz tabela de preços. Modelos sem preço mostram apenas tokens e não contam para o orçamento."
+  },
+  "options_pricing_input": {
+    "message": "$ / 1M entrada"
+  },
+  "options_pricing_output": {
+    "message": "$ / 1M saída"
+  },
+  "options_pricing_empty": {
+    "message": "Atribua modelos na aba Modelos primeiro — as linhas de preço aparecem para os modelos que você usa."
+  },
+  "options_tabs_schedules": {
+    "message": "Agendamentos"
+  },
+  "options_sched_header": {
+    "message": "Tarefas agendadas"
+  },
+  "options_sched_desc": {
+    "message": "Execute um prompt salvo todos os dias em um horário fixo, sem ninguém presente. Agendar pré-aprova os planos; ações sensíveis são recusadas automaticamente — uma tarefa sem supervisão pode ler e relatar, nunca gastar. Os resultados vão para o histórico do painel lateral, com uma notificação ao final de cada execução."
+  },
+  "options_sched_title_label": {
+    "message": "Nome"
+  },
+  "options_sched_prompt_label": {
+    "message": "Prompt da tarefa — executa exatamente como escrito"
+  },
+  "options_sched_time_label": {
+    "message": "Todos os dias às"
+  },
+  "options_sched_add": {
+    "message": "Adicionar agendamento"
+  },
+  "options_sched_empty": {
+    "message": "Nenhuma tarefa agendada ainda."
+  },
+  "options_sched_enable": {
+    "message": "Ativado"
+  },
+  "options_sched_delete": {
+    "message": "Excluir"
+  },
+  "options_sched_lastRun": {
+    "message": "Última execução: $TIME$",
+    "placeholders": {
+      "time": {
+        "content": "$1",
+        "example": "8/16/2026, 7:00:12 AM"
+      }
+    }
+  },
+  "options_sched_never": {
+    "message": "Ainda não executou"
+  },
+  "options_sched_hasSlots": {
+    "message": "Este prompt ainda tem {lacunas} a preencher — uma tarefa agendada executa exatamente como escrita, então preencha antes."
+  },
+  "options_webhook_header": {
+    "message": "Webhook de saída"
+  },
+  "options_webhook_desc": {
+    "message": "Quando uma tarefa termina, envia o resultado como JSON via POST para uma URL escolhida por você — n8n, Zapier, um webhook do Discord. Apenas saída, desativado por padrão; o Flowkite continua sem servidor. HTTPS em qualquer lugar, HTTP simples só para localhost."
+  },
+  "options_webhook_enable": {
+    "message": "Ativar webhook"
+  },
+  "options_webhook_enable_desc": {
+    "message": "Nada é enviado enquanto isto estiver desativado."
+  },
+  "options_webhook_url": {
+    "message": "URL do webhook"
+  },
+  "options_webhook_urlInvalid": {
+    "message": "Use uma URL https://, ou http:// apenas para localhost."
+  },
+  "options_webhook_sendScheduled": {
+    "message": "Enviar execuções agendadas"
+  },
+  "options_webhook_sendScheduled_desc": {
+    "message": "O caso para o qual isto existe: resultados chegando enquanto você está ausente."
+  },
+  "options_webhook_sendManual": {
+    "message": "Enviar tarefas executadas por você"
+  },
+  "options_webhook_sendManual_desc": {
+    "message": "Também dispara para tarefas iniciadas no painel lateral."
+  },
+  "options_webhook_test": {
+    "message": "Enviar teste"
+  },
+  "options_webhook_testing": {
+    "message": "Enviando…"
+  },
+  "options_webhook_testOk": {
+    "message": "Entregue"
+  },
+  "options_webhook_testFail": {
+    "message": "Falhou — verifique a URL e o receptor"
   },
   "options_general_planningInterval": {
     "message": "Frequência de Replanejamento"
@@ -475,6 +589,51 @@
   "bg_errors_noTabId": {
     "message": "Nenhum ID de aba fornecido"
   },
+  "bg_ctx_page": {
+    "message": "Pedir ao Flowkite para trabalhar nesta página"
+  },
+  "bg_ctx_selection": {
+    "message": "Perguntar ao Flowkite sobre \"%s\""
+  },
+  "bg_sched_skipped_title": {
+    "message": "Tarefa agendada ignorada"
+  },
+  "bg_sched_skipped_body": {
+    "message": "\"$TITLE$\" foi ignorada porque outra tarefa está em execução.",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Morning price check"
+      }
+    }
+  },
+  "bg_sched_ok_title": {
+    "message": "Concluído: $TITLE$",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Morning price check"
+      }
+    }
+  },
+  "bg_sched_fail_title": {
+    "message": "Falhou: $TITLE$",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Morning price check"
+      }
+    }
+  },
+  "bg_sched_done": {
+    "message": "Tarefa agendada concluída. A sessão completa está no histórico do painel lateral."
+  },
+  "bg_sched_cancelled": {
+    "message": "A execução agendada foi cancelada."
+  },
+  "bg_sched_noResult": {
+    "message": "A execução agendada não produziu resultado."
+  },
   "bg_errors_noTaskId": {
     "message": "Nenhum ID de tarefa fornecido"
   },
@@ -560,6 +719,19 @@
   },
   "exec_task_pause": {
     "message": "Tarefa pausada"
+  },
+  "exec_budget_reached": {
+    "message": "Orçamento atingido: gasto de cerca de $SPENT$ de $BUDGET$ USD",
+    "placeholders": {
+      "spent": {
+        "content": "$1",
+        "example": "0.52"
+      },
+      "budget": {
+        "content": "$2",
+        "example": "0.50"
+      }
+    }
   },
   "exec_task_fail": {
     "message": "Tarefa falhou: \n\n$ERROR_MESSAGE$",
@@ -805,6 +977,42 @@
         "example": "Preferências do usuário salvas"
       }
     }
+  },
+  "act_askUser_start": {
+    "message": "Pedindo que você assuma por uma etapa…"
+  },
+  "act_askUser_ok": {
+    "message": "Você concluiu a etapa: \"$INSTRUCTION$\". Confie no próximo estado da página, não no que foi lembrado antes da transferência.",
+    "placeholders": {
+      "instruction": {
+        "content": "$1",
+        "example": "Please log in to your account"
+      }
+    }
+  },
+  "act_askUser_declined": {
+    "message": "A etapa manual não foi concluída - o usuário parou a tarefa ou ninguém estava presente."
+  },
+  "act_extract_start": {
+    "message": "Extraindo da página: $GOAL$",
+    "placeholders": {
+      "goal": {
+        "content": "$1",
+        "example": "every product name with its price"
+      }
+    }
+  },
+  "act_extract_ok": {
+    "message": "Extraído da página: $GOAL$",
+    "placeholders": {
+      "goal": {
+        "content": "$1",
+        "example": "every product name with its price"
+      }
+    }
+  },
+  "act_errors_extractFailed": {
+    "message": "A extração falhou - leia o estado da página diretamente, salve o que encontrar e role para ver mais se necessário."
   },
   "act_scrollToPercent_start": {
     "message": "Rolar para a porcentagem: $PERCENT$",
@@ -1055,6 +1263,19 @@
   "planReview_reject": {
     "message": "Rejeitar"
   },
+  "planReview_budget": {
+    "message": "Gasto com modelos até agora: $SPENT$ · orçamento $BUDGET$",
+    "placeholders": {
+      "spent": {
+        "content": "$1",
+        "example": "$0.0061"
+      },
+      "budget": {
+        "content": "$2",
+        "example": "$0.50"
+      }
+    }
+  },
   "chat_undo": {
     "message": "Desfazer última etapa"
   },
@@ -1069,6 +1290,9 @@
   "bg_cmd_actionConfirm_notPending": {
     "message": "Nenhuma ação aguardando confirmação"
   },
+  "bg_cmd_handoff_notPending": {
+    "message": "Nenhuma transferência aguardando conclusão"
+  },
   "actConfirm_title": {
     "message": "Confirme antes de o agente continuar"
   },
@@ -1080,6 +1304,55 @@
   },
   "actConfirm_allow": {
     "message": "Permitir"
+  },
+  "handoff_title": {
+    "message": "Sua vez — o agente está esperando"
+  },
+  "handoff_onPage": {
+    "message": "Na página"
+  },
+  "handoff_note": {
+    "message": "Tudo o que você digitar vai direto para a página — nunca passa pelo modelo nem pelo chat."
+  },
+  "handoff_done": {
+    "message": "Concluído — continuar"
+  },
+  "handoff_stop": {
+    "message": "Parar tarefa"
+  },
+  "budgetPause_title": {
+    "message": "Orçamento atingido"
+  },
+  "budgetPause_body": {
+    "message": "Esta tarefa gastou cerca de $SPENT$ do seu orçamento de $BUDGET$.",
+    "placeholders": {
+      "spent": {
+        "content": "$1",
+        "example": "$0.52"
+      },
+      "budget": {
+        "content": "$2",
+        "example": "$0.50"
+      }
+    }
+  },
+  "budgetPause_unpriced": {
+    "message": "Sem preço informado para: $MODELS$ — o gasto real é maior.",
+    "placeholders": {
+      "models": {
+        "content": "$1",
+        "example": "llama3.1:8b"
+      }
+    }
+  },
+  "budgetPause_note": {
+    "message": "Continuar libera o freio pelo resto desta tarefa."
+  },
+  "budgetPause_continue": {
+    "message": "Continuar"
+  },
+  "budgetPause_stop": {
+    "message": "Parar tarefa"
   },
   "actConfirm_decline": {
     "message": "Não permitir"
@@ -1230,6 +1503,24 @@
   },
   "chat_usage_noPrice": {
     "message": "Apenas tokens. Consulte o painel do seu provedor para ver a cobrança."
+  },
+  "chat_usage_priced": {
+    "message": "Os custos são calculados com os preços que você inseriu nas Configurações."
+  },
+  "chat_usage_unpriced": {
+    "message": "Sem preço informado para: $MODELS$ — os totais em dólar são um piso.",
+    "placeholders": {
+      "models": {
+        "content": "$1",
+        "example": "gpt-4o-mini"
+      }
+    }
+  },
+  "chat_table_copyCsv": {
+    "message": "Copiar CSV"
+  },
+  "chat_table_copied": {
+    "message": "Copiado"
   },
   "chat_usage_details_a11y": {
     "message": "Mostrar uso de tokens por modelo"

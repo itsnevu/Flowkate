@@ -1,7 +1,10 @@
-import { memo } from 'react';
+import { memo, useMemo, useState } from 'react';
+import { t } from '@extension/i18n';
 import { ACTOR_PROFILES } from '../types/message';
+import { splitMarkdownTables, tableToCsv } from '../markdownTable';
 import StepTrail from './StepTrail';
 import type { Message } from '@extension/storage';
+import type { TableBlock } from '../markdownTable';
 
 interface MessageListProps {
   messages: Message[];
@@ -57,7 +60,7 @@ function MessageBlock({ message, isSameActor }: MessageBlockProps) {
       )}
 
       <div className={`min-w-0 max-w-[85%] px-3.5 py-2.5 text-sm ${bubble}`}>
-        <div className="whitespace-pre-wrap break-words">{message.content}</div>
+        <MessageContent content={message.content} />
       </div>
 
       {steps.length > 0 && (
@@ -69,6 +72,84 @@ function MessageBlock({ message, isSameActor }: MessageBlockProps) {
       <div className="mt-1 px-1 text-[11px] uppercase tracking-wide text-ink-faint">
         {formatTimestamp(message.timestamp)}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Message text, with any pipe tables rendered as real tables.
+ *
+ * Every other message renders exactly as before (one pre-wrap div); only a strict
+ * header/separator/rows sequence is promoted, so prose with a stray pipe stays prose.
+ */
+function MessageContent({ content }: { content: string }) {
+  const blocks = useMemo(() => splitMarkdownTables(content), [content]);
+
+  if (blocks.length === 1 && blocks[0].type === 'text') {
+    return <div className="whitespace-pre-wrap break-words">{content}</div>;
+  }
+
+  return (
+    <div className="flex min-w-0 flex-col gap-2">
+      {blocks.map((block, index) =>
+        block.type === 'text' ? (
+          <div key={index} className="whitespace-pre-wrap break-words">
+            {block.text}
+          </div>
+        ) : (
+          <ResultTable key={index} table={block} />
+        ),
+      )}
+    </div>
+  );
+}
+
+/** One extracted table: scrolls inside its own well, with a copy-as-CSV key underneath. */
+function ResultTable({ table }: { table: TableBlock }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyCsv = () => {
+    navigator.clipboard
+      ?.writeText(tableToCsv(table))
+      .then(() => {
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1800);
+      })
+      .catch(() => setCopied(false));
+  };
+
+  return (
+    <div className="min-w-0">
+      <div className="overflow-x-auto rounded-soft bg-canvas-sunk p-2 shadow-neu-inset-sm">
+        <table className="w-full border-collapse text-left text-xs">
+          <thead>
+            <tr>
+              {table.header.map((cell, i) => (
+                <th key={i} className="whitespace-nowrap px-2 py-1.5 font-semibold text-ink">
+                  {cell}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {table.rows.map((row, r) => (
+              <tr key={r} className="border-t border-black/5">
+                {row.map((cell, c) => (
+                  <td key={c} className="px-2 py-1.5 align-top text-ink-soft">
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <button
+        type="button"
+        onClick={handleCopyCsv}
+        className="mt-1.5 rounded-pill bg-canvas-raised px-2.5 py-1 text-[11px] font-medium text-ink-soft shadow-neu-sm transition-all duration-150 ease-press hover:text-ink active:shadow-neu-inset-sm">
+        {copied ? t('chat_table_copied') : t('chat_table_copyCsv')}
+      </button>
     </div>
   );
 }

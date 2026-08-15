@@ -106,6 +106,12 @@
   "chat_bookmarks_delete": {
     "message": "刪除書籤"
   },
+  "chat_bookmarks_template": {
+    "message": "範本 — 含待填空格"
+  },
+  "chat_template_hint": {
+    "message": "這是範本：請填寫每個 {空格}，按 Tab 跳到下一個"
+  },
   "chat_replay_starting": {
     "message": "開始重播任務：\n\n\"$TASK$\"",
     "placeholders": {
@@ -261,6 +267,114 @@
   },
   "options_general_soundOnComplete_desc": {
     "message": "工作完成或失敗時播放一段短提示音，讓你在執行期間可以去忙別的事"
+  },
+  "options_general_maxCostUsd": {
+    "message": "任務預算（美元）"
+  },
+  "options_general_maxCostUsd_desc": {
+    "message": "任務估計花費達到此值時暫停並詢問。0 表示停用；僅計入下方已定價的模型。"
+  },
+  "options_pricing_header": {
+    "message": "模型價格"
+  },
+  "options_pricing_desc": {
+    "message": "每 100 萬 token 的美元價格，由你自行輸入 — Flowkite 不內建價格表。未定價的模型僅顯示 token 數，且不計入預算。"
+  },
+  "options_pricing_input": {
+    "message": "$ / 1M 輸入"
+  },
+  "options_pricing_output": {
+    "message": "$ / 1M 輸出"
+  },
+  "options_pricing_empty": {
+    "message": "請先在「模型」分頁指派模型 — 價格列會顯示你使用的模型。"
+  },
+  "options_tabs_schedules": {
+    "message": "排程"
+  },
+  "options_sched_header": {
+    "message": "排程任務"
+  },
+  "options_sched_desc": {
+    "message": "每天在固定時間執行儲存的提示語，無需有人在場。排程即代表預先核准其計畫；敏感操作會自動被拒絕 — 無人值守的任務只能讀取與回報，絕不會消費。結果會存入側邊面板歷史紀錄，每次執行結束都會通知。"
+  },
+  "options_sched_title_label": {
+    "message": "名稱"
+  },
+  "options_sched_prompt_label": {
+    "message": "任務提示語 — 將完全按原文執行"
+  },
+  "options_sched_time_label": {
+    "message": "每天於"
+  },
+  "options_sched_add": {
+    "message": "新增排程"
+  },
+  "options_sched_empty": {
+    "message": "尚無排程任務。"
+  },
+  "options_sched_enable": {
+    "message": "啟用"
+  },
+  "options_sched_delete": {
+    "message": "刪除"
+  },
+  "options_sched_lastRun": {
+    "message": "上次執行：$TIME$",
+    "placeholders": {
+      "time": {
+        "content": "$1",
+        "example": "8/16/2026, 7:00:12 AM"
+      }
+    }
+  },
+  "options_sched_never": {
+    "message": "尚未執行"
+  },
+  "options_sched_hasSlots": {
+    "message": "此提示語仍有待填的 {空格} — 排程任務會完全按原文執行，請先填寫。"
+  },
+  "options_webhook_header": {
+    "message": "對外 Webhook"
+  },
+  "options_webhook_desc": {
+    "message": "任務結束時，將結果以 JSON POST 到你指定的網址 — n8n、Zapier、Discord webhook。僅對外送出，預設關閉；Flowkite 依然沒有伺服器。HTTPS 不限主機，純 HTTP 僅限 localhost。"
+  },
+  "options_webhook_enable": {
+    "message": "啟用 Webhook"
+  },
+  "options_webhook_enable_desc": {
+    "message": "關閉時不會傳送任何內容。"
+  },
+  "options_webhook_url": {
+    "message": "Webhook 網址"
+  },
+  "options_webhook_urlInvalid": {
+    "message": "請使用 https:// 網址；http:// 僅限 localhost。"
+  },
+  "options_webhook_sendScheduled": {
+    "message": "傳送排程執行結果"
+  },
+  "options_webhook_sendScheduled_desc": {
+    "message": "此功能的主要用途：你不在時送達的結果。"
+  },
+  "options_webhook_sendManual": {
+    "message": "傳送你手動執行的任務"
+  },
+  "options_webhook_sendManual_desc": {
+    "message": "側邊面板啟動的任務也會觸發。"
+  },
+  "options_webhook_test": {
+    "message": "傳送測試"
+  },
+  "options_webhook_testing": {
+    "message": "傳送中…"
+  },
+  "options_webhook_testOk": {
+    "message": "已送達"
+  },
+  "options_webhook_testFail": {
+    "message": "失敗 — 請檢查網址與接收端"
   },
   "options_general_planningInterval": {
     "message": "重新規劃頻率"
@@ -475,6 +589,51 @@
   "bg_errors_noTabId": {
     "message": "未提供分頁 ID"
   },
+  "bg_ctx_page": {
+    "message": "請 Flowkite 在此頁面執行任務"
+  },
+  "bg_ctx_selection": {
+    "message": "詢問 Flowkite 關於「%s」"
+  },
+  "bg_sched_skipped_title": {
+    "message": "已略過排程任務"
+  },
+  "bg_sched_skipped_body": {
+    "message": "「$TITLE$」已略過，因為另一個任務正在執行。",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Morning price check"
+      }
+    }
+  },
+  "bg_sched_ok_title": {
+    "message": "完成：$TITLE$",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Morning price check"
+      }
+    }
+  },
+  "bg_sched_fail_title": {
+    "message": "失敗：$TITLE$",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Morning price check"
+      }
+    }
+  },
+  "bg_sched_done": {
+    "message": "排程任務已完成。完整內容請見側邊面板的歷史紀錄。"
+  },
+  "bg_sched_cancelled": {
+    "message": "排程執行已取消。"
+  },
+  "bg_sched_noResult": {
+    "message": "排程執行沒有產生結果。"
+  },
   "bg_errors_noTaskId": {
     "message": "未提供任務 ID"
   },
@@ -560,6 +719,19 @@
   },
   "exec_task_pause": {
     "message": "任務已暫停"
+  },
+  "exec_budget_reached": {
+    "message": "已達預算：已花費約 $SPENT$（上限 $BUDGET$ 美元）",
+    "placeholders": {
+      "spent": {
+        "content": "$1",
+        "example": "0.52"
+      },
+      "budget": {
+        "content": "$2",
+        "example": "0.50"
+      }
+    }
   },
   "exec_task_fail": {
     "message": "任務失敗：\n\n$ERROR_MESSAGE$",
@@ -805,6 +977,42 @@
         "example": "User preferences saved"
       }
     }
+  },
+  "act_askUser_start": {
+    "message": "請你接手完成一個步驟…"
+  },
+  "act_askUser_ok": {
+    "message": "你已完成步驟：「$INSTRUCTION$」。請以交接後的頁面狀態為準，而非交接前的記憶。",
+    "placeholders": {
+      "instruction": {
+        "content": "$1",
+        "example": "Please log in to your account"
+      }
+    }
+  },
+  "act_askUser_declined": {
+    "message": "手動步驟未完成 — 使用者停止了任務，或無人在場。"
+  },
+  "act_extract_start": {
+    "message": "正在從頁面擷取：$GOAL$",
+    "placeholders": {
+      "goal": {
+        "content": "$1",
+        "example": "every product name with its price"
+      }
+    }
+  },
+  "act_extract_ok": {
+    "message": "已從頁面擷取：$GOAL$",
+    "placeholders": {
+      "goal": {
+        "content": "$1",
+        "example": "every product name with its price"
+      }
+    }
+  },
+  "act_errors_extractFailed": {
+    "message": "擷取失敗 — 請直接讀取頁面狀態並快取所得內容，必要時捲動查看更多。"
   },
   "act_scrollToPercent_start": {
     "message": "正在捲動至 $PERCENT$ 百分比位置",
@@ -1055,6 +1263,19 @@
   "planReview_reject": {
     "message": "拒絕"
   },
+  "planReview_budget": {
+    "message": "目前模型花費：$SPENT$ · 預算 $BUDGET$",
+    "placeholders": {
+      "spent": {
+        "content": "$1",
+        "example": "$0.0061"
+      },
+      "budget": {
+        "content": "$2",
+        "example": "$0.50"
+      }
+    }
+  },
   "chat_undo": {
     "message": "復原上一個步驟"
   },
@@ -1069,6 +1290,9 @@
   "bg_cmd_actionConfirm_notPending": {
     "message": "目前沒有等待確認的動作"
   },
+  "bg_cmd_handoff_notPending": {
+    "message": "沒有等待完成的交接"
+  },
   "actConfirm_title": {
     "message": "請先確認，代理才會繼續"
   },
@@ -1080,6 +1304,55 @@
   },
   "actConfirm_allow": {
     "message": "允許"
+  },
+  "handoff_title": {
+    "message": "輪到你了 — 代理正在等待"
+  },
+  "handoff_onPage": {
+    "message": "所在頁面"
+  },
+  "handoff_note": {
+    "message": "你輸入的內容會直接進入頁面 — 絕不會經過模型或聊天記錄。"
+  },
+  "handoff_done": {
+    "message": "完成 — 繼續"
+  },
+  "handoff_stop": {
+    "message": "停止任務"
+  },
+  "budgetPause_title": {
+    "message": "已達預算"
+  },
+  "budgetPause_body": {
+    "message": "此任務已花費約 $SPENT$（預算 $BUDGET$）。",
+    "placeholders": {
+      "spent": {
+        "content": "$1",
+        "example": "$0.52"
+      },
+      "budget": {
+        "content": "$2",
+        "example": "$0.50"
+      }
+    }
+  },
+  "budgetPause_unpriced": {
+    "message": "尚未輸入價格：$MODELS$ — 實際花費更高。",
+    "placeholders": {
+      "models": {
+        "content": "$1",
+        "example": "llama3.1:8b"
+      }
+    }
+  },
+  "budgetPause_note": {
+    "message": "繼續後，本任務其餘部分將不再暫停。"
+  },
+  "budgetPause_continue": {
+    "message": "繼續"
+  },
+  "budgetPause_stop": {
+    "message": "停止任務"
   },
   "actConfirm_decline": {
     "message": "不允許"
@@ -1230,6 +1503,24 @@
   },
   "chat_usage_noPrice": {
     "message": "僅顯示 Token。費用請查看您的供應商後台。"
+  },
+  "chat_usage_priced": {
+    "message": "費用依你在設定中輸入的價格計算。"
+  },
+  "chat_usage_unpriced": {
+    "message": "尚未輸入價格：$MODELS$ — 美元總額僅為下限。",
+    "placeholders": {
+      "models": {
+        "content": "$1",
+        "example": "gpt-4o-mini"
+      }
+    }
+  },
+  "chat_table_copyCsv": {
+    "message": "複製 CSV"
+  },
+  "chat_table_copied": {
+    "message": "已複製"
   },
   "chat_usage_details_a11y": {
     "message": "顯示各模型的 Token 使用量"

@@ -1,6 +1,13 @@
 import { z } from 'zod';
 import { DEFAULT_INCLUDE_ATTRIBUTES, type DOMElementNode } from '../browser/dom/views';
-import { Actors, ExecutionState, type ActionConfirmationPayload, type EventPayload, AgentEvent } from './event/types';
+import {
+  Actors,
+  ExecutionState,
+  type ActionConfirmationPayload,
+  type EventPayload,
+  type HandoffPayload,
+  AgentEvent,
+} from './event/types';
 import { AgentStepHistory } from './history';
 import { TokenUsageTracker } from './usage';
 import type BrowserContext from '../browser/context';
@@ -39,6 +46,13 @@ export interface AgentOptions {
    * mutable object, so the navigator re-reads it before every action with no subscription needed.
    */
   approvalMode: ApprovalMode;
+  /**
+   * True when nobody is watching — a scheduled run. Changes exactly two behaviours, both fail-safe:
+   * the plan gate treats the plan as pre-approved (scheduling the task WAS the approval), and the
+   * sensitive-action gate auto-DECLINES instead of parking forever on a question nobody will
+   * answer. It never auto-allows: an unattended task can read and report, not spend.
+   */
+  unattended: boolean;
 }
 
 export const DEFAULT_AGENT_OPTIONS: AgentOptions = {
@@ -53,6 +67,7 @@ export const DEFAULT_AGENT_OPTIONS: AgentOptions = {
   includeAttributes: DEFAULT_INCLUDE_ATTRIBUTES,
   planningInterval: 3,
   approvalMode: 'planner',
+  unattended: false,
 };
 
 export class AgentContext {
@@ -83,6 +98,8 @@ export class AgentContext {
   finalAnswer: string | null;
   /** Resolver for the pending sensitive-action gate, set only while the user is being asked. */
   private actionConfirmationResolver: ((approved: boolean) => void) | null = null;
+  /** Resolver for the pending human-handoff gate, set only while the user has the tab. */
+  private handoffResolver: ((completed: boolean) => void) | null = null;
 
   constructor(
     taskId: string,
@@ -141,6 +158,12 @@ export class AgentContext {
    * page that manages to steer the model still cannot spend money or delete data on its own.
    */
   async requestActionConfirmation(request: ActionConfirmationPayload): Promise<boolean> {
+    // Unattended: there is nobody to ask, and parking forever would hang the scheduled run. The
+    // fail-safe answer is the one a cautious user gives to a question they did not see: no.
+    if (this.options.unattended) {
+      await this.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_DECLINED, request.description, request);
+      return false;
+    }
     await this.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_CONFIRM, request.description, request);
     const approved = await new Promise<boolean>(resolve => {
       this.actionConfirmationResolver = resolve;
@@ -159,6 +182,37 @@ export class AgentContext {
     return this.actionConfirmationResolver !== null;
   }
 
+  /**
+   * Hand the tab to the user for one step they must do themselves — logging in, a captcha, a
+   * verification code — and block until they say they are done. The other direction of the
+   * asks-first contract: instead of the user approving the agent's action, the agent requests the
+   * user's. Credentials typed during a handoff go straight into the page and never pass through
+   * the model or the transcript.
+   */
+  async requestHumanHandoff(request: HandoffPayload): Promise<boolean> {
+    // Unattended: there is nobody to hand the tab to. Fail the request rather than park forever;
+    // the ask_user action emits the decline event, so none is emitted here.
+    if (this.options.unattended) {
+      return false;
+    }
+    await this.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_HANDOFF, request.instruction, request);
+    const completed = await new Promise<boolean>(resolve => {
+      this.handoffResolver = resolve;
+    });
+    this.handoffResolver = null;
+    return completed;
+  }
+
+  /** Resolve a pending human-handoff gate. No-op if the agent is not waiting on one. */
+  resolveHandoff(completed: boolean): void {
+    this.handoffResolver?.(completed);
+  }
+
+  /** Whether the agent is currently parked waiting for the user to finish a handoff. */
+  isAwaitingHandoff(): boolean {
+    return this.handoffResolver !== null;
+  }
+
   async pause() {
     this.paused = true;
   }
@@ -169,8 +223,9 @@ export class AgentContext {
 
   async stop() {
     this.stopped = true;
-    // release any pending confirmation gate, otherwise the navigator stays parked on it forever
+    // release any pending gate, otherwise the navigator stays parked on it forever
     this.actionConfirmationResolver?.(false);
+    this.handoffResolver?.(false);
     setTimeout(() => this.controller.abort(), 300);
   }
 }

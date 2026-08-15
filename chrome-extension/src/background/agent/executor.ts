@@ -1,7 +1,7 @@
 import { t } from '@extension/i18n';
 import { createLogger } from '@src/background/log';
 import { chatHistoryStore } from '@extension/storage/lib/chat';
-import { memoryStore, requiresPlanApproval } from '@extension/storage';
+import { memoryStore, requiresPlanApproval, estimateCostUsd } from '@extension/storage';
 import { URLNotAllowedError } from '../browser/views';
 import { TabGroupStatus } from '../browser/tabGroup';
 import { analytics } from '../services/analytics';
@@ -27,7 +27,7 @@ import {
 import { routeStep, ModelTier } from './routing';
 import type BrowserContext from '../browser/context';
 import type { AgentStepHistory } from './history';
-import type { ApprovalMode, GeneralSettingsConfig } from '@extension/storage';
+import type { ApprovalMode, GeneralSettingsConfig, ModelPricingConfig } from '@extension/storage';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 
 const logger = createLogger('Executor');
@@ -38,6 +38,8 @@ export interface ExecutorExtraArgs {
   extractorLLM?: BaseChatModel;
   agentOptions?: Partial<AgentOptions>;
   generalSettings?: GeneralSettingsConfig;
+  /** The user's own USD-per-MTok price entries, snapshotted at task start for the budget brake. */
+  modelPricing?: ModelPricingConfig;
 }
 
 export class Executor {
@@ -69,6 +71,13 @@ export class Executor {
   private planApproved = false;
   /** Whether remembered preferences were already loaded for the task currently being worked on. */
   private memoriesInjected = false;
+  /** Price entries snapshotted at construction; empty means nothing is priced and the brake stays off. */
+  private readonly modelPricing: ModelPricingConfig;
+  /**
+   * Latched once the budget pause has been shown. Resuming past it is an explicit "keep going"
+   * from the user, so the brake does not re-fire every step after that for the rest of the run.
+   */
+  private budgetPauseIssued = false;
   constructor(
     task: string,
     taskId: string,
@@ -100,6 +109,7 @@ export class Executor {
     const context = new AgentContext(taskId, browserContext, messageManager, eventManager, agentOptions);
 
     this.generalSettings = extraArgs?.generalSettings;
+    this.modelPricing = extraArgs?.modelPricing ?? {};
     this.tasks.push(task);
     this.navigatorPrompt = new NavigatorPrompt(context.options.maxActionsPerStep);
     this.plannerPrompt = new PlannerPrompt();
@@ -238,6 +248,8 @@ export class Executor {
         };
 
         logger.info(`🔄 Step ${step + 1} / ${allowedMaxSteps}`);
+        // Before shouldStop, whose pause-wait is what actually parks the loop when this fires.
+        this.checkBudget();
         if (await this.shouldStop()) {
           break;
         }
@@ -374,6 +386,10 @@ export class Executor {
    * @returns true if execution may continue, false if the user rejected the plan
    */
   private async ensurePlanApproved(planOutput: AgentOutput<PlannerOutput> | null): Promise<boolean> {
+    // Unattended runs pre-approved their plan when the user scheduled the task; parking on a
+    // review card nobody will answer would just hang the run. The sensitive-action gate is the one
+    // that stays armed for them (auto-decline), so "pre-approved" never extends to spending.
+    if (this.context.options.unattended) return true;
     // Read from the mutable field, not from the settings snapshot: the user may have moved the
     // picker since this Executor was built, and a follow-up task runs on this same instance.
     if (!requiresPlanApproval(this.approvalMode)) return true;
@@ -410,6 +426,16 @@ export class Executor {
   /** Resolve a pending sensitive-action gate. No-op if the agent is not waiting on one. */
   async respondToActionConfirmation(approved: boolean): Promise<void> {
     this.context.resolveActionConfirmation(approved);
+  }
+
+  /** Resolve a pending human-handoff gate. No-op if the agent is not waiting on one. */
+  async respondToHandoff(completed: boolean): Promise<void> {
+    this.context.resolveHandoff(completed);
+  }
+
+  /** Whether the agent is currently parked waiting for the user to finish a handoff. */
+  isAwaitingHandoff(): boolean {
+    return this.context.isAwaitingHandoff();
   }
 
   /** Whether the agent is currently blocked waiting for the user to confirm an action. */
@@ -545,6 +571,34 @@ export class Executor {
       }
     }
     return false;
+  }
+
+  /**
+   * The budget brake: pause the task, once, when its estimated spend reaches the user's cap.
+   *
+   * A pause and not a stop — the answer may be two steps away, and killing the task at $0.51 of a
+   * $0.50 budget helps nobody. The panel shows the numbers with resume/cancel keys; resuming is an
+   * explicit decision to keep spending, so the latch keeps the brake released for the rest of the
+   * run. Only models the user priced count toward the estimate (an unpriced model costs "unknown",
+   * not zero), and with no budget set or no prices entered this is inert.
+   */
+  private checkBudget(): void {
+    if (this.budgetPauseIssued) return;
+    const budgetUsd = this.generalSettings?.maxCostUsd ?? 0;
+    if (!(budgetUsd > 0)) return;
+
+    const snapshot = this.context.tokenUsage.snapshot();
+    const { usd, unpricedModels } = estimateCostUsd(snapshot.byModel, this.modelPricing);
+    if (usd < budgetUsd) return;
+
+    this.budgetPauseIssued = true;
+    this.context.emitEvent(
+      Actors.SYSTEM,
+      ExecutionState.TASK_PAUSE,
+      t('exec_budget_reached', [usd.toFixed(2), budgetUsd.toFixed(2)]),
+      { kind: 'budget', spentUsd: usd, budgetUsd, unpricedModels },
+    );
+    this.context.pause();
   }
 
   private async shouldStop(): Promise<boolean> {

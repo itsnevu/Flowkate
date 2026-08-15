@@ -40,7 +40,12 @@ const FALLBACK_MODE = MODES[1];
  */
 const ApprovalModePicker = ({ mode, disabled = false, onSelect }: ApprovalModePickerProps) => {
   const [open, setOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(() => Math.max(0, MODES.findIndex(m => m.value === mode)));
+  const [activeIndex, setActiveIndex] = useState(() =>
+    Math.max(
+      0,
+      MODES.findIndex(m => m.value === mode),
+    ),
+  );
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
@@ -50,7 +55,12 @@ const ApprovalModePicker = ({ mode, disabled = false, onSelect }: ApprovalModePi
   // aria-activedescendant rather than by moving focus between them.
   useEffect(() => {
     if (!open) return;
-    setActiveIndex(Math.max(0, MODES.findIndex(m => m.value === mode)));
+    setActiveIndex(
+      Math.max(
+        0,
+        MODES.findIndex(m => m.value === mode),
+      ),
+    );
     listRef.current?.focus();
   }, [open, mode]);
 

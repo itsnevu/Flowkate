@@ -1,14 +1,20 @@
 import 'webextension-polyfill';
 import {
+  Actors,
   agentModelStore,
   AgentNameEnum,
+  chatHistoryStore,
   firewallStore,
   generalSettingsStore,
   llmProviderStore,
   analyticsSettingsStore,
+  modelPricingStore,
+  schedulesStore,
   APPROVAL_MODES,
 } from '@extension/storage';
 import { t } from '@extension/i18n';
+import { SCHEDULE_ALARM_PREFIX, scheduleIdFromAlarmName, syncScheduleAlarms } from './services/scheduler';
+import { dispatchTaskWebhook } from './services/webhook';
 import BrowserContext from './browser/context';
 import { Executor } from './agent/executor';
 import { undoLastStepSafely } from './agent/undo';
@@ -19,8 +25,9 @@ import { DEFAULT_AGENT_OPTIONS } from './agent/types';
 import { SpeechToTextService } from './services/speechToText';
 import { injectBuildDomTreeScripts } from './browser/dom/service';
 import { analytics } from './services/analytics';
+import type { TaskWebhookPayload } from './services/webhook';
+import type { ScheduledTask, ApprovalMode } from '@extension/storage';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
-import type { ApprovalMode } from '@extension/storage';
 
 const logger = createLogger('background');
 
@@ -28,6 +35,28 @@ const browserContext = new BrowserContext({});
 let currentExecutor: Executor | null = null;
 let currentPort: chrome.runtime.Port | null = null;
 const SIDE_PANEL_URL = chrome.runtime.getURL('side-panel/index.html');
+
+/**
+ * True while any run (panel-started or scheduled) is inside its execute loop. The scheduler reads
+ * it to skip a firing rather than fight the user's live task for the one shared BrowserContext.
+ */
+let executorBusy = false;
+
+async function withExecutorBusy<T>(run: () => Promise<T>): Promise<T> {
+  executorBusy = true;
+  try {
+    return await run();
+  } finally {
+    executorBusy = false;
+  }
+}
+
+/**
+ * What the currently-running task is, for the outbound webhook. One executor runs at a time, so
+ * one slot is enough; it is nulled after the terminal dispatch so a stray second terminal event
+ * cannot fire the webhook twice for the same task.
+ */
+let currentTaskMeta: Pick<TaskWebhookPayload, 'source' | 'task' | 'title' | 'startedAt'> | null = null;
 
 /**
  * Narrow an approval mode arriving over the port.
@@ -47,6 +76,70 @@ function readApprovalMode(value: unknown): ApprovalMode | undefined {
 
 // Setup side panel behavior
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(error => console.error(error));
+
+/* -------------------------------------------------------------------------- */
+/* Context menu: start a task from the page under the cursor                   */
+/* -------------------------------------------------------------------------- */
+
+const CTX_MENU_PAGE = 'flowkite-ctx-page';
+const CTX_MENU_SELECTION = 'flowkite-ctx-selection';
+
+/**
+ * Longer selections are truncated before they reach the composer: the selection is context for
+ * the task, not the task itself, and a whole selected article would drown the input.
+ */
+const CTX_SELECTION_MAX = 500;
+
+// Recreated from scratch on every install/update: createContextMenu throws on duplicate ids, and
+// removeAll is the documented way to make registration idempotent across SW restarts.
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({ id: CTX_MENU_PAGE, title: t('bg_ctx_page'), contexts: ['page'] });
+    // Chrome substitutes %s in the title with the selected text itself.
+    chrome.contextMenus.create({ id: CTX_MENU_SELECTION, title: t('bg_ctx_selection'), contexts: ['selection'] });
+  });
+  void syncScheduleAlarms();
+});
+
+// Alarms persist across browser restarts but their `when` may be in the past after a long
+// shutdown; a startup resync re-anchors every schedule to its next real occurrence.
+chrome.runtime.onStartup.addListener(() => {
+  void syncScheduleAlarms();
+});
+
+// Any edit in the schedules UI lands here and rebuilds the alarms to match.
+schedulesStore.subscribe(() => {
+  void syncScheduleAlarms();
+});
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId !== CTX_MENU_PAGE && info.menuItemId !== CTX_MENU_SELECTION) return;
+  if (!tab?.id) return;
+
+  const url = info.pageUrl ?? tab.url ?? '';
+  let text: string;
+  if (info.menuItemId === CTX_MENU_SELECTION && info.selectionText) {
+    const selection =
+      info.selectionText.length > CTX_SELECTION_MAX
+        ? `${info.selectionText.slice(0, CTX_SELECTION_MAX)}…`
+        : info.selectionText;
+    text = `On the current page (${url}), regarding this selected text:\n"${selection}"\n\n{task}`;
+  } else {
+    text = `On the current page (${url}), {task}`;
+  }
+
+  // The composer reads this from session storage, which works in every panel state: already open
+  // (its onChanged listener fires), or opened by the call below (it reads the key on mount). A
+  // port message would cover neither reliably - the panel only connects once a task runs.
+  // storage.session is TRUSTED_CONTEXTS-only, so no web page can plant a prefill here.
+  chrome.storage.session
+    .set({ pendingPrefill: { text, ts: Date.now() } })
+    .catch(error => logger.error('Failed to stash context-menu prefill:', error));
+
+  // Must be called synchronously enough to keep the user gesture; .open() with tabId focuses the
+  // panel on the tab the user right-clicked.
+  chrome.sidePanel.open({ tabId: tab.id }).catch(error => logger.error('Failed to open side panel:', error));
+});
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (tabId && changeInfo.status === 'complete' && tab.url?.startsWith('http')) {
@@ -119,15 +212,17 @@ chrome.runtime.onConnect.addListener(port => {
             if (!message.tabId) return port.postMessage({ type: 'error', error: t('bg_errors_noTabId') });
 
             logger.info('new_task', message.tabId, message.task);
-            currentExecutor = await setupExecutor(
+            currentTaskMeta = { source: 'manual', task: message.task, startedAt: Date.now() };
+            const executor = await setupExecutor(
               message.taskId,
               message.task,
               browserContext,
               readApprovalMode(message.approvalMode),
             );
-            subscribeToExecutorEvents(currentExecutor);
+            currentExecutor = executor;
+            subscribeToExecutorEvents(executor);
 
-            const result = await currentExecutor.execute();
+            const result = await withExecutorBusy(() => executor.execute());
             logger.info('new_task execution result', message.tabId, result);
             break;
           }
@@ -140,15 +235,17 @@ chrome.runtime.onConnect.addListener(port => {
 
             // If executor exists, add follow-up task
             if (currentExecutor) {
+              const executor = currentExecutor;
+              currentTaskMeta = { source: 'manual', task: message.task, startedAt: Date.now() };
               // The Executor is reused here rather than rebuilt, so it still carries the mode the
               // session started with. Without this the picker would appear to work for the first
               // task and be silently ignored for every follow-up after it.
               const followUpMode = readApprovalMode(message.approvalMode);
-              if (followUpMode) currentExecutor.setApprovalMode(followUpMode);
-              currentExecutor.addFollowUpTask(message.task);
+              if (followUpMode) executor.setApprovalMode(followUpMode);
+              executor.addFollowUpTask(message.task);
               // Re-subscribe to events in case the previous subscription was cleaned up
-              subscribeToExecutorEvents(currentExecutor);
-              const result = await currentExecutor.execute();
+              subscribeToExecutorEvents(executor);
+              const result = await withExecutorBusy(() => executor.execute());
               logger.info('follow_up_task execution result', message.tabId, result);
             } else {
               // executor was cleaned up, can not add follow-up task
@@ -181,7 +278,10 @@ chrome.runtime.onConnect.addListener(port => {
 
           case 'set_approval_mode': {
             if (!isApprovalMode(message.mode))
-              return port.postMessage({ type: 'error', error: t('bg_cmd_approvalMode_invalid', [String(message.mode)]) });
+              return port.postMessage({
+                type: 'error',
+                error: t('bg_cmd_approvalMode_invalid', [String(message.mode)]),
+              });
             // Deliberately no noRunningTask error: moving the picker with nothing running is normal,
             // and the panel has already written the choice to storage, so there is nothing to fail.
             currentExecutor?.setApprovalMode(message.mode);
@@ -194,6 +294,14 @@ chrome.runtime.onConnect.addListener(port => {
             if (!currentExecutor.isAwaitingActionConfirmation())
               return port.postMessage({ type: 'error', error: t('bg_cmd_actionConfirm_notPending') });
             await currentExecutor.respondToActionConfirmation(message.type === 'confirm_action');
+            return port.postMessage({ type: 'success' });
+          }
+
+          case 'handoff_done': {
+            if (!currentExecutor) return port.postMessage({ type: 'error', error: t('bg_errors_noRunningTask') });
+            if (!currentExecutor.isAwaitingHandoff())
+              return port.postMessage({ type: 'error', error: t('bg_cmd_handoff_notPending') });
+            await currentExecutor.respondToHandoff(true);
             return port.postMessage({ type: 'success' });
           }
 
@@ -300,11 +408,12 @@ chrome.runtime.onConnect.addListener(port => {
               // Switch to the specified tab
               await browserContext.switchTab(message.tabId);
               // Setup executor with the new taskId and a dummy task description
-              currentExecutor = await setupExecutor(message.taskId, message.task, browserContext);
-              subscribeToExecutorEvents(currentExecutor);
+              const executor = await setupExecutor(message.taskId, message.task, browserContext);
+              currentExecutor = executor;
+              subscribeToExecutorEvents(executor);
 
               // Run replayHistory with the history session ID
-              const result = await currentExecutor.replayHistory(message.historySessionId);
+              const result = await withExecutorBusy(() => executor.replayHistory(message.historySessionId));
               logger.debug('replay execution result', message.tabId, result);
             } catch (error) {
               logger.error('Replay failed:', error);
@@ -350,6 +459,8 @@ async function setupExecutor(
   task: string,
   browserContext: BrowserContext,
   approvalModeOverride?: ApprovalMode,
+  /** Scheduled runs: plan gate pre-approved, sensitive actions auto-declined. See AgentOptions.unattended. */
+  unattended = false,
 ) {
   const providers = await llmProviderStore.getAllProviders();
   // if no providers, need to display the options page
@@ -418,6 +529,9 @@ async function setupExecutor(
   const executor = new Executor(task, taskId, browserContext, navigatorLLM, {
     plannerLLM: plannerLLM ?? navigatorLLM,
     fastLLM: fastLLM ?? undefined,
+    // Snapshotted at task start, like every other setting: a price edited mid-run applies to the
+    // next task, not retroactively to a brake that may already have fired.
+    modelPricing: await modelPricingStore.getAllPrices(),
     agentOptions: {
       maxSteps: generalSettings.maxSteps,
       maxFailures: generalSettings.maxFailures,
@@ -431,6 +545,7 @@ async function setupExecutor(
       useVisionForPlanner: true,
       planningInterval: generalSettings.planningInterval,
       approvalMode,
+      unattended,
     },
     // The override has to reach both readers, or the plan gate would run the stored mode while the
     // navigator's action gate ran the picked one.
@@ -438,6 +553,127 @@ async function setupExecutor(
   });
 
   return executor;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Scheduled tasks                                                             */
+/* -------------------------------------------------------------------------- */
+
+const SCHED_NOTIFICATION_PREFIX = 'flowkite-sched-';
+
+function notifySchedule(title: string, message: string): void {
+  chrome.notifications.create(`${SCHED_NOTIFICATION_PREFIX}${Date.now()}`, {
+    type: 'basic',
+    iconUrl: chrome.runtime.getURL('icon-128.png'),
+    title,
+    // Notification bodies clip anyway; a hard cap keeps a long final answer from being rejected.
+    message: message.length > 300 ? `${message.slice(0, 300)}…` : message,
+  });
+}
+
+chrome.notifications.onClicked.addListener(notificationId => {
+  if (!notificationId.startsWith(SCHED_NOTIFICATION_PREFIX)) return;
+  chrome.notifications.clear(notificationId);
+  // A notification click is a user gesture, which sidePanel.open requires; the result itself is
+  // waiting in the panel's chat history.
+  chrome.windows.getLastFocused().then(window => {
+    if (window?.id !== undefined) {
+      chrome.sidePanel.open({ windowId: window.id }).catch(error => logger.error('Failed to open panel:', error));
+    }
+  });
+});
+
+chrome.alarms.onAlarm.addListener(alarm => {
+  const scheduleId = scheduleIdFromAlarmName(alarm.name);
+  if (scheduleId === null) return;
+  void handleScheduleAlarm(scheduleId);
+});
+
+async function handleScheduleAlarm(scheduleId: number): Promise<void> {
+  try {
+    const schedule = await schedulesStore.getScheduleById(scheduleId);
+    if (!schedule || !schedule.enabled) {
+      // Deleted or switched off after the alarm was laid; make the alarm agree.
+      await chrome.alarms.clear(`${SCHEDULE_ALARM_PREFIX}${scheduleId}`);
+      return;
+    }
+    await runScheduledTask(schedule);
+  } catch (error) {
+    logger.error(`Scheduled task ${scheduleId} failed to run:`, error);
+  }
+}
+
+/**
+ * One unattended run of a schedule: its own background tab, the plan gate pre-approved, sensitive
+ * actions auto-declined (see AgentOptions.unattended), and the outcome left where every other
+ * task's outcome lives — a chat-history session — plus a notification that links back to it.
+ */
+async function runScheduledTask(schedule: ScheduledTask): Promise<void> {
+  if (executorBusy) {
+    // Never fight a live task for the one shared BrowserContext; skipping is the honest move.
+    logger.info(`Schedule "${schedule.title}" skipped: another task is running`);
+    notifySchedule(t('bg_sched_skipped_title'), t('bg_sched_skipped_body', [schedule.title]));
+    return;
+  }
+
+  logger.info(`Running scheduled task "${schedule.title}"`);
+  await schedulesStore.markRun(schedule.id, Date.now());
+
+  const startedAt = Date.now();
+  let outcome = { ok: false, text: t('bg_sched_noResult') };
+
+  try {
+    // Its own inactive tab, then pinned as the context's current tab, so the run never touches
+    // whatever the user happens to have focused.
+    const tab = await chrome.tabs.create({ url: 'about:blank', active: false });
+    if (!tab.id) throw new Error('Could not open a tab for the scheduled task');
+    await browserContext.switchTab(tab.id);
+
+    const taskId = `sched-${schedule.id}-${startedAt}`;
+    currentTaskMeta = { source: 'scheduled', task: schedule.prompt, title: schedule.title, startedAt };
+    const executor = await setupExecutor(taskId, schedule.prompt, browserContext, 'planner', true);
+    currentExecutor = executor;
+    // Port forwarding first (it clears old listeners), so an open panel watches the run live...
+    subscribeToExecutorEvents(executor);
+    // ...then a second subscriber captures the terminal event for the notification and history.
+    executor.subscribeExecutionEvents(async event => {
+      const details = event.data?.details ?? '';
+      if (event.state === ExecutionState.TASK_OK) {
+        outcome = { ok: true, text: details && details !== taskId ? details : t('bg_sched_done') };
+      } else if (event.state === ExecutionState.TASK_FAIL) {
+        outcome = { ok: false, text: details || t('bg_sched_noResult') };
+      } else if (event.state === ExecutionState.TASK_CANCEL) {
+        outcome = { ok: false, text: t('bg_sched_cancelled') };
+      }
+    });
+
+    await withExecutorBusy(() => executor.execute());
+  } catch (error) {
+    outcome = { ok: false, text: error instanceof Error ? error.message : String(error) };
+    logger.error('Scheduled task failed:', error);
+  }
+
+  // The result lands in chat history so the side panel can show the full session later.
+  try {
+    const session = await chatHistoryStore.createSession(schedule.title || schedule.prompt.slice(0, 60));
+    await chatHistoryStore.addMessage(session.id, {
+      actor: Actors.USER,
+      content: schedule.prompt,
+      timestamp: startedAt,
+    });
+    await chatHistoryStore.addMessage(session.id, {
+      actor: Actors.SYSTEM,
+      content: outcome.text,
+      timestamp: Date.now(),
+    });
+  } catch (error) {
+    logger.error('Failed to save scheduled task result:', error);
+  }
+
+  notifySchedule(
+    outcome.ok ? t('bg_sched_ok_title', [schedule.title]) : t('bg_sched_fail_title', [schedule.title]),
+    outcome.text,
+  );
 }
 
 // Update subscribeToExecutorEvents to use port
@@ -460,6 +696,17 @@ async function subscribeToExecutorEvents(executor: Executor) {
       event.state === ExecutionState.TASK_FAIL ||
       event.state === ExecutionState.TASK_CANCEL
     ) {
+      // One webhook per task: the meta slot is consumed by the first terminal event.
+      if (currentTaskMeta) {
+        const outcome = event.state === ExecutionState.TASK_OK ? 'ok' : event.state === ExecutionState.TASK_FAIL ? 'fail' : 'cancel';
+        void dispatchTaskWebhook({
+          ...currentTaskMeta,
+          outcome,
+          result: event.data?.details ?? '',
+          finishedAt: Date.now(),
+        });
+        currentTaskMeta = null;
+      }
       await currentExecutor?.cleanup();
     }
   });

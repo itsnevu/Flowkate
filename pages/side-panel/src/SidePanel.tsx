@@ -1,5 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Actors, type Message, type TrailStep, chatHistoryStore } from '@extension/storage';
+import {
+  Actors,
+  type Message,
+  type ModelPricingConfig,
+  type TrailStep,
+  chatHistoryStore,
+  generalSettingsStore,
+  modelPricingStore,
+} from '@extension/storage';
 import { t } from '@extension/i18n';
 import ChatHistoryList from './components/ChatHistoryList';
 import ChatView from './components/ChatView';
@@ -12,7 +20,13 @@ import { useModelConfigGate } from './hooks/useModelConfigGate';
 import { useSpeechInput } from './hooks/useSpeechInput';
 import { useTaskDispatch } from './hooks/useTaskDispatch';
 import { useTaskStateHandler } from './hooks/useTaskStateHandler';
-import type { ActionConfirmationPayload, PlanReviewPayload, TokenUsagePayload } from './types/event';
+import type {
+  ActionConfirmationPayload,
+  BudgetPausePayload,
+  HandoffPayload,
+  PlanReviewPayload,
+  TokenUsagePayload,
+} from './types/event';
 import type { LiveStatus } from './types/status';
 import './SidePanel.css';
 
@@ -36,6 +50,10 @@ const SidePanel = () => {
   const [isReplaying, setIsReplaying] = useState(false);
   const [pendingPlan, setPendingPlan] = useState<PlanReviewPayload | null>(null);
   const [pendingAction, setPendingAction] = useState<ActionConfirmationPayload | null>(null);
+  const [pendingBudget, setPendingBudget] = useState<BudgetPausePayload | null>(null);
+  const [pendingHandoff, setPendingHandoff] = useState<HandoffPayload | null>(null);
+  const [modelPrices, setModelPrices] = useState<ModelPricingConfig>({});
+  const [budgetUsd, setBudgetUsd] = useState(0);
   const [canUndo, setCanUndo] = useState(false);
   const [tokenUsage, setTokenUsage] = useState<TokenUsagePayload | null>(null);
   const [liveStatus, setLiveStatus] = useState<LiveStatus | null>(null);
@@ -126,6 +144,8 @@ const SidePanel = () => {
     setIsHistoricalSession,
     setPendingPlan,
     setPendingAction,
+    setPendingBudget,
+    setPendingHandoff,
     setInputEnabled,
     setShowStopButton,
     setIsFollowUpMode,
@@ -142,7 +162,13 @@ const SidePanel = () => {
     setInputTextRef,
   });
 
-  const { mode: approvalMode, selectMode, pendingAutoNotice, acknowledgeAuto, dismissAutoNotice } = useApprovalMode({
+  const {
+    mode: approvalMode,
+    selectMode,
+    pendingAutoNotice,
+    acknowledgeAuto,
+    dismissAutoNotice,
+  } = useApprovalMode({
     portRef,
   });
 
@@ -178,6 +204,63 @@ const SidePanel = () => {
       approvalMode,
     });
 
+  /**
+   * The user's answer to the budget card. Continuing resumes the parked executor — the brake
+   * stays released for the rest of the task, which the card said out loud; stopping is the same
+   * cancel as the Stop key.
+   */
+  /**
+   * The user's answer to the handoff card. "Done" releases the parked navigator, which re-reads
+   * the page on its next step; "Stop" is the same cancel as the Stop key. Input stays disabled on
+   * "done" - the task is still running, it was only waiting for the hands-on step.
+   */
+  const handleHandoffDecision = useCallback(
+    (done: boolean) => {
+      setPendingHandoff(null);
+      if (done) {
+        Promise.resolve(sendMessage({ type: 'handoff_done' })).catch(err => console.error('handoff_done error', err));
+      } else {
+        void handleStopTask();
+      }
+    },
+    [sendMessage, handleStopTask],
+  );
+
+  const handleBudgetDecision = useCallback(
+    (keepGoing: boolean) => {
+      setPendingBudget(null);
+      if (keepGoing) {
+        Promise.resolve(sendMessage({ type: 'resume_task' })).catch(err => console.error('resume_task error', err));
+      } else {
+        void handleStopTask();
+      }
+    },
+    [sendMessage, handleStopTask],
+  );
+
+  // The $ readouts and the plan card's budget line follow settings live, so a price or budget
+  // edited in Options lands here without reopening the panel.
+  useEffect(() => {
+    modelPricingStore.getAllPrices().then(setModelPrices).catch(console.error);
+    const unsubscribePrices = modelPricingStore.subscribe(() => {
+      modelPricingStore.getAllPrices().then(setModelPrices).catch(console.error);
+    });
+    generalSettingsStore
+      .getSettings()
+      .then(s => setBudgetUsd(s.maxCostUsd))
+      .catch(console.error);
+    const unsubscribeSettings = generalSettingsStore.subscribe(() => {
+      generalSettingsStore
+        .getSettings()
+        .then(s => setBudgetUsd(s.maxCostUsd))
+        .catch(console.error);
+    });
+    return () => {
+      unsubscribePrices();
+      unsubscribeSettings();
+    };
+  }, []);
+
   const handleNewChat = () => {
     // Clear messages and start a new chat
     setMessages([]);
@@ -189,6 +272,8 @@ const SidePanel = () => {
     setIsHistoricalSession(false);
     setPendingPlan(null);
     setPendingAction(null);
+    setPendingBudget(null);
+    setPendingHandoff(null);
     setCanUndo(false);
     // the background tracker's lifetime is the Executor's, which stopConnection ends
     setTokenUsage(null);
@@ -298,6 +383,38 @@ const SidePanel = () => {
     }
   };
 
+  /**
+   * Prefill handed over by the background's context menu. Session storage is the hand-off point
+   * because it works in every panel state: a panel this click just opened reads the key on mount,
+   * a panel that was already sitting open hears the onChanged event. Gated on the model check so
+   * the composer (and with it setInputTextRef) actually exists before the text is spent - the key
+   * is only cleared once it has landed in the input.
+   */
+  useEffect(() => {
+    if (hasConfiguredModels !== true) return undefined;
+
+    const applyPendingPrefill = async () => {
+      try {
+        const { pendingPrefill } = await chrome.storage.session.get('pendingPrefill');
+        const text = (pendingPrefill as { text?: unknown } | undefined)?.text;
+        if (typeof text === 'string' && text && setInputTextRef.current) {
+          setInputTextRef.current(text);
+          await chrome.storage.session.remove('pendingPrefill');
+        }
+      } catch (error) {
+        console.error('Failed to read context-menu prefill:', error);
+      }
+    };
+
+    const onSessionChanged = (changes: { [key: string]: chrome.storage.StorageChange }) => {
+      if (changes.pendingPrefill?.newValue) void applyPendingPrefill();
+    };
+
+    void applyPendingPrefill();
+    chrome.storage.session.onChanged.addListener(onSessionChanged);
+    return () => chrome.storage.session.onChanged.removeListener(onSessionChanged);
+  }, [hasConfiguredModels]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -358,6 +475,8 @@ const SidePanel = () => {
               currentSessionId={currentSessionId}
               pendingPlan={pendingPlan}
               pendingAction={pendingAction}
+              pendingBudget={pendingBudget}
+              pendingHandoff={pendingHandoff}
               canUndo={canUndo}
               liveStatus={liveStatus}
               trail={trail}
@@ -376,7 +495,11 @@ const SidePanel = () => {
               onBookmarkReorder={reorderPrompts}
               onPlanDecision={handlePlanDecision}
               onActionDecision={handleActionDecision}
+              onBudgetDecision={handleBudgetDecision}
+              onHandoffDecision={handleHandoffDecision}
               onUndo={handleUndo}
+              modelPrices={modelPrices}
+              budgetUsd={budgetUsd}
               approvalMode={approvalMode}
               onApprovalModeSelect={selectMode}
               pendingAutoNotice={pendingAutoNotice}

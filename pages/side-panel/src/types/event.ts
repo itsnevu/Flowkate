@@ -52,6 +52,8 @@ export enum ExecutionState {
   /** The agent is blocked, waiting for the user to allow a sensitive action */
   ACT_CONFIRM = 'act.confirm',
   ACT_DECLINED = 'act.declined',
+  /** The agent handed the tab to the user (login, captcha, OTP) and waits for "done" */
+  ACT_HANDOFF = 'act.handoff',
 }
 
 export interface EventData {
@@ -70,7 +72,38 @@ export interface EventData {
   payload?: EventPayload;
 }
 
-export type EventPayload = PlanReviewPayload | ActionConfirmationPayload | TokenUsagePayload;
+export type EventPayload =
+  | PlanReviewPayload
+  | ActionConfirmationPayload
+  | TokenUsagePayload
+  | BudgetPausePayload
+  | HandoffPayload;
+
+/**
+ * A step the agent asked the user to do by hand in the tab it is driving — logging in, a captcha,
+ * a verification code. Carried on ACT_HANDOFF; the executor is parked until handoff_done arrives.
+ */
+export interface HandoffPayload {
+  /** what the user is being asked to do, in the agent's words */
+  instruction: string;
+  /** the page the handoff happens on */
+  url: string;
+}
+
+/**
+ * The task paused itself because its estimated spend crossed the user's budget. Carried on a
+ * TASK_PAUSE event; the panel answers with resume_task or cancel_task.
+ */
+export interface BudgetPausePayload {
+  /** discriminates this payload from the other TASK_PAUSE reasons */
+  kind: 'budget';
+  /** estimated spend so far, from the user's own price entries */
+  spentUsd: number;
+  /** the budget it crossed */
+  budgetUsd: number;
+  /** models that spent tokens without a price entry, making spentUsd a floor */
+  unpricedModels: string[];
+}
 
 /** A sensitive action the agent wants to run, held for the user to allow or decline. */
 export interface ActionConfirmationPayload {

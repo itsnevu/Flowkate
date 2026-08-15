@@ -57,6 +57,8 @@ function setup() {
     setIsHistoricalSession: vi.fn(),
     setPendingPlan: vi.fn(),
     setPendingAction: vi.fn(),
+    setPendingBudget: vi.fn(),
+    setPendingHandoff: vi.fn(),
     setInputEnabled: vi.fn(),
     setShowStopButton: vi.fn(),
     setIsFollowUpMode: vi.fn(),
@@ -114,6 +116,7 @@ const EMITTED: Array<[Actors, ExecutionState]> = [
   [Actors.NAVIGATOR, ExecutionState.ACT_FAIL],
   [Actors.NAVIGATOR, ExecutionState.ACT_CONFIRM],
   [Actors.NAVIGATOR, ExecutionState.ACT_DECLINED],
+  [Actors.NAVIGATOR, ExecutionState.ACT_HANDOFF],
   // Legacy events, still present in stored histories that get replayed into the panel.
   [Actors.VALIDATOR, ExecutionState.STEP_START],
   [Actors.VALIDATOR, ExecutionState.STEP_OK],
@@ -570,6 +573,58 @@ describe('action confirmation gate', () => {
       timestamp: TIMESTAMP,
     });
     expect(appendMessage).not.toHaveBeenCalled();
+  });
+});
+
+describe('budget pause gate', () => {
+  const budget = { kind: 'budget' as const, spentUsd: 0.52, budgetUsd: 0.5, unpricedModels: [] };
+
+  it('raises the budget card and keeps the pause off the transcript', () => {
+    const { handle, setPendingBudget, appendMessage, setLiveStatus } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_PAUSE, 'budget reached', budget));
+    expect(setPendingBudget).toHaveBeenCalledWith(budget);
+    // the pause reason still lands on the status line, like every other pause
+    expect(setLiveStatus).toHaveBeenCalled();
+    expect(appendMessage).not.toHaveBeenCalled();
+  });
+
+  // An undo confirmation is also a TASK_PAUSE; without the kind check it would raise the card.
+  it('leaves the card down for a pause without a budget payload', () => {
+    const { handle, setPendingBudget } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_PAUSE, 'undid the last step'));
+    expect(setPendingBudget).not.toHaveBeenCalled();
+  });
+
+  it('clears the card when the task resumes or ends', () => {
+    const resumed = setup();
+    resumed.handle(event(Actors.SYSTEM, ExecutionState.TASK_RESUME, ''));
+    expect(resumed.setPendingBudget).toHaveBeenCalledWith(null);
+
+    const done = setup();
+    done.handle(event(Actors.SYSTEM, ExecutionState.TASK_OK, 'done'));
+    expect(done.setPendingBudget).toHaveBeenCalledWith(null);
+  });
+});
+
+describe('human handoff gate', () => {
+  const handoff = { instruction: 'Please log in to your account', url: 'https://shop.test/login' };
+
+  it('parks the handoff card and takes over the input', () => {
+    const { handle, setPendingHandoff, setInputEnabled, appendMessage } = setup();
+    handle(event(Actors.NAVIGATOR, ExecutionState.ACT_HANDOFF, 'Please log in', handoff));
+    expect(setPendingHandoff).toHaveBeenCalledWith(handoff);
+    expect(setInputEnabled).toHaveBeenCalledWith(false);
+    expect(appendMessage).not.toHaveBeenCalled();
+  });
+
+  it('clears the card when the run moves on or ends', () => {
+    const declined = setup();
+    declined.handle(event(Actors.NAVIGATOR, ExecutionState.ACT_DECLINED, 'not completed'));
+    expect(declined.setPendingHandoff).toHaveBeenCalledWith(null);
+
+    const done = setup();
+    done.handle(event(Actors.SYSTEM, ExecutionState.TASK_OK, 'finished'));
+    expect(done.setPendingHandoff).toHaveBeenCalledWith(null);
   });
 });
 

@@ -15,6 +15,9 @@ export const READ_ONLY_ACTION_NAMES: ReadonlySet<string> = new Set([
   'go_to_url',
   'go_back',
   'cache_content',
+  // reads the page through the extractor model; writes nothing. NOT ask_user: a background tab
+  // has no user standing by, and a handoff from one would park the subtask forever.
+  'extract_content',
   'scroll_to_percent',
   'scroll_to_top',
   'scroll_to_bottom',

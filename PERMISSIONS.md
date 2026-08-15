@@ -121,6 +121,52 @@ with `StorageEnum.Local`.
 
 ---
 
+## `contextMenus`
+
+**Justification for the listing:**
+
+> Adds two entries to the page's right-click menu — "Ask Flowkite to work on this page" and, on a
+> text selection, "Ask Flowkite about …" — which open the side panel with the composer pre-filled.
+> Nothing runs from the menu itself: the user still writes or completes the task and presses send,
+> and every existing gate (plan approval, sensitive-action confirmation) applies unchanged.
+
+**Where it is used:** menu registration and click handling at the top of
+[`background/index.ts`](chrome-extension/src/background/index.ts); the pre-fill is read by
+[`SidePanel.tsx`](pages/side-panel/src/SidePanel.tsx) from `chrome.storage.session`.
+
+---
+
+## `alarms`
+
+**Justification for the listing:**
+
+> Backs user-created scheduled tasks (Options → Schedules): one daily alarm per enabled schedule,
+> named with the schedule's id. Scheduled runs are deliberately weaker than interactive ones — the
+> plan gate is treated as pre-approved because the user approved it by scheduling, and sensitive
+> actions (purchases, deletions, credentials, submissions) are automatically DECLINED, never
+> auto-allowed, because nobody is present to answer.
+
+**Where it is used:** [`services/scheduler.ts`](chrome-extension/src/background/services/scheduler.ts)
+lays and clears the alarms; the `chrome.alarms.onAlarm` listener and the unattended runner live in
+[`background/index.ts`](chrome-extension/src/background/index.ts); the auto-decline is in
+`requestActionConfirmation` in [`agent/types.ts`](chrome-extension/src/background/agent/types.ts).
+
+---
+
+## `notifications`
+
+**Justification for the listing:**
+
+> When a scheduled task finishes (or is skipped because another task was running), the user is not
+> looking at the browser — a system notification is the only way to tell them the result is ready.
+> Clicking it opens the side panel, where the full session is saved in history. No other feature
+> creates notifications.
+
+**Where it is used:** `notifySchedule` and `chrome.notifications.onClicked` in
+[`background/index.ts`](chrome-extension/src/background/index.ts).
+
+---
+
 ## Remote code
 
 **Answer: no remote code is executed.** All JavaScript is bundled into the extension package at build
@@ -136,7 +182,9 @@ Declare in the dashboard's data-use section:
   the provider they belong to. They are never transmitted to the developer.
 - **Website content** — page structure and screenshots are transmitted to the user's chosen LLM
   provider in order to perform the task the user requested. This is disclosed in
-  [PRIVACY.md](PRIVACY.md).
+  [PRIVACY.md](PRIVACY.md). Additionally, if the user enables the outbound webhook
+  (Options → General → Outbound webhook, off by default), each finished task's outcome text is
+  POSTed to the single URL the user entered — HTTPS anywhere, plain HTTP only to localhost.
 - **Location, health, financial, personal communications, web history, user activity** — not
   collected.
 

@@ -378,6 +378,18 @@ export default class Page {
     return await this._puppeteerPage.content();
   }
 
+  /**
+   * The page's rendered text, as a reader would see it — what the extractor wants: prose and
+   * tables, no markup. innerText rather than textContent so hidden elements stay out and layout
+   * linebreaks survive. Callers cap the length; a long feed's innerText can run to megabytes.
+   */
+  async getVisibleText(): Promise<string> {
+    if (!this._puppeteerPage) {
+      throw new Error('Puppeteer page is not connected');
+    }
+    return await this._puppeteerPage.evaluate(() => document.body?.innerText ?? '');
+  }
+
   getCachedState(): PageState | null {
     return this._cachedState;
   }

@@ -106,6 +106,12 @@
   "chat_bookmarks_delete": {
     "message": "Delete bookmark"
   },
+  "chat_bookmarks_template": {
+    "message": "Template — has blanks to fill in"
+  },
+  "chat_template_hint": {
+    "message": "A template: fill in each {blank} — Tab jumps to the next one"
+  },
   "chat_replay_starting": {
     "message": "Starting replay of task:\n\n\"$TASK$\"",
     "placeholders": {
@@ -261,6 +267,114 @@
   },
   "options_general_soundOnComplete_desc": {
     "message": "Play a short chime when a task finishes or fails, so you can look away while it runs"
+  },
+  "options_general_maxCostUsd": {
+    "message": "Task budget (USD)"
+  },
+  "options_general_maxCostUsd_desc": {
+    "message": "Pause and ask once a task’s estimated spend reaches this. 0 disables it; only models priced below count."
+  },
+  "options_pricing_header": {
+    "message": "Model pricing"
+  },
+  "options_pricing_desc": {
+    "message": "USD per 1 million tokens, entered by you — Flowkite ships no price table. Unpriced models show token counts only and never count toward the budget."
+  },
+  "options_pricing_input": {
+    "message": "$ / 1M in"
+  },
+  "options_pricing_output": {
+    "message": "$ / 1M out"
+  },
+  "options_pricing_empty": {
+    "message": "Assign models in the Models tab first — pricing rows appear for the models you use."
+  },
+  "options_tabs_schedules": {
+    "message": "Schedules"
+  },
+  "options_sched_header": {
+    "message": "Scheduled tasks"
+  },
+  "options_sched_desc": {
+    "message": "Run a saved prompt every day at a set time, with nobody watching. Scheduling pre-approves its plans; sensitive actions are automatically declined — an unattended task can read and report, never spend. Results land in the side panel history, with a notification when each run finishes."
+  },
+  "options_sched_title_label": {
+    "message": "Name"
+  },
+  "options_sched_prompt_label": {
+    "message": "Task prompt — runs exactly as written"
+  },
+  "options_sched_time_label": {
+    "message": "Every day at"
+  },
+  "options_sched_add": {
+    "message": "Add schedule"
+  },
+  "options_sched_empty": {
+    "message": "No scheduled tasks yet."
+  },
+  "options_sched_enable": {
+    "message": "Enabled"
+  },
+  "options_sched_delete": {
+    "message": "Delete"
+  },
+  "options_sched_lastRun": {
+    "message": "Last run: $TIME$",
+    "placeholders": {
+      "time": {
+        "content": "$1",
+        "example": "8/16/2026, 7:00:12 AM"
+      }
+    }
+  },
+  "options_sched_never": {
+    "message": "Has not run yet"
+  },
+  "options_sched_hasSlots": {
+    "message": "This prompt still has {slots} to fill — a scheduled task runs exactly as written, so fill them in first."
+  },
+  "options_webhook_header": {
+    "message": "Outbound webhook"
+  },
+  "options_webhook_desc": {
+    "message": "When a task finishes, POST its outcome as JSON to one URL you choose — n8n, Zapier, a Discord webhook. Outbound only, off by default; Flowkite still has no server. HTTPS anywhere, plain HTTP only to localhost."
+  },
+  "options_webhook_enable": {
+    "message": "Enable webhook"
+  },
+  "options_webhook_enable_desc": {
+    "message": "Nothing is sent anywhere while this is off."
+  },
+  "options_webhook_url": {
+    "message": "Webhook URL"
+  },
+  "options_webhook_urlInvalid": {
+    "message": "Use an https:// URL, or http:// only for localhost."
+  },
+  "options_webhook_sendScheduled": {
+    "message": "Send scheduled runs"
+  },
+  "options_webhook_sendScheduled_desc": {
+    "message": "The case this exists for: results arriving while you are away."
+  },
+  "options_webhook_sendManual": {
+    "message": "Send tasks you run yourself"
+  },
+  "options_webhook_sendManual_desc": {
+    "message": "Also fire for tasks started from the side panel."
+  },
+  "options_webhook_test": {
+    "message": "Send test"
+  },
+  "options_webhook_testing": {
+    "message": "Sending…"
+  },
+  "options_webhook_testOk": {
+    "message": "Delivered"
+  },
+  "options_webhook_testFail": {
+    "message": "Failed — check the URL and the receiver"
   },
   "options_general_planningInterval": {
     "message": "Replanning Frequency"
@@ -475,6 +589,51 @@
   "bg_errors_noTabId": {
     "message": "No tab ID provided"
   },
+  "bg_ctx_page": {
+    "message": "Ask Flowkite to work on this page"
+  },
+  "bg_ctx_selection": {
+    "message": "Ask Flowkite about \"%s\""
+  },
+  "bg_sched_skipped_title": {
+    "message": "Scheduled task skipped"
+  },
+  "bg_sched_skipped_body": {
+    "message": "\"$TITLE$\" was skipped because another task is running.",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Morning price check"
+      }
+    }
+  },
+  "bg_sched_ok_title": {
+    "message": "Done: $TITLE$",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Morning price check"
+      }
+    }
+  },
+  "bg_sched_fail_title": {
+    "message": "Failed: $TITLE$",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Morning price check"
+      }
+    }
+  },
+  "bg_sched_done": {
+    "message": "Scheduled task completed. The full session is in the side panel history."
+  },
+  "bg_sched_cancelled": {
+    "message": "The scheduled run was cancelled."
+  },
+  "bg_sched_noResult": {
+    "message": "The scheduled run produced no result."
+  },
   "bg_errors_noTaskId": {
     "message": "No task ID provided"
   },
@@ -560,6 +719,19 @@
   },
   "exec_task_pause": {
     "message": "Task paused"
+  },
+  "exec_budget_reached": {
+    "message": "Budget reached: spent about $SPENT$ of $BUDGET$ USD",
+    "placeholders": {
+      "spent": {
+        "content": "$1",
+        "example": "0.52"
+      },
+      "budget": {
+        "content": "$2",
+        "example": "0.50"
+      }
+    }
   },
   "exec_task_fail": {
     "message": "Task failed: \n\n$ERROR_MESSAGE$",
@@ -805,6 +977,42 @@
         "example": "User preferences saved"
       }
     }
+  },
+  "act_askUser_start": {
+    "message": "Asking you to take over for one step…"
+  },
+  "act_askUser_ok": {
+    "message": "You completed the step: \"$INSTRUCTION$\". Trust the next page state over anything remembered from before the handoff.",
+    "placeholders": {
+      "instruction": {
+        "content": "$1",
+        "example": "Please log in to your account"
+      }
+    }
+  },
+  "act_askUser_declined": {
+    "message": "The hands-on step was not completed - the user stopped the task or nobody was present."
+  },
+  "act_extract_start": {
+    "message": "Extracting from the page: $GOAL$",
+    "placeholders": {
+      "goal": {
+        "content": "$1",
+        "example": "every product name with its price"
+      }
+    }
+  },
+  "act_extract_ok": {
+    "message": "Extracted from the page: $GOAL$",
+    "placeholders": {
+      "goal": {
+        "content": "$1",
+        "example": "every product name with its price"
+      }
+    }
+  },
+  "act_errors_extractFailed": {
+    "message": "Extraction failed - read the page state directly, cache what you find, and scroll for more if needed."
   },
   "act_scrollToPercent_start": {
     "message": "Scroll to percent: $PERCENT$",
@@ -1055,6 +1263,19 @@
   "planReview_reject": {
     "message": "Reject"
   },
+  "planReview_budget": {
+    "message": "Model spend so far: $SPENT$ · budget $BUDGET$",
+    "placeholders": {
+      "spent": {
+        "content": "$1",
+        "example": "$0.0061"
+      },
+      "budget": {
+        "content": "$2",
+        "example": "$0.50"
+      }
+    }
+  },
   "chat_undo": {
     "message": "Undo last step"
   },
@@ -1069,6 +1290,9 @@
   "bg_cmd_actionConfirm_notPending": {
     "message": "No action is waiting for confirmation"
   },
+  "bg_cmd_handoff_notPending": {
+    "message": "No handoff is waiting to be completed"
+  },
   "actConfirm_title": {
     "message": "Confirm before the agent continues"
   },
@@ -1080,6 +1304,55 @@
   },
   "actConfirm_allow": {
     "message": "Allow"
+  },
+  "handoff_title": {
+    "message": "Your turn — the agent is waiting"
+  },
+  "handoff_onPage": {
+    "message": "On page"
+  },
+  "handoff_note": {
+    "message": "Anything you type goes straight into the page — it never passes through the model or the chat."
+  },
+  "handoff_done": {
+    "message": "Done — continue"
+  },
+  "handoff_stop": {
+    "message": "Stop task"
+  },
+  "budgetPause_title": {
+    "message": "Budget reached"
+  },
+  "budgetPause_body": {
+    "message": "This task has spent about $SPENT$ of your $BUDGET$ budget.",
+    "placeholders": {
+      "spent": {
+        "content": "$1",
+        "example": "$0.52"
+      },
+      "budget": {
+        "content": "$2",
+        "example": "$0.50"
+      }
+    }
+  },
+  "budgetPause_unpriced": {
+    "message": "No price entered for: $MODELS$ — the real spend is higher.",
+    "placeholders": {
+      "models": {
+        "content": "$1",
+        "example": "llama3.1:8b"
+      }
+    }
+  },
+  "budgetPause_note": {
+    "message": "Continuing releases the brake for the rest of this task."
+  },
+  "budgetPause_continue": {
+    "message": "Continue"
+  },
+  "budgetPause_stop": {
+    "message": "Stop task"
   },
   "actConfirm_decline": {
     "message": "Don’t allow"
@@ -1230,6 +1503,24 @@
   },
   "chat_usage_noPrice": {
     "message": "Tokens only. Check your provider's dashboard for the bill."
+  },
+  "chat_usage_priced": {
+    "message": "Costs are computed from the prices you entered in Settings."
+  },
+  "chat_usage_unpriced": {
+    "message": "No price entered for: $MODELS$ — dollar totals are a floor.",
+    "placeholders": {
+      "models": {
+        "content": "$1",
+        "example": "gpt-4o-mini"
+      }
+    }
+  },
+  "chat_table_copyCsv": {
+    "message": "Copy CSV"
+  },
+  "chat_table_copied": {
+    "message": "Copied"
   },
   "chat_usage_details_a11y": {
     "message": "Show token usage per model"

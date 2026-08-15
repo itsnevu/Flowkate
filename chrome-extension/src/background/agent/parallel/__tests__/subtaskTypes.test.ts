@@ -30,14 +30,19 @@ describe('summarizeSubtaskResults', () => {
 describe('read-only action allowlist', () => {
   // subtasks run in background tabs the user cannot reach, so anything that changes state on a site
   // must be impossible there by construction rather than by the model choosing well
-  it.each(['click_element', 'input_text', 'send_keys', 'select_dropdown_option', 'remember'])(
+  // ask_user is excluded for its own reason: a background tab has no user standing by, so a
+  // handoff raised from one would park the subtask forever.
+  it.each(['click_element', 'input_text', 'send_keys', 'select_dropdown_option', 'remember', 'ask_user'])(
     'excludes %s',
     actionName => {
       expect(READ_ONLY_ACTION_NAMES.has(actionName)).toBe(false);
     },
   );
 
-  it.each(['go_to_url', 'search_google', 'cache_content', 'scroll_to_bottom', 'done'])('allows %s', actionName => {
-    expect(READ_ONLY_ACTION_NAMES.has(actionName)).toBe(true);
-  });
+  it.each(['go_to_url', 'search_google', 'cache_content', 'scroll_to_bottom', 'done', 'extract_content'])(
+    'allows %s',
+    actionName => {
+      expect(READ_ONLY_ACTION_NAMES.has(actionName)).toBe(true);
+    },
+  );
 });

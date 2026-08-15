@@ -93,9 +93,7 @@ export const memoryStore: MemoryStore = {
     // updating in place keeps repeated observations from stacking up as near-duplicates
     const existing = state.entries.find(
       entry =>
-        entry.scope === scope &&
-        entry.host === normalizedHost &&
-        entry.content.toLowerCase() === trimmed.toLowerCase(),
+        entry.scope === scope && entry.host === normalizedHost && entry.content.toLowerCase() === trimmed.toLowerCase(),
     );
     if (existing) {
       existing.lastUsedAt = Date.now();
@@ -143,7 +141,8 @@ export const memoryStore: MemoryStore = {
     if (!state.enabled) return [];
     const normalizedHost = normalizeHost(host);
     return state.entries.filter(
-      entry => entry.scope === MemoryScope.GLOBAL || (entry.scope === MemoryScope.SITE && entry.host === normalizedHost),
+      entry =>
+        entry.scope === MemoryScope.GLOBAL || (entry.scope === MemoryScope.SITE && entry.host === normalizedHost),
     );
   },
 
