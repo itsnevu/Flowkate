@@ -27,7 +27,14 @@ abstract class BasePrompt {
    * @returns HumanMessage from LangChain
    */
   async buildBrowserStateUserMessage(context: AgentContext): Promise<HumanMessage> {
-    const browserState = await context.browserContext.getState(context.options.useVision);
+    // Failure-triggered vision escalation: after a failed step, the next read attaches a numbered
+    // screenshot even with vision off. A step usually fails because the DOM text under-describes
+    // the page (canvas widgets, mis-grounded indices), and retrying on the same blind description
+    // just burns the failure budget; one screenshot per retry, bounded by maxFailures, is the
+    // cheapest way out of that loop. Full-blind pages (domGroundingFailed) already do this.
+    const escalateVision = context.consecutiveFailures > 0;
+    const stepVision = context.options.useVision || escalateVision;
+    const browserState = await context.browserContext.getState(stepVision);
     // This is the parse the model's element indices are numbered against; actions resolve them here
     // rather than re-reading the DOM, which would renumber the page under the model's feet.
     context.stepState = browserState;
@@ -49,6 +56,14 @@ abstract class BasePrompt {
         'navigation, scrolling or going back over clicking an element index you cannot see.';
     } else {
       formattedElementsText = 'empty page';
+    }
+
+    // Written into the state text so the model knows why it suddenly has eyes, and that the
+    // numbered boxes in the screenshot map onto the element indices above.
+    if (escalateVision && !context.options.useVision && browserState.screenshot && !browserState.domGroundingFailed) {
+      formattedElementsText +=
+        '\nNote: the previous step failed, so a screenshot with numbered element boxes is attached - ' +
+        'use it to re-ground your element indices before retrying.';
     }
 
     let stepInfoDescription = '';
@@ -91,9 +106,9 @@ ${stepInfoDescription}
 ${actionResultsDescription}
 `;
 
-    // Attach the screenshot when vision is on, and also when DOM grounding failed - in that case the
-    // screenshot is the only description of the page the model has.
-    if (browserState.screenshot && (context.options.useVision || browserState.domGroundingFailed)) {
+    // Attach the screenshot when vision is on for this step (setting or failure escalation), and
+    // when DOM grounding failed - in that case it is the only description of the page the model has.
+    if (browserState.screenshot && (stepVision || browserState.domGroundingFailed)) {
       return new HumanMessage({
         content: [
           { type: 'text', text: stateDescription },
