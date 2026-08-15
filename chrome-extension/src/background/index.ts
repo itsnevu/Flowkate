@@ -15,6 +15,7 @@ import {
 import { t } from '@extension/i18n';
 import { SCHEDULE_ALARM_PREFIX, scheduleIdFromAlarmName, syncScheduleAlarms } from './services/scheduler';
 import { dispatchTaskWebhook } from './services/webhook';
+import { FOLLOW_UP_MAX_CHAIN } from './services/webhookContract';
 import BrowserContext from './browser/context';
 import { Executor } from './agent/executor';
 import { undoLastStepSafely } from './agent/undo';
@@ -25,6 +26,7 @@ import { DEFAULT_AGENT_OPTIONS } from './agent/types';
 import { SpeechToTextService } from './services/speechToText';
 import { injectBuildDomTreeScripts } from './browser/dom/service';
 import { analytics } from './services/analytics';
+import type { WebhookFollowUp } from './services/webhookContract';
 import type { TaskWebhookPayload } from './services/webhook';
 import type { ScheduledTask, ApprovalMode } from '@extension/storage';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
@@ -56,7 +58,12 @@ async function withExecutorBusy<T>(run: () => Promise<T>): Promise<T> {
  * one slot is enough; it is nulled after the terminal dispatch so a stray second terminal event
  * cannot fire the webhook twice for the same task.
  */
-let currentTaskMeta: Pick<TaskWebhookPayload, 'source' | 'task' | 'title' | 'startedAt'> | null = null;
+let currentTaskMeta:
+  | (Pick<TaskWebhookPayload, 'source' | 'task' | 'title' | 'startedAt'> & {
+      /** how many webhook follow-ups preceded this run; caps the chain */
+      chain: number;
+    })
+  | null = null;
 
 /**
  * Narrow an approval mode arriving over the port.
@@ -212,7 +219,7 @@ chrome.runtime.onConnect.addListener(port => {
             if (!message.tabId) return port.postMessage({ type: 'error', error: t('bg_errors_noTabId') });
 
             logger.info('new_task', message.tabId, message.task);
-            currentTaskMeta = { source: 'manual', task: message.task, startedAt: Date.now() };
+            currentTaskMeta = { source: 'manual', task: message.task, startedAt: Date.now(), chain: 0 };
             const executor = await setupExecutor(
               message.taskId,
               message.task,
@@ -236,7 +243,7 @@ chrome.runtime.onConnect.addListener(port => {
             // If executor exists, add follow-up task
             if (currentExecutor) {
               const executor = currentExecutor;
-              currentTaskMeta = { source: 'manual', task: message.task, startedAt: Date.now() };
+              currentTaskMeta = { source: 'manual', task: message.task, startedAt: Date.now(), chain: 0 };
               // The Executor is reused here rather than rebuilt, so it still carries the mode the
               // session started with. Without this the picker would appear to work for the first
               // task and be silently ignored for every follow-up after it.
@@ -615,9 +622,43 @@ async function runScheduledTask(schedule: ScheduledTask): Promise<void> {
     notifySchedule(t('bg_sched_skipped_title'), t('bg_sched_skipped_body', [schedule.title]));
     return;
   }
-
-  logger.info(`Running scheduled task "${schedule.title}"`);
   await schedulesStore.markRun(schedule.id, Date.now());
+  await runUnattendedTask({ prompt: schedule.prompt, title: schedule.title, source: 'scheduled', chain: 0 });
+}
+
+/**
+ * A follow-up task the webhook's response asked for. Same unattended machinery as a schedule,
+ * with two extra guards: the chain cap (a receiver that always answers with a follow-up must
+ * terminate), and the same busy-skip a schedule gets.
+ */
+async function runWebhookFollowUp(followUp: WebhookFollowUp, chain: number): Promise<void> {
+  const title = followUp.title ?? t('bg_followup_title');
+  if (chain > FOLLOW_UP_MAX_CHAIN) {
+    logger.warning(`Webhook follow-up chain cap (${FOLLOW_UP_MAX_CHAIN}) reached; "${title}" not run`);
+    notifySchedule(t('bg_followup_chainCap_title'), t('bg_followup_chainCap_body', [String(FOLLOW_UP_MAX_CHAIN)]));
+    return;
+  }
+  if (executorBusy) {
+    logger.info(`Webhook follow-up "${title}" skipped: another task is running`);
+    notifySchedule(t('bg_sched_skipped_title'), t('bg_sched_skipped_body', [title]));
+    return;
+  }
+  await runUnattendedTask({ prompt: followUp.task, title, source: 'followup', chain });
+}
+
+/**
+ * One unattended run: its own background tab, the plan gate pre-approved, sensitive actions
+ * auto-declined (see AgentOptions.unattended), and the outcome left where every other task's
+ * outcome lives — a chat-history session — plus a notification that links back to it.
+ */
+async function runUnattendedTask(input: {
+  prompt: string;
+  title: string;
+  source: 'scheduled' | 'followup';
+  /** webhook follow-ups completed before this run; 0 for a fresh schedule */
+  chain: number;
+}): Promise<void> {
+  logger.info(`Running unattended task "${input.title}" (${input.source})`);
 
   const startedAt = Date.now();
   let outcome = { ok: false, text: t('bg_sched_noResult') };
@@ -626,12 +667,18 @@ async function runScheduledTask(schedule: ScheduledTask): Promise<void> {
     // Its own inactive tab, then pinned as the context's current tab, so the run never touches
     // whatever the user happens to have focused.
     const tab = await chrome.tabs.create({ url: 'about:blank', active: false });
-    if (!tab.id) throw new Error('Could not open a tab for the scheduled task');
+    if (!tab.id) throw new Error('Could not open a tab for the unattended task');
     await browserContext.switchTab(tab.id);
 
-    const taskId = `sched-${schedule.id}-${startedAt}`;
-    currentTaskMeta = { source: 'scheduled', task: schedule.prompt, title: schedule.title, startedAt };
-    const executor = await setupExecutor(taskId, schedule.prompt, browserContext, 'planner', true);
+    const taskId = `unattended-${startedAt}`;
+    currentTaskMeta = {
+      source: input.source,
+      task: input.prompt,
+      title: input.title,
+      startedAt,
+      chain: input.chain,
+    };
+    const executor = await setupExecutor(taskId, input.prompt, browserContext, 'planner', true);
     currentExecutor = executor;
     // Port forwarding first (it clears old listeners), so an open panel watches the run live...
     subscribeToExecutorEvents(executor);
@@ -650,15 +697,15 @@ async function runScheduledTask(schedule: ScheduledTask): Promise<void> {
     await withExecutorBusy(() => executor.execute());
   } catch (error) {
     outcome = { ok: false, text: error instanceof Error ? error.message : String(error) };
-    logger.error('Scheduled task failed:', error);
+    logger.error('Unattended task failed:', error);
   }
 
   // The result lands in chat history so the side panel can show the full session later.
   try {
-    const session = await chatHistoryStore.createSession(schedule.title || schedule.prompt.slice(0, 60));
+    const session = await chatHistoryStore.createSession(input.title || input.prompt.slice(0, 60));
     await chatHistoryStore.addMessage(session.id, {
       actor: Actors.USER,
-      content: schedule.prompt,
+      content: input.prompt,
       timestamp: startedAt,
     });
     await chatHistoryStore.addMessage(session.id, {
@@ -667,11 +714,11 @@ async function runScheduledTask(schedule: ScheduledTask): Promise<void> {
       timestamp: Date.now(),
     });
   } catch (error) {
-    logger.error('Failed to save scheduled task result:', error);
+    logger.error('Failed to save unattended task result:', error);
   }
 
   notifySchedule(
-    outcome.ok ? t('bg_sched_ok_title', [schedule.title]) : t('bg_sched_fail_title', [schedule.title]),
+    outcome.ok ? t('bg_sched_ok_title', [input.title]) : t('bg_sched_fail_title', [input.title]),
     outcome.text,
   );
 }
@@ -696,14 +743,22 @@ async function subscribeToExecutorEvents(executor: Executor) {
       event.state === ExecutionState.TASK_FAIL ||
       event.state === ExecutionState.TASK_CANCEL
     ) {
-      // One webhook per task: the meta slot is consumed by the first terminal event.
+      // One webhook per task: the meta slot is consumed by the first terminal event. The response
+      // may carry a follow-up task (opt-in, chain-capped) - the two-way half of the webhook.
       if (currentTaskMeta) {
-        const outcome = event.state === ExecutionState.TASK_OK ? 'ok' : event.state === ExecutionState.TASK_FAIL ? 'fail' : 'cancel';
+        const meta = currentTaskMeta;
+        const outcome =
+          event.state === ExecutionState.TASK_OK ? 'ok' : event.state === ExecutionState.TASK_FAIL ? 'fail' : 'cancel';
         void dispatchTaskWebhook({
-          ...currentTaskMeta,
+          source: meta.source,
+          task: meta.task,
+          title: meta.title,
+          startedAt: meta.startedAt,
           outcome,
           result: event.data?.details ?? '',
           finishedAt: Date.now(),
+        }).then(followUp => {
+          if (followUp) void runWebhookFollowUp(followUp, meta.chain + 1);
         });
         currentTaskMeta = null;
       }

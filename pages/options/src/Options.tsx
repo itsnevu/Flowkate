@@ -2,15 +2,16 @@ import { useState } from 'react';
 import '@src/Options.css';
 import { withErrorBoundary, withSuspense } from '@extension/shared';
 import { t } from '@extension/i18n';
-import { FiSettings, FiCpu, FiShield, FiTrendingUp, FiHelpCircle, FiDatabase, FiClock } from 'react-icons/fi';
+import { FiSettings, FiCpu, FiShield, FiTrendingUp, FiHelpCircle, FiDatabase, FiClock, FiEye } from 'react-icons/fi';
 import { GeneralSettings } from './components/GeneralSettings';
 import { ModelSettings } from './components/ModelSettings';
 import { FirewallSettings } from './components/FirewallSettings';
 import { AnalyticsSettings } from './components/AnalyticsSettings';
 import { MemorySettings } from './components/MemorySettings';
 import { ScheduleSettings } from './components/ScheduleSettings';
+import { PrivacySettings } from './components/PrivacySettings';
 
-type TabTypes = 'general' | 'models' | 'firewall' | 'schedules' | 'memory' | 'analytics' | 'help';
+type TabTypes = 'general' | 'models' | 'firewall' | 'schedules' | 'memory' | 'privacy' | 'analytics' | 'help';
 
 const TABS: { id: TabTypes; icon: React.ComponentType<{ className?: string }>; label: string }[] = [
   { id: 'general', icon: FiSettings, label: t('options_tabs_general') },
@@ -18,6 +19,7 @@ const TABS: { id: TabTypes; icon: React.ComponentType<{ className?: string }>; l
   { id: 'firewall', icon: FiShield, label: t('options_tabs_firewall') },
   { id: 'schedules', icon: FiClock, label: t('options_tabs_schedules') },
   { id: 'memory', icon: FiDatabase, label: t('options_tabs_memory') },
+  { id: 'privacy', icon: FiEye, label: t('options_tabs_privacy') },
   { id: 'analytics', icon: FiTrendingUp, label: 'Analytics' },
   { id: 'help', icon: FiHelpCircle, label: t('options_tabs_help') },
 ];
@@ -56,6 +58,8 @@ const Options = () => {
         return <ScheduleSettings />;
       case 'memory':
         return <MemorySettings />;
+      case 'privacy':
+        return <PrivacySettings />;
       case 'analytics':
         return <AnalyticsSettings />;
       default:

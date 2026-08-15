@@ -364,6 +364,12 @@
   "options_webhook_sendManual_desc": {
     "message": "Also fire for tasks started from the side panel."
   },
+  "options_webhook_allowFollowUp": {
+    "message": "Allow follow-up tasks from the response"
+  },
+  "options_webhook_allowFollowUp_desc": {
+    "message": "The response may answer {\"followUp\": \"next task\"} and Flowkite runs it — your pipeline decides the next step. Runs unattended (sensitive actions auto-decline), max 3 per chain."
+  },
   "options_webhook_test": {
     "message": "Send test"
   },
@@ -375,6 +381,90 @@
   },
   "options_webhook_testFail": {
     "message": "Failed — check the URL and the receiver"
+  },
+  "options_tabs_privacy": {
+    "message": "Privacy"
+  },
+  "options_privacy_header": {
+    "message": "Privacy dashboard"
+  },
+  "options_privacy_desc": {
+    "message": "A checkable answer to \"what left this machine?\" — assembled entirely from local records, fetched from nowhere. Your API keys are stored locally and go only to the provider they belong to."
+  },
+  "options_privacy_models_header": {
+    "message": "Sent to model providers"
+  },
+  "options_privacy_models_desc": {
+    "message": "Token totals per model, from the $COUNT$ most recent stored sessions. Dollar figures use the prices you entered under General.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "42"
+      }
+    }
+  },
+  "options_privacy_models_empty": {
+    "message": "No stored sessions carry token usage yet."
+  },
+  "options_privacy_visits_header": {
+    "message": "Hosts the agent visited"
+  },
+  "options_privacy_visits_desc": {
+    "message": "Only navigation the agent itself performed — your own browsing is never logged."
+  },
+  "options_privacy_visits_empty": {
+    "message": "No agent navigation recorded yet."
+  },
+  "options_privacy_webhooks_header": {
+    "message": "Webhook deliveries"
+  },
+  "options_privacy_webhooks_empty": {
+    "message": "No webhook deliveries yet."
+  },
+  "options_privacy_col_model": {
+    "message": "Model"
+  },
+  "options_privacy_col_calls": {
+    "message": "Calls"
+  },
+  "options_privacy_col_tokens": {
+    "message": "Tokens"
+  },
+  "options_privacy_col_cost": {
+    "message": "Cost"
+  },
+  "options_privacy_col_host": {
+    "message": "Host"
+  },
+  "options_privacy_col_visits": {
+    "message": "Visits"
+  },
+  "options_privacy_col_last": {
+    "message": "Last visit"
+  },
+  "options_privacy_col_when": {
+    "message": "When"
+  },
+  "options_privacy_col_source": {
+    "message": "Source"
+  },
+  "options_privacy_col_status": {
+    "message": "Status"
+  },
+  "options_privacy_delivered": {
+    "message": "delivered"
+  },
+  "options_privacy_failed": {
+    "message": "failed"
+  },
+  "options_privacy_noPrice": {
+    "message": "no price set"
+  },
+  "options_privacy_note": {
+    "message": "The visit and webhook log is capped, lives only in chrome.storage.local, and is yours to clear."
+  },
+  "options_privacy_clear": {
+    "message": "Clear activity log"
   },
   "options_general_planningInterval": {
     "message": "Replanning Frequency"
@@ -633,6 +723,21 @@
   },
   "bg_sched_noResult": {
     "message": "The scheduled run produced no result."
+  },
+  "bg_followup_title": {
+    "message": "Webhook follow-up"
+  },
+  "bg_followup_chainCap_title": {
+    "message": "Follow-up chain stopped"
+  },
+  "bg_followup_chainCap_body": {
+    "message": "The webhook kept asking for more tasks; the chain is capped at $MAX$ follow-ups per task.",
+    "placeholders": {
+      "max": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   },
   "bg_errors_noTaskId": {
     "message": "No task ID provided"

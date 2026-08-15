@@ -1,5 +1,6 @@
 import 'webextension-polyfill';
 import { createLogger } from '@src/background/log';
+import { activityLogStore } from '@extension/storage';
 import { analytics } from '../services/analytics';
 import {
   type BrowserContextConfig,
@@ -13,6 +14,21 @@ import { isUrlAllowed } from './util';
 import TaskTabGroup, { type TabGroupStatus } from './tabGroup';
 
 const logger = createLogger('BrowserContext');
+
+/**
+ * Best-effort append to the user's own local activity log (the privacy dashboard's data). Only
+ * real web hosts are worth recording, and a log write must never fail a navigation.
+ */
+function recordLocalVisit(url: string): void {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      void activityLogStore.recordVisit(parsed.host).catch(() => {});
+    }
+  } catch {
+    // an unparseable URL is not a visit
+  }
+}
 export default class BrowserContext {
   private _config: BrowserContextConfig;
   private _currentTabId: number | null = null;
@@ -260,8 +276,9 @@ export default class BrowserContext {
       throw new URLNotAllowedError(`URL: ${url} is not allowed`);
     }
 
-    // Track domain visit for analytics
+    // Track domain visit for analytics, and in the user's own local activity log
     void analytics.trackDomainVisit(url);
+    recordLocalVisit(url);
 
     const page = await this.getCurrentPage();
     if (!page) {
@@ -289,6 +306,8 @@ export default class BrowserContext {
     if (!isUrlAllowed(url, this._config.allowedUrls, this._config.deniedUrls)) {
       throw new URLNotAllowedError(`Open tab failed. URL: ${url} is not allowed`);
     }
+
+    recordLocalVisit(url);
 
     // Create the new tab
     const tab = await chrome.tabs.create({ url, active: true });

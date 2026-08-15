@@ -100,6 +100,15 @@ export const WebhookSettings = () => {
         />
       </SettingRow>
 
+      <SettingRow title={t('options_webhook_allowFollowUp')} description={t('options_webhook_allowFollowUp_desc')}>
+        <Toggle
+          id="webhookFollowUp"
+          label={t('options_webhook_allowFollowUp')}
+          checked={config.allowFollowUp}
+          onChange={checked => update({ allowFollowUp: checked })}
+        />
+      </SettingRow>
+
       <div className="flex items-center gap-3">
         <button
           type="button"

@@ -364,6 +364,12 @@
   "options_webhook_sendManual_desc": {
     "message": "Também dispara para tarefas iniciadas no painel lateral."
   },
+  "options_webhook_allowFollowUp": {
+    "message": "Permitir tarefas de follow-up na resposta"
+  },
+  "options_webhook_allowFollowUp_desc": {
+    "message": "A resposta pode conter {\"followUp\": \"próxima tarefa\"} e o Flowkite a executa — seu pipeline decide o próximo passo. Executa sem supervisão (ações sensíveis são recusadas), máx. 3 por cadeia."
+  },
   "options_webhook_test": {
     "message": "Enviar teste"
   },
@@ -375,6 +381,90 @@
   },
   "options_webhook_testFail": {
     "message": "Falhou — verifique a URL e o receptor"
+  },
+  "options_tabs_privacy": {
+    "message": "Privacidade"
+  },
+  "options_privacy_header": {
+    "message": "Painel de privacidade"
+  },
+  "options_privacy_desc": {
+    "message": "Uma resposta verificável para \"o que saiu desta máquina?\" — montada inteiramente com registros locais, sem buscar nada de fora. Suas chaves de API ficam locais e vão apenas para o provedor a que pertencem."
+  },
+  "options_privacy_models_header": {
+    "message": "Enviado aos provedores de modelos"
+  },
+  "options_privacy_models_desc": {
+    "message": "Totais de tokens por modelo, das $COUNT$ sessões mais recentes armazenadas. Os valores em dólar usam os preços inseridos em Geral.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "42"
+      }
+    }
+  },
+  "options_privacy_models_empty": {
+    "message": "Nenhuma sessão armazenada tem uso de tokens ainda."
+  },
+  "options_privacy_visits_header": {
+    "message": "Hosts visitados pelo agente"
+  },
+  "options_privacy_visits_desc": {
+    "message": "Apenas navegação feita pelo próprio agente — sua navegação pessoal nunca é registrada."
+  },
+  "options_privacy_visits_empty": {
+    "message": "Nenhuma navegação do agente registrada ainda."
+  },
+  "options_privacy_webhooks_header": {
+    "message": "Entregas de webhook"
+  },
+  "options_privacy_webhooks_empty": {
+    "message": "Nenhuma entrega de webhook ainda."
+  },
+  "options_privacy_col_model": {
+    "message": "Modelo"
+  },
+  "options_privacy_col_calls": {
+    "message": "Chamadas"
+  },
+  "options_privacy_col_tokens": {
+    "message": "Tokens"
+  },
+  "options_privacy_col_cost": {
+    "message": "Custo"
+  },
+  "options_privacy_col_host": {
+    "message": "Host"
+  },
+  "options_privacy_col_visits": {
+    "message": "Visitas"
+  },
+  "options_privacy_col_last": {
+    "message": "Última visita"
+  },
+  "options_privacy_col_when": {
+    "message": "Quando"
+  },
+  "options_privacy_col_source": {
+    "message": "Origem"
+  },
+  "options_privacy_col_status": {
+    "message": "Status"
+  },
+  "options_privacy_delivered": {
+    "message": "entregue"
+  },
+  "options_privacy_failed": {
+    "message": "falhou"
+  },
+  "options_privacy_noPrice": {
+    "message": "sem preço definido"
+  },
+  "options_privacy_note": {
+    "message": "O registro de visitas e webhooks é limitado, vive apenas em chrome.storage.local e você pode limpá-lo."
+  },
+  "options_privacy_clear": {
+    "message": "Limpar registro de atividade"
   },
   "options_general_planningInterval": {
     "message": "Frequência de Replanejamento"
@@ -633,6 +723,21 @@
   },
   "bg_sched_noResult": {
     "message": "A execução agendada não produziu resultado."
+  },
+  "bg_followup_title": {
+    "message": "Follow-up do webhook"
+  },
+  "bg_followup_chainCap_title": {
+    "message": "Cadeia de follow-ups interrompida"
+  },
+  "bg_followup_chainCap_body": {
+    "message": "O webhook continuou pedindo mais tarefas; a cadeia é limitada a $MAX$ follow-ups por tarefa.",
+    "placeholders": {
+      "max": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   },
   "bg_errors_noTaskId": {
     "message": "Nenhum ID de tarefa fornecido"

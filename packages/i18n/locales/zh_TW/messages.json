@@ -364,6 +364,12 @@
   "options_webhook_sendManual_desc": {
     "message": "側邊面板啟動的任務也會觸發。"
   },
+  "options_webhook_allowFollowUp": {
+    "message": "允許回應中的後續任務"
+  },
+  "options_webhook_allowFollowUp_desc": {
+    "message": "回應可包含 {\"followUp\": \"下一個任務\"}，Flowkite 會執行它 — 由你的管線決定下一步。以無人值守模式執行（敏感操作自動拒絕），每鏈最多 3 個。"
+  },
   "options_webhook_test": {
     "message": "傳送測試"
   },
@@ -375,6 +381,90 @@
   },
   "options_webhook_testFail": {
     "message": "失敗 — 請檢查網址與接收端"
+  },
+  "options_tabs_privacy": {
+    "message": "隱私"
+  },
+  "options_privacy_header": {
+    "message": "隱私儀表板"
+  },
+  "options_privacy_desc": {
+    "message": "「有什麼離開了這台機器？」的可驗證答案 — 完全由本機紀錄組成，不從任何地方擷取。你的 API 金鑰只儲存在本機，且只會送往其所屬的供應商。"
+  },
+  "options_privacy_models_header": {
+    "message": "傳送給模型供應商"
+  },
+  "options_privacy_models_desc": {
+    "message": "每個模型的 token 總計，來自最近儲存的 $COUNT$ 個工作階段。美元金額依你在「一般」輸入的價格計算。",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "42"
+      }
+    }
+  },
+  "options_privacy_models_empty": {
+    "message": "尚無工作階段記錄 token 用量。"
+  },
+  "options_privacy_visits_header": {
+    "message": "代理造訪過的主機"
+  },
+  "options_privacy_visits_desc": {
+    "message": "僅記錄代理自身的導覽 — 你個人的瀏覽絕不會被記錄。"
+  },
+  "options_privacy_visits_empty": {
+    "message": "尚未記錄任何代理導覽。"
+  },
+  "options_privacy_webhooks_header": {
+    "message": "Webhook 傳送紀錄"
+  },
+  "options_privacy_webhooks_empty": {
+    "message": "尚無 webhook 傳送紀錄。"
+  },
+  "options_privacy_col_model": {
+    "message": "模型"
+  },
+  "options_privacy_col_calls": {
+    "message": "呼叫數"
+  },
+  "options_privacy_col_tokens": {
+    "message": "Token"
+  },
+  "options_privacy_col_cost": {
+    "message": "費用"
+  },
+  "options_privacy_col_host": {
+    "message": "主機"
+  },
+  "options_privacy_col_visits": {
+    "message": "造訪次數"
+  },
+  "options_privacy_col_last": {
+    "message": "最近造訪"
+  },
+  "options_privacy_col_when": {
+    "message": "時間"
+  },
+  "options_privacy_col_source": {
+    "message": "來源"
+  },
+  "options_privacy_col_status": {
+    "message": "狀態"
+  },
+  "options_privacy_delivered": {
+    "message": "已送達"
+  },
+  "options_privacy_failed": {
+    "message": "失敗"
+  },
+  "options_privacy_noPrice": {
+    "message": "未設定價格"
+  },
+  "options_privacy_note": {
+    "message": "造訪與 webhook 紀錄有上限，僅存於 chrome.storage.local，你可隨時清除。"
+  },
+  "options_privacy_clear": {
+    "message": "清除活動紀錄"
   },
   "options_general_planningInterval": {
     "message": "重新規劃頻率"
@@ -633,6 +723,21 @@
   },
   "bg_sched_noResult": {
     "message": "排程執行沒有產生結果。"
+  },
+  "bg_followup_title": {
+    "message": "Webhook 後續任務"
+  },
+  "bg_followup_chainCap_title": {
+    "message": "後續任務鏈已停止"
+  },
+  "bg_followup_chainCap_body": {
+    "message": "Webhook 持續要求更多任務；每個任務的後續鏈上限為 $MAX$ 個。",
+    "placeholders": {
+      "max": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   },
   "bg_errors_noTaskId": {
     "message": "未提供任務 ID"

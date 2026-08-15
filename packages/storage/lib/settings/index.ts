@@ -5,6 +5,7 @@ export * from './generalSettings';
 export * from './modelPricing';
 export * from './schedules';
 export * from './webhook';
+export * from './activityLog';
 export * from './firewall';
 export * from './speechToText';
 export * from './analyticsSettings';

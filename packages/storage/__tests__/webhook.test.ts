@@ -35,8 +35,14 @@ describe('isValidWebhookUrl', () => {
 });
 
 describe('webhookStore', () => {
-  it('starts disabled with scheduled-only delivery', () => {
-    expect(DEFAULT_WEBHOOK_CONFIG).toEqual({ enabled: false, url: '', sendManual: false, sendScheduled: true });
+  it('starts disabled, scheduled-only, and with the response command channel off', () => {
+    expect(DEFAULT_WEBHOOK_CONFIG).toEqual({
+      enabled: false,
+      url: '',
+      sendManual: false,
+      sendScheduled: true,
+      allowFollowUp: false,
+    });
   });
 
   it('patches config without losing other fields', async () => {

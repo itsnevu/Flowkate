@@ -16,6 +16,14 @@ export interface WebhookConfig {
   sendManual: boolean;
   /** Fire for scheduled (unattended) runs — the case the feature exists for. */
   sendScheduled: boolean;
+  /**
+   * Let the webhook's RESPONSE queue a follow-up task: `{"followUp": "..."}` in the response body
+   * runs as a new unattended task. This is what turns the webhook into a two-way pipeline — n8n
+   * can decide the next step — without Flowkite gaining any inbound surface: the only party that
+   * can ever speak here is the one URL the user typed in. Off by default; follow-ups run under
+   * unattended rules (sensitive actions auto-decline) and the chain is hard-capped.
+   */
+  allowFollowUp: boolean;
 }
 
 export const DEFAULT_WEBHOOK_CONFIG: WebhookConfig = {
@@ -23,6 +31,7 @@ export const DEFAULT_WEBHOOK_CONFIG: WebhookConfig = {
   url: '',
   sendManual: false,
   sendScheduled: true,
+  allowFollowUp: false,
 };
 
 /**
