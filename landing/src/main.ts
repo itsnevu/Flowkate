@@ -157,6 +157,8 @@ if (hero && typeof ResizeObserver !== 'undefined') {
 
 let stuck = false;
 let lastProgress = -1;
+/** The back-to-top key; created later, once, in its own section below. */
+let totop: HTMLButtonElement | null = null;
 
 /**
  * The single place scroll position is turned into page state. Called from the
@@ -169,6 +171,10 @@ const applyScroll = (scrollY: number): void => {
     stuck = nextStuck;
     nav?.classList.toggle('is-stuck', nextStuck);
   }
+
+  // A viewport down is where "scroll back" starts beating "just scroll" — earlier
+  // than that the button is noise next to the hero.
+  totop?.classList.toggle('is-visible', scrollY > window.innerHeight);
 
   const activeScene = scene;
   if (!activeScene) return;
@@ -681,6 +687,54 @@ const setUpTaskRotation = (): void => {
 setUpTaskRotation();
 
 /* -------------------------------------------------------------------------- */
+/* Back to top                                                                 */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * A single fixed key that appears once the reader is a viewport down and glides
+ * back to the start. Created here rather than in the markup so every language
+ * page gets it from the shared bundle — only the label is per-language. Under
+ * reduced motion the ride is an instant jump, matching native anchor behaviour.
+ */
+const setUpBackToTop = (): void => {
+  const labels: Record<string, string> = {
+    en: 'Back to top',
+    'pt-BR': 'Voltar ao topo',
+    'zh-TW': '回到頂端',
+  };
+
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'totop';
+  button.setAttribute('aria-label', labels[document.documentElement.lang] ?? labels.en);
+  // Static, trusted markup — a chevron cut from the same stroke style as the glyphs.
+  button.innerHTML =
+    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">' +
+    '<path d="m5 14 7-7 7 7" stroke-linecap="round" stroke-linejoin="round" /></svg>';
+
+  button.addEventListener(
+    'click',
+    () => {
+      if (lenis) lenis.scrollTo(0);
+      else window.scrollTo(0, 0);
+      // Focus follows the ride for keyboard users, same dance as the anchor
+      // handler: <main> is only focusable once it carries a tabindex.
+      const main = document.getElementById('main');
+      if (main) {
+        if (!main.hasAttribute('tabindex')) main.setAttribute('tabindex', '-1');
+        main.focus({ preventScroll: true });
+      }
+    },
+    { signal },
+  );
+
+  document.body.append(button);
+  totop = button;
+};
+
+setUpBackToTop();
+
+/* -------------------------------------------------------------------------- */
 /* Quickstart: copy to clipboard                                               */
 /* -------------------------------------------------------------------------- */
 
@@ -797,6 +851,8 @@ const teardown = (): void => {
   timeouts.clear();
   // Before the abort, so the buttons are gone while their listeners still are.
   cleanUpCopyButtons();
+  totop?.remove();
+  totop = null;
   // Fires the abort listeners above (observers) and drops every DOM listener.
   // Also latches `signal.aborted`, which is what stops an in-flight `loadScene`
   // from attaching a scene to a page that is already being dismantled.

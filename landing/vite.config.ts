@@ -1,4 +1,3 @@
-import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
 // The landing site ships as a plain static bundle, so `base: './'` keeps every
@@ -11,12 +10,17 @@ export default defineConfig({
       // One HTML entry per language. The localized pages import the same
       // src/main.ts, so every locale shares one JS/CSS bundle and the only
       // per-language weight is the HTML itself.
+      //
+      // Relative paths on purpose (resolved against the project root): this
+      // workspace ships no @types/node, so `node:path` / `import.meta.dirname`
+      // type-check locally only by borrowing the monorepo's types — and then
+      // fail on Vercel, where only landing/ is installed.
       input: {
-        main: resolve(import.meta.dirname, 'index.html'),
-        'pt-BR': resolve(import.meta.dirname, 'pt-BR/index.html'),
-        'zh-TW': resolve(import.meta.dirname, 'zh-TW/index.html'),
+        main: 'index.html',
+        'pt-BR': 'pt-BR/index.html',
+        'zh-TW': 'zh-TW/index.html',
         // Vercel serves dist/404.html for any unmatched path on a static deployment.
-        notFound: resolve(import.meta.dirname, '404.html'),
+        notFound: '404.html',
       },
       output: {
         // three.js is by far the heaviest dependency; give it its own chunk so

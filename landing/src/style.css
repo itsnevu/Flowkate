@@ -1209,6 +1209,66 @@ html.js .demo__replay {
   transform: none;
 }
 
+/* At phone widths the first code line runs under the corner button (on wide
+   viewports the line ends long before it). Give the button its own band. */
+@media (max-width: 640px) {
+  .code.has-copy {
+    padding-top: 3rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   12c. Back to top — created by main.ts, shown once the reader is a viewport
+        down. Fixed above the content but below the nav and its sheet.
+   -------------------------------------------------------------------------- */
+
+.totop {
+  position: fixed;
+  right: calc(1.1rem + env(safe-area-inset-right, 0px));
+  bottom: calc(1.1rem + env(safe-area-inset-bottom, 0px));
+  z-index: 90;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--canvas-raised);
+  color: var(--ink-soft);
+  box-shadow: var(--neu);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition:
+    opacity 0.25s var(--ease-press),
+    transform 0.25s var(--ease-press),
+    box-shadow 0.15s var(--ease-press),
+    color 0.15s var(--ease-press);
+}
+
+.totop.is-visible {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.totop:hover {
+  color: var(--ink);
+  box-shadow: var(--neu-lg);
+}
+
+.totop:active {
+  box-shadow: var(--neu-inset-sm);
+  transform: translateY(1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .totop {
+    transition: none;
+  }
+}
+
 .cta {
   display: flex;
   flex-wrap: wrap;
