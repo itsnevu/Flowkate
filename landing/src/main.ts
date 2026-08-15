@@ -105,8 +105,16 @@ const disposeScene = (): void => {
  *
  * Called once, below, after everything else on the page is already live.
  */
+/**
+ * Data saver is a promise the browser made on the user's behalf, and the scene is
+ * exactly the half-megabyte of decoration it exists to skip. Slow cellular gets the
+ * same courtesy. The hero copy stands on its own either way.
+ */
+const connection = (navigator as { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+const constrainedData = connection?.saveData === true || /(^|-)2g$/.test(connection?.effectiveType ?? '');
+
 const loadScene = async (): Promise<void> => {
-  if (!canvas) return;
+  if (!canvas || constrainedData) return;
   try {
     const { initScene } = await import('./scene');
     // Teardown can easily win the race against a network fetch. Attaching now
@@ -257,6 +265,34 @@ const decodeId = (raw: string): string => {
   }
 };
 
+/**
+ * Sections below the fold use `content-visibility: auto`, so their heights are
+ * estimates until they render — and a scroll target computed over estimates lands
+ * hundreds of pixels off. This class forces real layout for the duration of the
+ * glide; the safety timeout covers a scroll that Lenis abandons midway (user
+ * grabbed the wheel), where onComplete never fires. Leaving the class on merely
+ * costs the optimisation, but the timeout keeps even that window short.
+ */
+let anchoringSafetyId = 0;
+
+const endAnchoring = (): void => {
+  document.documentElement.classList.remove('is-anchoring');
+  if (anchoringSafetyId !== 0) {
+    window.clearTimeout(anchoringSafetyId);
+    timeouts.delete(anchoringSafetyId);
+    anchoringSafetyId = 0;
+  }
+};
+
+const beginAnchoring = (): void => {
+  endAnchoring(); // reset any glide already in flight
+  document.documentElement.classList.add('is-anchoring');
+  anchoringSafetyId = later(() => {
+    anchoringSafetyId = 0;
+    endAnchoring();
+  }, 3000);
+};
+
 const scrollToHash = (hash: string, immediate = false): boolean => {
   if (!lenis) return false;
 
@@ -270,7 +306,8 @@ const scrollToHash = (hash: string, immediate = false): boolean => {
   const target = document.getElementById(decodeId(hash.slice(1)));
   if (!target) return false;
 
-  lenis.scrollTo(target, { offset: -headerOffset(), immediate });
+  beginAnchoring();
+  lenis.scrollTo(target, { offset: -headerOffset(), immediate, onComplete: endAnchoring });
 
   // Keyboard and screen-reader users need focus to follow the scroll, or the
   // next Tab press resumes from wherever they were before.
@@ -365,6 +402,283 @@ if (prefersReducedMotion || typeof IntersectionObserver === 'undefined') {
   for (const el of reveals) revealObserver.observe(el);
   signal.addEventListener('abort', () => revealObserver.disconnect(), { once: true });
 }
+
+/* -------------------------------------------------------------------------- */
+/* Demo replay                                                                 */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The side-panel mocks in #demo play once, when the demo scrolls into view: the
+ * active panel gets `.is-playing` and style.css owns every beat from there (each
+ * element carries its own `--d` delay in the markup — choreography, not the
+ * reveal stagger).
+ *
+ * `.is-playing` is also the visibility latch: `html.js` blanks a panel's beats,
+ * so whichever path runs here MUST end in the class or the panel stays empty.
+ * That is why reduced motion and a missing IntersectionObserver both add it to
+ * every panel immediately — the global reduced-motion rule zeroes the delays,
+ * so doing so shows the finished conversations as stills.
+ *
+ * Two scenarios share the stage behind an ARIA tab pair. Switching tabs swaps
+ * the `hidden` panel and replays the incoming one from its first beat — a replay
+ * is the whole point of choosing a scenario.
+ */
+const demoTabs = Array.from(document.querySelectorAll<HTMLButtonElement>('.demo__tab'));
+const demoPanels = Array.from(document.querySelectorAll<HTMLElement>('.demo__panel'));
+
+if (demoPanels.length > 0) {
+  const panelFor = (tab: HTMLButtonElement): HTMLElement | null => {
+    const id = tab.getAttribute('aria-controls');
+    return id ? document.getElementById(id) : null;
+  };
+
+  const activePanel = (): HTMLElement => demoPanels.find(panel => !panel.hidden) ?? demoPanels[0];
+
+  const play = (panel: HTMLElement): void => {
+    panel.classList.remove('is-playing');
+    // Forces a style flush between remove and add; without it the browser
+    // coalesces the two into "no change" and no animation restarts.
+    void panel.offsetWidth;
+    panel.classList.add('is-playing');
+  };
+
+  const selectTab = (tab: HTMLButtonElement): void => {
+    const target = panelFor(tab);
+    if (!target || !target.hidden) return; // already showing
+
+    for (const other of demoTabs) {
+      const chosen = other === tab;
+      other.setAttribute('aria-selected', String(chosen));
+      // Roving tabindex, per the ARIA tabs pattern: one tab stop for the list.
+      other.tabIndex = chosen ? 0 : -1;
+    }
+    for (const panel of demoPanels) panel.hidden = panel !== target;
+    play(target);
+  };
+
+  demoTabs.forEach((tab, tabIndex) => {
+    tab.addEventListener('click', () => selectTab(tab), { signal });
+    tab.addEventListener(
+      'keydown',
+      (event: KeyboardEvent) => {
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+        const step = event.key === 'ArrowRight' ? 1 : -1;
+        const next = demoTabs[(tabIndex + step + demoTabs.length) % demoTabs.length];
+        next.focus();
+        selectTab(next);
+        event.preventDefault();
+      },
+      { signal },
+    );
+  });
+
+  if (prefersReducedMotion || typeof IntersectionObserver === 'undefined') {
+    // No animation to schedule: every panel becomes its finished still, so tab
+    // switches under reduced motion swap complete conversations.
+    for (const panel of demoPanels) panel.classList.add('is-playing');
+  } else {
+    const demoObserver = new IntersectionObserver(
+      (entries, observer) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          play(activePanel());
+          // One-shot: once the replay has started there is nothing left to watch.
+          observer.disconnect();
+        }
+      },
+      // Waits for a third of the panel so the opening beats are not spent
+      // below the fold, half-scrolled-into.
+      { threshold: 0.35 },
+    );
+    demoObserver.observe(demoPanels[0]);
+    signal.addEventListener('abort', () => demoObserver.disconnect(), { once: true });
+
+    const replay = document.querySelector<HTMLButtonElement>('.demo__replay');
+    replay?.addEventListener('click', () => play(activePanel()), { signal });
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Mobile menu                                                                 */
+/* -------------------------------------------------------------------------- */
+
+const menuButton = document.querySelector<HTMLButtonElement>('.nav__menu');
+
+if (nav && menuButton) {
+  const header = nav;
+  const button = menuButton;
+
+  const setMenu = (open: boolean): void => {
+    header.classList.toggle('is-open', open);
+    button.setAttribute('aria-expanded', String(open));
+  };
+
+  button.addEventListener('click', () => setMenu(!header.classList.contains('is-open')), { signal });
+
+  document.addEventListener(
+    'keydown',
+    (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || !header.classList.contains('is-open')) return;
+      setMenu(false);
+      // Focus was likely inside the sheet, which display:none just destroyed;
+      // hand it back to the control that reopens it.
+      button.focus();
+    },
+    { signal },
+  );
+
+  // Closing on any document click covers both cases at once: a sheet link was
+  // chosen (the smooth-scroll handler above still receives the same event —
+  // display:none on the sheet does not stop the scroll already dispatched), or
+  // the tap landed outside the header entirely.
+  document.addEventListener(
+    'click',
+    (event: MouseEvent) => {
+      if (!header.classList.contains('is-open')) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest('.nav__menu')) return; // the toggle manages itself
+      if (target.closest('a[href^="#"]') || !target.closest('header.nav')) setMenu(false);
+    },
+    { signal },
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* GitHub stars                                                                */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Live star count on the hero's GitHub key — social proof fetched from the public
+ * API, no token. Strictly additive: the badge starts `hidden` in the markup and is
+ * only revealed once a real number is in hand, so a failed fetch, a rate-limited
+ * IP or a blocked request leaves the button exactly as designed. Cached per tab
+ * session — the count does not need to be fresher than that.
+ */
+const setUpStarCount = (): void => {
+  const badge = document.querySelector<HTMLElement>('[data-gh-stars]');
+  if (!badge || typeof fetch !== 'function') return;
+
+  const format = (count: number): string =>
+    count >= 1000 ? `${(count / 1000).toFixed(1).replace(/\.0$/, '')}k` : String(count);
+
+  const apply = (count: number): void => {
+    // A star count of zero is anti-social-proof; the badge only exists once there is
+    // something to show.
+    if (count < 1) return;
+    badge.textContent = `★ ${format(count)}`;
+    badge.hidden = false;
+  };
+
+  let cached: string | null = null;
+  try {
+    cached = sessionStorage.getItem('flowkite:stars');
+  } catch {
+    // Storage can be walled off (privacy modes); the fetch below still works.
+  }
+  if (cached !== null && Number.isFinite(Number(cached))) {
+    apply(Number(cached));
+    return;
+  }
+
+  void fetch('https://api.github.com/repos/itsnevu/Flowkite', {
+    headers: { Accept: 'application/vnd.github+json' },
+  })
+    .then(response => (response.ok ? (response.json() as Promise<{ stargazers_count?: number }>) : null))
+    .then(data => {
+      const count = data?.stargazers_count;
+      if (typeof count !== 'number') return;
+      try {
+        sessionStorage.setItem('flowkite:stars', String(count));
+      } catch {
+        // Same walled-off storage as above; showing the number still works.
+      }
+      apply(count);
+    })
+    .catch(() => {
+      // Offline or blocked: the badge simply never appears.
+    });
+};
+
+setUpStarCount();
+
+/* -------------------------------------------------------------------------- */
+/* Hero: rotating task examples                                                */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Types out a rotation of concrete tasks in the hero chip. The examples live on the
+ * element (data-tasks), not here: each language page carries its own set, so this
+ * file stays locale-agnostic. The first entry mirrors the markup's static text
+ * exactly, so the handoff from server HTML to the first erase is invisible. Reduced
+ * motion never starts the rotation — the static example stands. Every delay goes
+ * through `later`, so teardown stops the typing mid-word.
+ */
+const setUpTaskRotation = (): void => {
+  if (prefersReducedMotion) return;
+  const chip = document.getElementById('hero-task');
+  if (!chip) return;
+
+  let tasks: unknown;
+  try {
+    tasks = JSON.parse(chip.dataset.tasks ?? '[]');
+  } catch {
+    return; // malformed attribute: leave the static example alone
+  }
+  if (!Array.isArray(tasks) || tasks.length < 2 || tasks.some(task => typeof task !== 'string')) return;
+  const examples = tasks as string[];
+
+  // Quote marks are part of the page's language (zh-TW uses 「」), so the page
+  // supplies them; typing happens inside the quotes.
+  const quoteOpen = chip.dataset.quoteOpen ?? '“';
+  const quoteClose = chip.dataset.quoteClose ?? '”';
+
+  const HOLD_MS = 3800;
+  const TYPE_MS = 26;
+  const ERASE_MS = 11;
+
+  let index = 0;
+  const render = (text: string): void => {
+    chip.textContent = `${quoteOpen}${text}${quoteClose}`;
+  };
+
+  const cycle = (): void => {
+    const current = examples[index];
+    let pos = current.length;
+
+    const eraseTick = (): void => {
+      pos -= 1;
+      render(current.slice(0, pos));
+      if (pos > 0) {
+        later(eraseTick, ERASE_MS);
+        return;
+      }
+
+      index = (index + 1) % examples.length;
+      const next = examples[index];
+      let typed = 0;
+
+      const typeTick = (): void => {
+        typed += 1;
+        render(next.slice(0, typed));
+        if (typed < next.length) {
+          later(typeTick, TYPE_MS);
+          return;
+        }
+        later(cycle, HOLD_MS);
+      };
+
+      // A breath between erasing one task and typing the next.
+      later(typeTick, 240);
+    };
+
+    later(eraseTick, ERASE_MS);
+  };
+
+  later(cycle, HOLD_MS + 1400);
+};
+
+setUpTaskRotation();
 
 /* -------------------------------------------------------------------------- */
 /* Quickstart: copy to clipboard                                               */

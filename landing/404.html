@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>404 — Flowkite</title>
+    <!-- Error pages have no business in a search index. -->
+    <meta name="robots" content="noindex" />
+
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#eef0f4" />
+    <link rel="icon" href="/favicon-16.png" type="image/png" sizes="16x16" />
+    <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="256x256" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+
+  <!--
+    Deliberately no main.ts: an error page must not wait on Lenis or a half-megabyte
+    renderer, and nothing here scrolls or reveals. The only motion is one CSS drift
+    on the mark, and reduced motion stills it.
+  -->
+  <body>
+    <main class="notfound">
+      <div class="notfound__inner">
+        <img class="notfound__kite" src="/mark.png" alt="" width="72" height="72" decoding="async" />
+
+        <p class="notfound__code" aria-hidden="true">404</p>
+        <h1 class="notfound__title">This page slipped its line.</h1>
+        <p class="notfound__lede">
+          The address may be mistyped, or the page has drifted off somewhere we can't reach it. The rest of the site is
+          still flying.
+        </p>
+
+        <div class="notfound__actions">
+          <a class="key" href="/">Back to the site</a>
+          <a class="key key--ghost" href="https://github.com/itsnevu/Flowkite/issues" rel="noopener noreferrer">
+            Report a broken link
+          </a>
+        </div>
+
+        <nav class="notfound__langs" aria-label="Language">
+          <a href="/" lang="en">English</a>
+          <a href="/pt-BR/" lang="pt-BR">Português</a>
+          <a href="/zh-TW/" lang="zh-TW">繁體中文</a>
+        </nav>
+      </div>
+    </main>
+  </body>
+</html>

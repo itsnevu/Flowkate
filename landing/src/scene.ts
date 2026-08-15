@@ -3,10 +3,18 @@ import * as THREE from 'three';
 /**
  * Hero scene: the Flowkite kite, drifting.
  *
- * The whole thing is deliberately one object in a lot of air. It has to sit in the same
- * material world as the CSS — pale ground (#eef0f4), graphite form, light from the
- * upper-left — so the canvas reads as an extension of the page rather than a video
- * playing inside it.
+ * The whole thing is deliberately one object in a lot of air — but the air itself is
+ * allowed a presence: the line the kite flies on, a few wind swooshes riding across the
+ * frame, a field of dust motes drifting the same way, and cloud puffs far behind it all.
+ * Under everything, a dim mirror of the kite in the ground turns the pale void into a
+ * glossy studio floor. All of it has to sit in the same material world as the CSS —
+ * pale ground (#eef0f4), graphite form, light from the upper-left — so the canvas reads
+ * as an extension of the page rather than a video playing inside it.
+ *
+ * Two clocks run here: `elapsed` (real time, drives the idle pose and the camera) and
+ * `windTime` (accumulated at 1× normally, faster during a gust or the periodic swoop),
+ * which drives every piece of cloth and the whole air system so a click genuinely makes
+ * the wind pick up instead of just nudging the kite.
  */
 
 /** Canvas ground colour, shared with `--canvas` in style.css. */
@@ -210,7 +218,12 @@ export function initScene(canvas: HTMLCanvasElement): { setScroll(p: number): vo
     { tri: [SPAR_CROSS, TIP_BOTTOM, TIP_RIGHT], color: 0x0e1014, roughness: 0.42, dihedral: 0.1 },
   ];
 
-  const fadeables: Array<THREE.MeshPhysicalMaterial> = [];
+  // Everything whose opacity the scroll fade drives. Material, not MeshPhysicalMaterial:
+  // the flying line below is deliberately a flat MeshBasicMaterial.
+  const fadeables: THREE.Material[] = [];
+
+  /** The sail meshes, kept so the floor reflection below can share their geometry. */
+  const sailMeshes: THREE.Mesh[] = [];
 
   for (const panel of panels) {
     const geometry = panelGeometry(panel.tri[0], panel.tri[1], panel.tri[2]);
@@ -221,6 +234,10 @@ export function initScene(canvas: HTMLCanvasElement): { setScroll(p: number): vo
       clearcoat: 0.65,
       clearcoatRoughness: 0.28,
       envMapIntensity: 0.9,
+      // A whisper of thin-film iridescence: as the yaw walks the facets through the key
+      // light the graphite picks up a shifting cool sheen — ripstop nylon, not plastic.
+      iridescence: 0.16,
+      iridescenceIOR: 1.3,
     });
     const mesh = new THREE.Mesh(geometry, material);
     // A shallow dihedral, as if the sail were bowed by the wind: outer tips fall back,
@@ -228,6 +245,7 @@ export function initScene(canvas: HTMLCanvasElement): { setScroll(p: number): vo
     mesh.rotation.y = panel.dihedral;
     mesh.castShadow = true;
     kite.add(mesh);
+    sailMeshes.push(mesh);
     geometries.push(geometry);
     materials.push(material);
     fadeables.push(material);
@@ -436,7 +454,97 @@ export function initScene(canvas: HTMLCanvasElement): { setScroll(p: number): vo
   // rather than a strip of zeroed vertices collapsed at the origin.
   updateRibbons(STATIC_POSE_TIME);
 
+  // --- flying line ----------------------------------------------------------------------
+
+  /**
+   * The line the kite flies on, bowing away down-left toward a flyer somewhere past the
+   * bottom of the frame. Built with the same station-by-station integration as the tails,
+   * but this cloth is under tension rather than free: the bow is one smooth arc, and the
+   * ripple running down it is a fraction of the tails' wave. It is what turns "a kite
+   * shape floating" into "a kite being flown".
+   */
+  const LINE_STATIONS = 64;
+  const LINE_LENGTH = 4.8;
+  const LINE_HALF_WIDTH = 0.016;
+
+  const linePosition = new THREE.BufferAttribute(new Float32Array((LINE_STATIONS + 1) * 2 * 3), 3);
+  linePosition.setUsage(THREE.DynamicDrawUsage);
+
+  const lineIndices: number[] = [];
+  for (let i = 0; i < LINE_STATIONS; i++) {
+    const a = i * 2;
+    lineIndices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+  }
+
+  const lineGeometry = new THREE.BufferGeometry();
+  lineGeometry.setAttribute('position', linePosition);
+  lineGeometry.setIndex(lineIndices);
+
+  // Flat graphite, unlit: a hair-thin strip has no readable shading — under the physical
+  // material it only sparkles. Drawn flat it reads as the mark's own linework.
+  const lineMaterial = new THREE.MeshBasicMaterial({ color: 0x2a2f37, side: THREE.DoubleSide });
+  const line = new THREE.Mesh(lineGeometry, lineMaterial);
+  // Nearly all of it hangs outside the kite's bounding box, and its shadow would draw a
+  // hard diagonal across the soft contact shadow.
+  line.castShadow = false;
+  line.frustumCulled = false;
+  kite.add(line);
+  geometries.push(lineGeometry);
+  materials.push(lineMaterial);
+  fadeables.push(lineMaterial);
+
+  /**
+   * Rebuild the flying line for time `t`. `sway` is a whole-line lean supplied by the
+   * frame loop (slow wander plus a little pointer lag) — passed in rather than read from
+   * `pointer` so the build-once call below can run before the state section exists.
+   */
+  function updateLine(t: number, sway: number): void {
+    const step = LINE_LENGTH / LINE_STATIONS;
+    centre.set(TIP_BOTTOM.x, TIP_BOTTOM.y + 0.05, 0.02);
+    previous.copy(centre);
+
+    for (let i = 0; i <= LINE_STATIONS; i++) {
+      const s = i / LINE_STATIONS;
+
+      if (i > 0) {
+        // One shallow bow toward -X, tightening toward the far end, plus a small ripple
+        // that grows with distance from the kite — near the bridle the line is taut.
+        const bow = -(0.16 + 1.0 * Math.pow(s, 1.5));
+        const ripple = Math.sin(s * Math.PI * 2 * 1.1 - t * 1.4) * 0.05 * s;
+        const heading = bow + ripple + sway * s;
+
+        previous.copy(centre);
+        centre.x += Math.sin(heading) * step;
+        centre.y -= Math.cos(heading) * step;
+        // The flyer stands on the viewer's side of the kite, so the line eases forward.
+        centre.z += step * 0.1;
+
+        tangent.subVectors(centre, previous).normalize();
+      } else {
+        tangent.set(0, -1, 0);
+      }
+
+      across.crossVectors(tangent, axisZ);
+      if (across.lengthSq() < 1e-8) across.set(1, 0, 0);
+      across.normalize();
+
+      // Tapers away from the kite — cheap perspective for a strip with no thickness.
+      const half = LINE_HALF_WIDTH * (1 - 0.45 * s);
+
+      const a = i * 2;
+      linePosition.setXYZ(a, centre.x - across.x * half, centre.y - across.y * half, centre.z - across.z * half);
+      linePosition.setXYZ(a + 1, centre.x + across.x * half, centre.y + across.y * half, centre.z + across.z * half);
+    }
+
+    linePosition.needsUpdate = true;
+  }
+
+  // Same reason as the ribbons: the first frame needs a real line, not zeroed vertices.
+  updateLine(STATIC_POSE_TIME, 0);
+
   // --- ground ---------------------------------------------------------------------------
+
+  const GROUND_Y = -1.7;
 
   // ShadowMaterial draws nothing but the shadow, so the ground stays exactly the clear
   // colour — no seam where the plane ends, no second pale that almost matches the CSS.
@@ -444,12 +552,326 @@ export function initScene(canvas: HTMLCanvasElement): { setScroll(p: number): vo
   const groundMaterial = new THREE.ShadowMaterial({ color: 0x9fa7b7, opacity: 0.34 });
   const ground = new THREE.Mesh(groundGeometry, groundMaterial);
   ground.rotation.x = -Math.PI / 2;
-  ground.position.y = -1.7;
+  ground.position.y = GROUND_Y;
   ground.receiveShadow = true;
   scene.add(ground);
   geometries.push(groundGeometry);
   materials.push(groundMaterial);
   const GROUND_SHADOW_OPACITY = groundMaterial.opacity;
+
+  // --- air ------------------------------------------------------------------------------
+
+  /**
+   * The wind, made just barely visible. Two ingredients, both travelling toward -X —
+   * the direction the tails already trail, so the whole frame agrees on where the wind
+   * is going: long swoosh strips that ride across the scene and fade in and out, and a
+   * field of dust motes drifting the same way. Everything in this group is graphic
+   * rather than physical — flat colour, no lights, no shadows, depthWrite off — because
+   * it is set dressing for the kite, not competition.
+   */
+  const air = new THREE.Group();
+  scene.add(air);
+
+  /** Stations along a swoosh. Enough that the arc reads as a curve, not a polyline. */
+  const STREAK_STATIONS = 36;
+  /** Horizontal distance a swoosh covers per cycle — comfortably past both frame edges. */
+  const STREAK_TRAVEL = 18;
+
+  interface StreakSpec {
+    /** Tip-to-tip length of the strip. */
+    length: number;
+    /** Half-width at the fullest point; the ends taper to nothing. */
+    halfWidth: number;
+    /** Height of the arc bump along the strip. */
+    arc: number;
+    /** End-to-end slope, so no two swooshes sit parallel. */
+    tilt: number;
+    y: number;
+    z: number;
+    /** Seconds per full crossing. Detuned against each other so they never bunch. */
+    period: number;
+    phase: number;
+    opacity: number;
+  }
+
+  /**
+   * Four swooshes at four depths. The one in front of the kite is the faintest —
+   * anything bold crossing the subject reads as a scratch on the lens.
+   */
+  const streakSpecs: StreakSpec[] = [
+    { length: 3.4, halfWidth: 0.03, arc: 0.13, tilt: -0.1, y: 2.3, z: -2.6, period: 12.4, phase: 0.0, opacity: 0.6 },
+    { length: 2.5, halfWidth: 0.024, arc: 0.09, tilt: 0.08, y: 1.0, z: -1.4, period: 8.6, phase: 0.45, opacity: 0.5 },
+    { length: 3.0, halfWidth: 0.032, arc: 0.11, tilt: -0.05, y: -0.55, z: 0.7, period: 10.2, phase: 0.72, opacity: 0.35 },
+    { length: 2.1, halfWidth: 0.02, arc: 0.07, tilt: 0.12, y: 3.05, z: -3.4, period: 15.2, phase: 0.22, opacity: 0.55 },
+  ];
+
+  /** One static strip in the XY plane: an arced centreline, pointed at both ends. */
+  function streakGeometry(spec: StreakSpec): THREE.BufferGeometry {
+    const position = new Float32Array((STREAK_STATIONS + 1) * 2 * 3);
+    const indices: number[] = [];
+    for (let i = 0; i < STREAK_STATIONS; i++) {
+      const a = i * 2;
+      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+    }
+    for (let i = 0; i <= STREAK_STATIONS; i++) {
+      const s = i / STREAK_STATIONS;
+      const x = (s - 0.5) * spec.length;
+      const y = Math.sin(Math.PI * s) * spec.arc + (s - 0.5) * spec.tilt;
+      // sin^0.7 keeps the belly long and the tips sharp — the classic wind swoosh.
+      const half = spec.halfWidth * Math.pow(Math.sin(Math.PI * s), 0.7);
+      const a = i * 6;
+      position[a + 0] = x;
+      position[a + 1] = y - half;
+      position[a + 2] = 0;
+      position[a + 3] = x;
+      position[a + 4] = y + half;
+      position[a + 5] = 0;
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(position, 3));
+    geometry.setIndex(indices);
+    return geometry;
+  }
+
+  interface Streak {
+    spec: StreakSpec;
+    mesh: THREE.Mesh;
+    material: THREE.MeshBasicMaterial;
+  }
+
+  const streaks: Streak[] = [];
+
+  for (const spec of streakSpecs) {
+    const geometry = streakGeometry(spec);
+    // A shade deeper than the sunk canvas: present when you look, silent when you read.
+    // DoubleSide because the strip's winding faces -Z; single-sided it simply never draws.
+    const material = new THREE.MeshBasicMaterial({
+      color: 0xbcc4d3,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(0, spec.y, spec.z);
+    // The mesh spends most of its cycle parked outside the frustum on purpose.
+    mesh.frustumCulled = false;
+    air.add(mesh);
+    streaks.push({ spec, mesh, material });
+    geometries.push(geometry);
+    materials.push(material);
+  }
+
+  /** Dust motes: enough to feel like air, few enough to never read as weather. */
+  const MOTE_COUNT = 110;
+  const MOTE_WRAP = 15;
+  const MOTE_OPACITY = 0.5;
+
+  /** A soft radial dot, drawn once — a square point sprite reads as confetti. */
+  function createMoteSprite(): THREE.Texture | null {
+    const source = document.createElement('canvas');
+    source.width = 64;
+    source.height = 64;
+    const ctx = source.getContext('2d');
+    if (!ctx) return null;
+    const dot = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    dot.addColorStop(0, 'rgba(255,255,255,1)');
+    dot.addColorStop(0.5, 'rgba(255,255,255,0.35)');
+    dot.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = dot;
+    ctx.fillRect(0, 0, 64, 64);
+    return new THREE.CanvasTexture(source);
+  }
+
+  const moteBase = new Float32Array(MOTE_COUNT * 3);
+  /** Per mote: drift speed, bob amplitude, bob frequency, bob phase. */
+  const moteParams = new Float32Array(MOTE_COUNT * 4);
+  for (let i = 0; i < MOTE_COUNT; i++) {
+    moteBase[i * 3 + 0] = (Math.random() - 0.5) * MOTE_WRAP;
+    moteBase[i * 3 + 1] = -1.6 + Math.random() * 5.0;
+    moteBase[i * 3 + 2] = -3.5 + Math.random() * 4.6;
+    moteParams[i * 4 + 0] = 0.1 + Math.random() * 0.18;
+    moteParams[i * 4 + 1] = 0.05 + Math.random() * 0.12;
+    moteParams[i * 4 + 2] = 0.3 + Math.random() * 0.5;
+    moteParams[i * 4 + 3] = Math.random() * Math.PI * 2;
+  }
+
+  const motePosition = new THREE.BufferAttribute(new Float32Array(MOTE_COUNT * 3), 3);
+  motePosition.setUsage(THREE.DynamicDrawUsage);
+  const moteGeometry = new THREE.BufferGeometry();
+  moteGeometry.setAttribute('position', motePosition);
+
+  const moteSprite = createMoteSprite();
+  const moteMaterial = new THREE.PointsMaterial({
+    color: 0x9aa4b4,
+    size: 0.085,
+    map: moteSprite,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+  });
+  const motes = new THREE.Points(moteGeometry, moteMaterial);
+  // Positions wrap around the whole scene; the once-computed bounding sphere is a lie.
+  motes.frustumCulled = false;
+  air.add(motes);
+  geometries.push(moteGeometry);
+  materials.push(moteMaterial);
+
+  /** Horizontal wrap for the cloud layer — wider than the streaks', it sits much deeper. */
+  const CLOUD_WRAP = 30;
+
+  /**
+   * One soft cumulus puff, painted once and shared: a handful of overlapping radial blobs,
+   * flat-bottomed by keeping every centre in the upper half. Hand-placed rather than
+   * random so every visitor gets the same sky.
+   */
+  function createCloudSprite(): THREE.Texture | null {
+    const source = document.createElement('canvas');
+    source.width = 256;
+    source.height = 128;
+    const ctx = source.getContext('2d');
+    if (!ctx) return null;
+    const blobs: Array<[number, number, number]> = [
+      [0.5, 0.52, 0.4],
+      [0.3, 0.6, 0.28],
+      [0.68, 0.58, 0.3],
+      [0.42, 0.42, 0.24],
+      [0.62, 0.4, 0.22],
+      [0.2, 0.7, 0.18],
+      [0.8, 0.7, 0.19],
+    ];
+    for (const [bx, by, br] of blobs) {
+      const puff = ctx.createRadialGradient(256 * bx, 128 * by, 0, 256 * bx, 128 * by, 128 * br);
+      puff.addColorStop(0, 'rgba(255,255,255,0.85)');
+      puff.addColorStop(0.6, 'rgba(255,255,255,0.35)');
+      puff.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = puff;
+      ctx.fillRect(0, 0, 256, 128);
+    }
+    return new THREE.CanvasTexture(source);
+  }
+
+  interface CloudSpec {
+    x: number;
+    y: number;
+    z: number;
+    scale: number;
+    /** World units per second of windTime, so gusts hurry the sky along too. */
+    speed: number;
+    opacity: number;
+  }
+
+  /** Five puffs on three depth planes: big and slow far back, smaller and quicker nearer. */
+  const cloudSpecs: CloudSpec[] = [
+    { x: -6, y: 2.6, z: -6, scale: 4.2, speed: 0.2, opacity: 0.75 },
+    { x: 2, y: 3.4, z: -8, scale: 5.6, speed: 0.14, opacity: 0.6 },
+    { x: 7, y: 1.95, z: -5, scale: 3.2, speed: 0.26, opacity: 0.7 },
+    { x: -1, y: 2.3, z: -9.5, scale: 6.4, speed: 0.1, opacity: 0.5 },
+    { x: 11, y: 3.0, z: -7, scale: 4.6, speed: 0.17, opacity: 0.65 },
+  ];
+
+  const cloudSprite = createCloudSprite();
+  const clouds: Array<{ spec: CloudSpec; sprite: THREE.Sprite; material: THREE.SpriteMaterial }> = [];
+
+  if (cloudSprite) {
+    for (const spec of cloudSpecs) {
+      // One material per puff: each carries its own opacity, both for its depth-fade
+      // and because the scroll fade multiplies in per frame.
+      const material = new THREE.SpriteMaterial({
+        map: cloudSprite,
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+      });
+      const sprite = new THREE.Sprite(material);
+      sprite.position.set(spec.x, spec.y, spec.z);
+      sprite.scale.set(spec.scale, spec.scale * 0.48, 1);
+      air.add(sprite);
+      clouds.push({ spec, sprite, material });
+      materials.push(material);
+    }
+  }
+
+  /**
+   * A second kite, far away among the clouds: the same four sail extrusions — spar gaps
+   * and all, so it is unmistakably the mark — flattened to one hazy silhouette colour.
+   * It rides the wind's clock across the sky the way the clouds do, with its own little
+   * bob and yaw. A speck with a story: this is a sky where other kites fly.
+   */
+  const distantMaterial = new THREE.MeshBasicMaterial({
+    color: 0xc2c9d6,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    // The mini kite yaws past edge-on; single-sided its sails would blink out mid-turn.
+    side: THREE.DoubleSide,
+  });
+  materials.push(distantMaterial);
+
+  const distantKite = new THREE.Group();
+  for (const sail of sailMeshes) {
+    const mini = new THREE.Mesh(sail.geometry, distantMaterial);
+    mini.rotation.copy(sail.rotation);
+    distantKite.add(mini);
+  }
+  distantKite.scale.setScalar(0.26);
+  distantKite.position.set(0, 2.1, -7);
+  air.add(distantKite);
+
+  /** Where the distant kite starts its crossing, and how fast the wind carries it.
+   *  Starts left of the hero kite so a first visit sees it in open sky within seconds. */
+  const DISTANT_START_X = 0;
+  const DISTANT_SPEED = 0.42;
+
+  /**
+   * Advance the air for time `t`. Everything is computed from `t` alone — no integrated
+   * state — so the reduced-motion still lands on the exact same frame every load, and a
+   * background tab that skipped rendering picks up exactly where the clock says.
+   * `visibility` is the scroll fade, folded in here because the swooshes already own
+   * their opacity for the fade-in/fade-out of each crossing.
+   */
+  function updateAir(t: number, visibility: number): void {
+    for (const streak of streaks) {
+      const { spec, mesh, material } = streak;
+      const cycle = ((t / spec.period + spec.phase) % 1 + 1) % 1;
+      // 0.5 → -0.5: right edge to left, downwind.
+      mesh.position.x = (0.5 - cycle) * STREAK_TRAVEL;
+      mesh.position.y = spec.y + Math.sin(t * 0.5 + spec.phase * 9) * 0.07;
+      // sin^1.6 window: born faint, brightest mid-frame, gone before the edge.
+      material.opacity = spec.opacity * Math.pow(Math.sin(Math.PI * cycle), 1.6) * visibility;
+    }
+
+    for (let i = 0; i < MOTE_COUNT; i++) {
+      const j = i * 3;
+      const k = i * 4;
+      const raw = moteBase[j] - moteParams[k] * t;
+      const half = MOTE_WRAP / 2;
+      const x = ((((raw + half) % MOTE_WRAP) + MOTE_WRAP) % MOTE_WRAP) - half;
+      const y = moteBase[j + 1] + Math.sin(t * moteParams[k + 2] + moteParams[k + 3]) * moteParams[k + 1];
+      motePosition.setXYZ(i, x, y, moteBase[j + 2]);
+    }
+    motePosition.needsUpdate = true;
+    moteMaterial.opacity = MOTE_OPACITY * visibility;
+
+    for (const cloud of clouds) {
+      const { spec, sprite, material } = cloud;
+      const half = CLOUD_WRAP / 2;
+      const raw = spec.x - spec.speed * t;
+      sprite.position.x = ((((raw + half) % CLOUD_WRAP) + CLOUD_WRAP) % CLOUD_WRAP) - half;
+      material.opacity = spec.opacity * visibility;
+    }
+
+    {
+      const half = CLOUD_WRAP / 2;
+      const raw = DISTANT_START_X - DISTANT_SPEED * t;
+      distantKite.position.x = ((((raw + half) % CLOUD_WRAP) + CLOUD_WRAP) % CLOUD_WRAP) - half;
+      distantKite.position.y = 2.1 + Math.sin(t * 0.4) * 0.16;
+      distantKite.rotation.z = -0.14 + Math.sin(t * 0.5 + 1.0) * 0.1;
+      distantKite.rotation.y = Math.sin(t * 0.33) * 0.5;
+      distantMaterial.opacity = 0.9 * visibility;
+    }
+  }
 
   // --- light ----------------------------------------------------------------------------
 
@@ -474,6 +896,12 @@ export function initScene(canvas: HTMLCanvasElement): { setScroll(p: number): vo
   fill.position.set(5, 1.5, 4);
   scene.add(fill);
 
+  // A cool rim from behind-right: when the yaw swings the lit faces away from the key,
+  // this keeps a bright hairline on the sail's edge so it separates from its own shadow.
+  const rim = new THREE.DirectionalLight(0xe9eef8, 0.55);
+  rim.position.set(3.5, 2.2, -4.5);
+  scene.add(rim);
+
   const hemi = new THREE.HemisphereLight(0xffffff, 0xc8cdd8, 1.1);
   scene.add(hemi);
 
@@ -486,6 +914,26 @@ export function initScene(canvas: HTMLCanvasElement): { setScroll(p: number): vo
   let rafId = 0;
   let inView = true;
   let scroll = 0;
+  /** The scroll fade, cached for the air: its materials animate their own opacity per
+   *  frame, so they multiply this in rather than being written to from applyScroll. */
+  let sceneOpacity = 1;
+  /** Camera distance chosen by resize(); the frame loop breathes around it. */
+  let cameraZ = BASE_CAMERA_Z;
+  /**
+   * The wind's own clock. Advances at 1× normally and faster while a gust or the swoop
+   * is live, so cloth, swooshes, motes and clouds all genuinely speed up together.
+   * Starts at the static pose so the reduced-motion still (delta 0 forever) matches it.
+   */
+  let windTime = STATIC_POSE_TIME;
+  /** Click impulse, 0..~1.6, decaying exponentially. Fed by onPointerDown below. */
+  let gust = 0;
+
+  /** How long between swoops, how long one lasts, and where in the cycle it starts.
+   *  The start offset keeps STATIC_POSE_TIME (1.6s) safely outside the window, so the
+   *  reduced-motion still is the calm pose, never mid-manoeuvre. */
+  const SWOOP_PERIOD = 19;
+  const SWOOP_START = 6;
+  const SWOOP_LENGTH = 3.4;
 
   const pointerTarget = { x: 0, y: 0 };
   const pointer = { x: 0, y: 0 };
@@ -509,6 +957,7 @@ export function initScene(canvas: HTMLCanvasElement): { setScroll(p: number): vo
     root.scale.setScalar(layout.scale);
 
     const opacity = 1 - smoothstep(0.15, 0.85, scroll);
+    sceneOpacity = opacity;
     for (const material of fadeables) {
       material.opacity = opacity;
       material.transparent = opacity < 1;
@@ -516,6 +965,7 @@ export function initScene(canvas: HTMLCanvasElement): { setScroll(p: number): vo
     groundMaterial.opacity = GROUND_SHADOW_OPACITY * opacity;
     root.visible = opacity > 0.002;
     ground.visible = root.visible;
+    air.visible = root.visible;
   }
 
   function renderFrame(elapsed: number, delta: number): void {
@@ -525,6 +975,20 @@ export function initScene(canvas: HTMLCanvasElement): { setScroll(p: number): vo
     pointer.x += (pointerTarget.x - pointer.x) * ease;
     pointer.y += (pointerTarget.y - pointer.y) * ease;
 
+    /**
+     * The swoop: every SWOOP_PERIOD seconds the kite allows itself one manoeuvre — it
+     * slides downwind, dips, banks into the dive and climbs back out. `w` walks 0→1
+     * through the window; the shapes below are sine windows so entry and exit are silent.
+     */
+    const cyclePhase = ((elapsed % SWOOP_PERIOD) + SWOOP_PERIOD) % SWOOP_PERIOD;
+    const w = (cyclePhase - SWOOP_START) / SWOOP_LENGTH;
+    const swoop = w > 0 && w < 1 ? Math.sin(Math.PI * w) : 0;
+
+    // The gust decays on its own; while either is live the wind's clock runs fast, which
+    // is what whips the tails, the line, the swooshes, the dust and the clouds at once.
+    gust *= Math.exp(-1.6 * delta);
+    windTime += delta * (1 + gust * 2.2 + swoop * 0.9);
+
     // Buoyancy: two detuned sines so the bob never lands on an obvious period.
     kite.position.y = Math.sin(elapsed * 0.55) * 0.12 + Math.sin(elapsed * 0.31 + 1.3) * 0.06;
     kite.position.x = Math.sin(elapsed * 0.24 + 0.6) * 0.09;
@@ -532,16 +996,36 @@ export function initScene(canvas: HTMLCanvasElement): { setScroll(p: number): vo
     kite.rotation.z = Math.sin(elapsed * 0.19 + 0.7) * 0.1;
     kite.rotation.x = -0.1 + Math.sin(elapsed * 0.27) * 0.05;
 
+    // Manoeuvre and gust, stacked on top of the idle pose rather than replacing it.
+    // The swoop slides away from the copy (+X, off-frame side); sin(2πw) dips it first,
+    // then lifts it past level on the way back — a dive and a recovering climb.
+    if (swoop > 0) {
+      kite.position.x += swoop * 0.55;
+      kite.position.y -= Math.sin(Math.PI * 2 * w) * 0.34;
+      kite.rotation.z += swoop * 0.3;
+      kite.rotation.y -= swoop * 0.18;
+    }
+    if (gust > 0.01) {
+      kite.position.y += gust * 0.26;
+      kite.rotation.z += gust * 0.12;
+    }
+
     // The ribbons swing on the same yaw, phase-shifted, so they always look like they are
-    // catching up with the kite rather than welded to it.
-    tailPivot.rotation.z = -Math.sin(elapsed * 0.23 - 0.6) * 0.22;
+    // catching up with the kite rather than welded to it. The swoop adds its own lash.
+    tailPivot.rotation.z = -Math.sin(elapsed * 0.23 - 0.6) * 0.22 - swoop * 0.28;
     tailPivot.rotation.x = Math.sin(elapsed * 0.41 + 0.2) * 0.1;
 
-    // The wave itself, rebuilt from scratch every frame.
-    updateRibbons(elapsed);
+    // The cloth and the air run on the wind's clock, not the wall clock.
+    updateRibbons(windTime);
+    // The flying line leans with a slow wander plus a trace of the pointer, so it lags
+    // the kite the way the tails do rather than swinging rigidly with it.
+    updateLine(windTime, Math.sin(elapsed * 0.32) * 0.05 + pointer.x * 0.07 - swoop * 0.1);
+    updateAir(windTime, sceneOpacity);
 
     camera.position.x = pointer.x * 0.55;
     camera.position.y = BASE_CAMERA_Y + pointer.y * 0.3;
+    // A breath of dolly — slow enough to be felt as air pressure, never seen as zoom.
+    camera.position.z = cameraZ + Math.sin(elapsed * 0.14) * 0.06;
     camera.lookAt(lookTarget);
 
     renderer.render(scene, camera);
@@ -574,7 +1058,8 @@ export function initScene(canvas: HTMLCanvasElement): { setScroll(p: number): vo
     camera.aspect = aspect;
     // Narrow viewports pull the camera back so the kite and its tails stay in frame.
     const fit = aspect < 1.15 ? Math.min(1.15 / Math.max(aspect, 0.5), 1.6) : 1;
-    camera.position.z = BASE_CAMERA_Z * fit;
+    cameraZ = BASE_CAMERA_Z * fit;
+    camera.position.z = cameraZ;
     camera.updateProjectionMatrix();
     camera.lookAt(lookTarget);
 
@@ -621,6 +1106,28 @@ export function initScene(canvas: HTMLCanvasElement): { setScroll(p: number): vo
     pointerTarget.y = -((event.clientY / window.innerHeight) * 2 - 1);
   }
 
+  /** A press anywhere in the hero kicks the wind up. Capped so mashing cannot wind it
+   *  into a tornado — the second click during a gust tops it up, no further. */
+  function onPointerDown(event: PointerEvent): void {
+    const target = event.target;
+    if (target instanceof Element && !target.closest('#hero')) return;
+    gust = Math.min(gust + 1, 1.6);
+  }
+
+  /**
+   * Touch devices have no hover, so the parallax would be dead there: feed it from the
+   * device's tilt instead. Centred on holding the phone at a natural ~40° pitch. On iOS
+   * this listener stays silent until the site is granted motion access — it degrades to
+   * the still scene, which is fine; requesting permission with a dialog is not worth it.
+   */
+  function onOrientation(event: DeviceOrientationEvent): void {
+    if (event.gamma == null || event.beta == null) return;
+    pointerTarget.x = Math.max(-1, Math.min(1, event.gamma / 24));
+    pointerTarget.y = Math.max(-1, Math.min(1, (40 - event.beta) / 28));
+  }
+
+  const coarseInput = window.matchMedia('(hover: none)').matches;
+
   // --- start ----------------------------------------------------------------------------
 
   resize();
@@ -632,6 +1139,10 @@ export function initScene(canvas: HTMLCanvasElement): { setScroll(p: number): vo
     renderFrame(STATIC_POSE_TIME, 0);
   } else {
     window.addEventListener('pointermove', onPointerMove, { passive: true });
+    window.addEventListener('pointerdown', onPointerDown, { passive: true });
+    if (coarseInput && 'DeviceOrientationEvent' in window) {
+      window.addEventListener('deviceorientation', onOrientation, { passive: true });
+    }
     rafId = requestAnimationFrame(tick);
   }
 
@@ -650,14 +1161,19 @@ export function initScene(canvas: HTMLCanvasElement): { setScroll(p: number): vo
       resizeObserver.disconnect();
       viewObserver.disconnect();
       window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('deviceorientation', onOrientation);
 
       scene.clear();
       // Lights own render targets too — the key light's shadow map is not small.
       key.dispose();
       fill.dispose();
+      rim.dispose();
       hemi.dispose();
       for (const geometry of geometries) geometry.dispose();
       for (const material of materials) material.dispose();
+      moteSprite?.dispose();
+      cloudSprite?.dispose();
       environment?.dispose();
       scene.environment = null;
       renderer.dispose();
