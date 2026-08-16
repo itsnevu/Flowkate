@@ -6,6 +6,7 @@ import {
   getDefaultDisplayNameFromProviderId,
   getDefaultProviderConfig,
   seedAgentModelsFromProvider,
+  checkProviderKey,
 } from '@extension/storage';
 import { t } from '@extension/i18n';
 import { maxCustomProviderNumber, sortProviderEntries } from './helpers';
@@ -365,6 +366,15 @@ export const useProviderConfigs = (onAgentModelsSeeded?: () => void) => {
         // Use existing modelNames from state, or default if somehow missing
         configToSave.modelNames =
           providers[provider].modelNames || llmProviderModelNames[provider as keyof typeof llmProviderModelNames] || [];
+      }
+
+      // Ask the provider whether it accepts these credentials before storing them. Only an
+      // outright rejection stops the save: an unreachable or unprobeable endpoint answers
+      // `unknown`, and refusing on that would block perfectly good self-hosted setups.
+      const verdict = await checkProviderKey(configToSave as ProviderConfig);
+      if (verdict === 'rejected') {
+        alert(t('options_models_providers_errors_keyRejected', getDefaultDisplayNameFromProviderId(provider)));
+        return;
       }
 
       // Pass the cleaned config to setProvider

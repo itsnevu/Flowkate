@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { t } from '@extension/i18n';
 import {
   agentModelStore,
+  checkProviderKey,
   getDefaultDisplayNameFromProviderId,
   getDefaultProviderConfig,
   llmProviderStore,
@@ -43,6 +44,7 @@ const SetupGuide = ({ onConfigured }: { onConfigured: () => void }) => {
   const [apiKey, setApiKey] = useState('');
   const [baseUrl, setBaseUrl] = useState('http://localhost:11434');
   const [saving, setSaving] = useState(false);
+  const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isOllama = providerId === ProviderTypeEnum.Ollama;
@@ -70,6 +72,25 @@ const SetupGuide = ({ onConfigured }: { onConfigured: () => void }) => {
         config.baseUrl = baseUrl.trim();
       } else {
         config.apiKey = apiKey.trim();
+      }
+
+      // Ask the provider before storing anything. Without this, a mistyped key is only
+      // discovered by the first task, mid-run, as a model error - after a plan the user
+      // already approved. Only an outright rejection stops the save: `unknown` covers a
+      // provider being down or unprobeable, which is no reason to refuse what they typed.
+      // Ollama is the exception: there is no key to reject, so the meaningful failure is
+      // "nothing answered", and that is also what the agent would hit later. Its probe has to
+      // pass outright, which is fair because it is local and a minute to fix.
+      setChecking(true);
+      const verdict = await checkProviderKey(config);
+      setChecking(false);
+      if (verdict === 'rejected' || (isOllama && verdict !== 'valid')) {
+        setError(
+          isOllama
+            ? t('welcome_errors_ollamaUnreachable')
+            : t('welcome_errors_keyRejected', getDefaultDisplayNameFromProviderId(providerId)),
+        );
+        return;
       }
 
       await llmProviderStore.setProvider(providerId, config);
@@ -167,7 +188,7 @@ const SetupGuide = ({ onConfigured }: { onConfigured: () => void }) => {
             type="submit"
             disabled={saving}
             className="w-full rounded-soft bg-graphite px-5 py-2.5 text-sm font-medium text-graphite-50 shadow-key transition-all duration-150 ease-press hover:bg-graphite-hover active:translate-y-px active:bg-graphite-active active:shadow-key-pressed disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none">
-            {saving ? t('welcome_saving') : t('welcome_start')}
+            {checking ? t('welcome_checking') : saving ? t('welcome_saving') : t('welcome_start')}
           </button>
         </form>
 

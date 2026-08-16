@@ -67,6 +67,21 @@
   "welcome_saving": {
     "message": "Salvando"
   },
+  "welcome_checking": {
+    "message": "Verificando a chave"
+  },
+  "welcome_errors_keyRejected": {
+    "message": "A $PROVIDER$ recusou essa chave. Nada foi salvo.",
+    "placeholders": {
+      "provider": {
+        "content": "$1",
+        "example": "OpenAI"
+      }
+    }
+  },
+  "welcome_errors_ollamaUnreachable": {
+    "message": "Nada respondeu nesse endereço. Verifique se o Ollama está rodando e foi iniciado com acesso pelo navegador liberado."
+  },
   "welcome_errors_apiKeyRequired": {
     "message": "Este provedor precisa de uma chave de API."
   },
@@ -670,6 +685,15 @@
       "provider": {
         "content": "$1",
         "example": "Custom OpenAI"
+      }
+    }
+  },
+  "options_models_providers_errors_keyRejected": {
+    "message": "A $PROVIDER$ recusou essa chave, então nada foi salvo. Confira e tente de novo.",
+    "placeholders": {
+      "provider": {
+        "content": "$1",
+        "example": "OpenAI"
       }
     }
   },

@@ -67,6 +67,21 @@
   "welcome_saving": {
     "message": "Saving"
   },
+  "welcome_checking": {
+    "message": "Checking the key"
+  },
+  "welcome_errors_keyRejected": {
+    "message": "$PROVIDER$ rejected that key. Nothing was saved.",
+    "placeholders": {
+      "provider": {
+        "content": "$1",
+        "example": "OpenAI"
+      }
+    }
+  },
+  "welcome_errors_ollamaUnreachable": {
+    "message": "Nothing answered at that address. Check Ollama is running and was started with browser access allowed."
+  },
   "welcome_errors_apiKeyRequired": {
     "message": "This provider needs an API key."
   },
@@ -670,6 +685,15 @@
       "provider": {
         "content": "$1",
         "example": "Custom OpenAI"
+      }
+    }
+  },
+  "options_models_providers_errors_keyRejected": {
+    "message": "$PROVIDER$ rejected that key, so nothing was saved. Check it and try again.",
+    "placeholders": {
+      "provider": {
+        "content": "$1",
+        "example": "OpenAI"
       }
     }
   },

@@ -67,6 +67,21 @@
   "welcome_saving": {
     "message": "儲存中"
   },
+  "welcome_checking": {
+    "message": "正在驗證金鑰"
+  },
+  "welcome_errors_keyRejected": {
+    "message": "$PROVIDER$ 拒絕了這組金鑰，沒有儲存任何內容。",
+    "placeholders": {
+      "provider": {
+        "content": "$1",
+        "example": "OpenAI"
+      }
+    }
+  },
+  "welcome_errors_ollamaUnreachable": {
+    "message": "該位址沒有任何回應。請確認 Ollama 正在執行，且以允許瀏覽器存取的方式啟動。"
+  },
   "welcome_errors_apiKeyRequired": {
     "message": "這個服務商需要 API 金鑰。"
   },
@@ -670,6 +685,15 @@
       "provider": {
         "content": "$1",
         "example": "Custom OpenAI"
+      }
+    }
+  },
+  "options_models_providers_errors_keyRejected": {
+    "message": "$PROVIDER$ 拒絕了這組金鑰，因此沒有儲存任何內容。請確認後再試一次。",
+    "placeholders": {
+      "provider": {
+        "content": "$1",
+        "example": "OpenAI"
       }
     }
   },
