@@ -1,6 +1,6 @@
 # Chrome Web Store listing copy
 
-Paste-ready text for the Developer Dashboard, for version 0.2.0. Field names below match the
+Paste-ready text for the Developer Dashboard, for version 0.3.0. Field names below match the
 dashboard's own. The per-permission justifications live in [PERMISSIONS.md](PERMISSIONS.md); this
 file is everything else the submission form asks for.
 
@@ -49,6 +49,10 @@ There is no Flowkite account, no Flowkite server, and no subscription. Your API 
 locally and talks straight to the provider it belongs to. The only cost is your own usage bill
 with whichever model provider you choose.
 
+Setup is one step. Open the panel, pick a provider, paste your key, and it checks the key with
+that provider before storing it, so a typo is caught there and then rather than halfway through
+your first task. Pick Ollama instead and there is no key and no bill at all.
+
 HOW IT WORKS
 
 Two agents split the work. A Planner decides the approach and shows it to you for approval. A
@@ -73,7 +77,8 @@ WHAT IT CAN DO
   group so they never get confused with yours.
 • Extract content into a real table and copy it as CSV.
 • Reusable task templates with fill-in-the-blank slots.
-• "Ask Flowkite" on the right-click menu, for the page or your text selection.
+• "Ask Flowkite" on the right-click menu, for the page or your text selection, and Alt+Shift+F
+  to open the panel from the keyboard.
 • Scheduled daily tasks that run unattended and notify you when they finish. Sensitive actions
   are automatically declined during those runs, because nobody is there to answer.
 • An optional outbound webhook to one URL you choose, off by default.
