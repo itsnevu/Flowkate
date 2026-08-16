@@ -1116,8 +1116,22 @@ export function initScene(canvas: HTMLCanvasElement): { setScroll(p: number): vo
    * Starts at the static pose so the reduced-motion still (delta 0 forever) matches it.
    */
   let windTime = STATIC_POSE_TIME;
-  /** Click impulse, 0..~1.6, decaying exponentially. Fed by onPointerDown below. */
+  /**
+   * The click impulse, in two parts.
+   *
+   * `gustEnergy` is what a click deposits and what decays on its own. `gust` is what the
+   * frame actually reads, and it only ever *chases* the energy. The split is the whole
+   * point: driving the kite straight from the deposited value moved it a fifth of its
+   * own height between one frame and the next, which does not read as a gust of wind at
+   * all — it reads as the kite teleporting.
+   */
+  let gustEnergy = 0;
   let gust = 0;
+
+  /** How fast the sail answers a gust. ~70ms to nearly full: a snap, but a drawn one. */
+  const GUST_ATTACK = 14;
+  /** How fast a deposited gust dies away. */
+  const GUST_DECAY = 2.6;
 
   /** How long between swoops, how long one lasts, and where in the cycle it starts.
    *  The start offset keeps STATIC_POSE_TIME (1.6s) safely outside the window, so the
@@ -1177,8 +1191,12 @@ export function initScene(canvas: HTMLCanvasElement): { setScroll(p: number): vo
 
     // The gust decays on its own; while either is live the wind's clock runs fast, which
     // is what whips the tails, the line, the swooshes, the dust and the clouds at once.
-    gust *= Math.exp(-1.6 * delta);
-    windTime += delta * (1 + gust * 2.2 + swoop * 0.9);
+    gustEnergy *= Math.exp(-GUST_DECAY * delta);
+    // Frame-rate independent chase, so the rise is the same on 60Hz and 120Hz.
+    gust += (gustEnergy - gust) * (1 - Math.exp(-GUST_ATTACK * delta));
+    // 1.2×, not 2.2×: at the old rate the travelling wave along the tails advanced far
+    // enough between frames to break up, and torn cloth reads as a rendering fault.
+    windTime += delta * (1 + gust * 1.2 + swoop * 0.9);
 
     // Buoyancy: two detuned sines so the bob never lands on an obvious period.
     kite.position.y = Math.sin(elapsed * 0.55) * 0.12 + Math.sin(elapsed * 0.31 + 1.3) * 0.06;
@@ -1196,9 +1214,13 @@ export function initScene(canvas: HTMLCanvasElement): { setScroll(p: number): vo
       kite.rotation.z += swoop * 0.3;
       kite.rotation.y -= swoop * 0.18;
     }
-    if (gust > 0.01) {
-      kite.position.y += gust * 0.26;
-      kite.rotation.z += gust * 0.12;
+    if (gust > 0.001) {
+      // Roughly half the old throw. A gust should lift the kite, not launch it: the
+      // previous amount carried it clear of its own resting frame on a single click.
+      kite.position.y += gust * 0.14;
+      kite.position.x += gust * 0.05;
+      kite.rotation.z += gust * 0.07;
+      kite.rotation.x -= gust * 0.05;
     }
 
     // The ribbons swing on the same yaw, phase-shifted, so they always look like they are
@@ -1297,12 +1319,21 @@ export function initScene(canvas: HTMLCanvasElement): { setScroll(p: number): vo
     pointerTarget.y = -((event.clientY / window.innerHeight) * 2 - 1);
   }
 
-  /** A press anywhere in the hero kicks the wind up. Capped so mashing cannot wind it
-   *  into a tornado — the second click during a gust tops it up, no further. */
+  /**
+   * A press on the hero's empty air kicks the wind up.
+   *
+   * Not on its controls, though: someone pressing "View on GitHub" is aiming at a button,
+   * and having the backdrop lurch under their cursor at that moment reads as the page
+   * malfunctioning rather than as a scene that answers to them.
+   *
+   * The cap is on the deposited energy, so mashing saturates instead of accumulating.
+   */
   function onPointerDown(event: PointerEvent): void {
     const target = event.target;
-    if (target instanceof Element && !target.closest('#hero')) return;
-    gust = Math.min(gust + 1, 1.6);
+    if (!(target instanceof Element)) return;
+    if (!target.closest('#hero')) return;
+    if (target.closest('a, button, summary, input, textarea, select, [role="button"]')) return;
+    gustEnergy = Math.min(gustEnergy + 0.55, 1);
   }
 
   /**
