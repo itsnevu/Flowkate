@@ -62,7 +62,7 @@ Independent lookups — the same product across three shops — run concurrently
 
 ### From a release
 
-1. Download `flowkite.zip` from the [releases page](https://github.com/itsnevu/Flowkite/releases) and unzip it.
+1. Download `flowkite-<version>.zip` from the [releases page](https://github.com/itsnevu/Flowkite/releases) and unzip it.
 2. Open `chrome://extensions/`, turn on **Developer mode** (top right).
 3. Click **Load unpacked** and select the unzipped folder.
 
@@ -91,7 +91,9 @@ pnpm zip            # build and package into a distributable zip
 
 ## Set up your models
 
-Open the side panel, click the settings icon, add your API keys, then assign a model to each role.
+Open the side panel — the toolbar icon, or **Alt+Shift+F** — then pick a provider, paste your key and press **Save and start**. The key is checked with the provider before anything is stored, so a typo is caught there instead of halfway through your first task. Choose **Ollama** and there is no key at all, only the address it listens on.
+
+That is the whole setup. Saving your first provider points the Planner and Navigator at its flagship model, and the Fast agent at its cheap tier when the provider has one. **Options → Models** is where you change any of that, add more providers, or tune sampling per role — and it never overrides a model you picked yourself.
 
 | Role | What it does | Required |
 | --- | --- | --- |
@@ -109,8 +111,8 @@ Open the side panel, click the settings icon, add your API keys, then assign a m
 
 **Cheapest that still works**
 
-- Planner: Claude Haiku 4.5 or GPT-4o
-- Navigator: Gemini 2.5 Flash or GPT-4o-mini
+- Planner: Claude Haiku 4.5 or GPT-5 mini
+- Navigator: Gemini 2.5 Flash or GPT-4.1 mini
 - Fast: same as Navigator
 
 Expect more iterations on complex tasks with the cheaper setup.
@@ -123,7 +125,15 @@ Supported providers: OpenAI, Anthropic, Gemini, DeepSeek, Grok, Groq, Cerebras, 
 
 **Options → Firewall** takes an allow list and a deny list, enforced before every navigation — including inside parallel subtasks. If there is a site you never want an agent on, put it in the deny list.
 
-**Options → General** holds the two safety switches (plan approval, sensitive-action confirmation). Both default to on. Turning them off is your call to make, but that is what they are protecting you from.
+**Approval mode** is picked in the composer, per task, and there are three of them:
+
+| Mode | What it gates |
+| --- | --- |
+| **Planner** (default) | The first plan of a task, plus every sensitive action |
+| **Manual** | Every action that touches a page, navigation included |
+| **Auto** | Nothing at all, including before money and credentials |
+
+Switching to Auto takes an acknowledgement that spells out what it turns off — it is your call to make, but not one to make by accident. The mode in force is shown in **Options → General**.
 
 It also holds the knobs that decide how hard the agent works before it gives up:
 
