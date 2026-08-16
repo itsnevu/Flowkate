@@ -2011,7 +2011,10 @@ html.js .chips.reveal.is-visible .chip {
   font-weight: 620;
 }
 
-.doc a {
+/* Prose links only. `:not(.key)` is load-bearing: a bare `.doc a` outweighs
+   `.key` on specificity, so it repainted the graphite buttons in body ink and
+   left them dark text on a dark slab. */
+.doc a:not(.key) {
   color: var(--ink);
   text-decoration: underline;
   text-underline-offset: 0.2em;
@@ -2019,7 +2022,7 @@ html.js .chips.reveal.is-visible .chip {
   transition: text-decoration-color 0.15s var(--ease-press);
 }
 
-.doc a:hover {
+.doc a:not(.key):hover {
   text-decoration-color: currentcolor;
 }
 
@@ -2062,9 +2065,4 @@ html.js .chips.reveal.is-visible .chip {
   flex-wrap: wrap;
   gap: 0.9rem;
   margin-top: clamp(2.5rem, 5vw, 3.5rem);
-}
-
-/* The keys are the site's, but they carry the doc link underline otherwise. */
-.doc__actions .key {
-  text-decoration: none;
 }
