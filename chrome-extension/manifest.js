@@ -89,6 +89,18 @@ const manifest = withOperaSidebar(
         'notifications',
       ],
       options_page: 'options/index.html',
+      commands: {
+        /**
+         * Opening the panel was mouse-only: the toolbar icon, or the right-click menu. The
+         * shortcut is user-rebindable at chrome://extensions/shortcuts, and Chrome silently
+         * drops the suggested binding if another extension already holds it, so the command
+         * still works from that page even when this default does not stick.
+         */
+        'open-side-panel': {
+          suggested_key: { default: 'Alt+Shift+F' },
+          description: '__MSG_app_commands_openPanel__',
+        },
+      },
       background: {
         service_worker: 'background.iife.js',
         type: 'module',

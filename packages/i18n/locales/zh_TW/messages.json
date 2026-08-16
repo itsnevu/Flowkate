@@ -7,6 +7,10 @@
     "description": "Extension name",
     "message": "Flowkite：AI 網頁代理程式與自動化"
   },
+  "app_commands_openPanel": {
+    "description": "Keyboard shortcut listed at chrome://extensions/shortcuts",
+    "message": "開啟 Flowkite 面板"
+  },
   "errors_unknown": {
     "message": "發生未知錯誤"
   },

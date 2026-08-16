@@ -7,6 +7,10 @@
     "description": "Extension name",
     "message": "Flowkite: AI Web Agent & Automation"
   },
+  "app_commands_openPanel": {
+    "description": "Keyboard shortcut listed at chrome://extensions/shortcuts",
+    "message": "Open the Flowkite panel"
+  },
   "errors_unknown": {
     "message": "Unknown error occurred"
   },

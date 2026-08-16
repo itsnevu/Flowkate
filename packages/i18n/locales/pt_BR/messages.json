@@ -7,6 +7,10 @@
     "description": "Nome da extensão",
     "message": "Flowkite: Agente Web de IA e Automação"
   },
+  "app_commands_openPanel": {
+    "description": "Atalho de teclado listado em chrome://extensions/shortcuts",
+    "message": "Abrir o painel do Flowkite"
+  },
   "errors_unknown": {
     "message": "Ocorreu um erro desconhecido"
   },

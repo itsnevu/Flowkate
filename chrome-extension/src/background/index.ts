@@ -84,6 +84,24 @@ function readApprovalMode(value: unknown): ApprovalMode | undefined {
 // Setup side panel behavior
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(error => console.error(error));
 
+/**
+ * Keyboard shortcut for the panel.
+ *
+ * `sidePanel.open()` needs a user gesture and a keyboard command counts as one, which is why
+ * this opens the panel directly rather than going through the action. Optional-chained because
+ * neither namespace exists in a Firefox build.
+ */
+chrome.commands?.onCommand.addListener(async command => {
+  if (command !== 'open-side-panel') return;
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab?.windowId === undefined) return;
+    await chrome.sidePanel?.open({ windowId: tab.windowId });
+  } catch (error) {
+    logger.error('Failed to open the side panel from the keyboard shortcut', error);
+  }
+});
+
 /* -------------------------------------------------------------------------- */
 /* Context menu: start a task from the page under the cursor                   */
 /* -------------------------------------------------------------------------- */
