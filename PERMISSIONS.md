@@ -67,6 +67,25 @@ called by `navigateTo` and `openTab`; lists come from `firewallStore`.
 
 ---
 
+## `tabGroups`
+
+**Justification for the listing:**
+
+> Every tab the agent opens for a task is collected into one labelled Chrome tab group, so a tab
+> opened by the extension is immediately distinguishable from the user's own — which matters when the
+> agent is working unattended on a schedule. The group's title carries the task's status. The
+> permission is used only to create that group and set its title and colour; no tab outside the
+> running task is ever grouped or read through it.
+
+**Where it is used:** [`browser/tabGroup.ts`](chrome-extension/src/background/browser/tabGroup.ts) —
+`chrome.tabs.group` to collect the task's tabs, `chrome.tabGroups.update` for the title and colour.
+
+Note for the Firefox/other-store case: the permission is added conditionally in
+[`manifest.js`](chrome-extension/manifest.js) (`withTabGroups`), because Firefox implements neither
+`tabs.group` nor the `tabGroups` namespace and rejects the permission at install time.
+
+---
+
 ## `scripting`
 
 **Justification for the listing:**
@@ -186,10 +205,29 @@ Declare in the dashboard's data-use section:
   (Options → General → Outbound webhook, off by default), each finished task's outcome text is
   POSTed to the single URL the user entered — HTTPS anywhere, plain HTTP only to localhost.
 - **Location, health, financial, personal communications, web history, user activity** — not
-  collected.
+  collected. See the analytics note below before re-certifying this line on a future upload.
 
 Certify: data is not sold to third parties; data is not used or transferred for purposes unrelated to
 the item's single purpose; data is not used to determine creditworthiness or for lending.
+
+### Analytics — true for the published build, and conditional
+
+The package contains an optional PostHog client
+([`services/analytics.ts`](chrome-extension/src/background/services/analytics.ts)). It reads its key
+from `VITE_POSTHOG_API_KEY` at **build** time and disables itself when that variable is absent. No
+`.env.local` exists in the repository, so the released build carries no key: `init()` bails at the
+key check and nothing is ever sent. That is what makes the "not collected" answers above accurate for
+the uploaded package.
+
+This is worth stating plainly because two things about it are easy to get wrong later:
+
+- The user-facing setting (Options → Analytics) defaults to **on** —
+  [`analyticsSettings.ts`](packages/storage/lib/settings/analyticsSettings.ts) — so the switch is not
+  what keeps the release silent; the missing key is.
+- Were a key ever baked into a build, the events sent would include `domain_visited`, carrying the
+  hostname of each site the agent navigated to. That is squarely **web history / user activity**, and
+  both the disclosure above and the Privacy tab's answers would have to change to match, on that
+  upload and every one after it.
 
 ## Single purpose statement
 
