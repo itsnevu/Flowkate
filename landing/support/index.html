@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Support · Flowkite</title>
+    <meta
+      name="description"
+      content="Where to get help with Flowkite, and fixes for the things that go wrong most often: a rejected API key, Ollama refusing the browser, the debugging banner, and updating a sideloaded build." />
+    <link rel="canonical" href="https://flowkite.vercel.app/support/" />
+
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#eef0f4" />
+    <link rel="icon" href="/favicon-16.png" type="image/png" sizes="16x16" />
+    <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="256x256" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+
+  <!--
+    Like 404.html, deliberately no main.ts: nothing here reveals, scrolls in a
+    controlled way, or needs a renderer. A support page is the one page that has
+    to load when everything else is going wrong.
+  -->
+  <body>
+    <main class="doc">
+      <div class="container container--narrow">
+        <a class="doc__back" href="/">← Flowkite</a>
+
+        <p class="eyebrow">Support</p>
+        <h1 class="doc__title">Something not working?</h1>
+        <p class="lede">
+          Flowkite has no support desk, because it has no company behind it. What it has is a public issue tracker where
+          the maintainer and other users answer, and a short list of the things that go wrong most often.
+        </p>
+
+        <h2>Where to ask</h2>
+        <ul class="doc__list">
+          <li>
+            <strong>A question, or an idea</strong> —
+            <a href="https://github.com/itsnevu/Flowkite/discussions" rel="noopener noreferrer">Discussions</a>. Best
+            place to start if you are not sure whether something is broken or just unfamiliar.
+          </li>
+          <li>
+            <strong>Something is broken</strong> —
+            <a href="https://github.com/itsnevu/Flowkite/issues" rel="noopener noreferrer">Issues</a>. Include your
+            browser version, which model provider you use, and what the side panel said. Never paste your API key.
+          </li>
+          <li>
+            <strong>A security problem</strong> — follow
+            <a href="https://github.com/itsnevu/Flowkite/blob/main/SECURITY.md" rel="noopener noreferrer"
+              >SECURITY.md</a
+            >
+            rather than opening a public issue.
+          </li>
+        </ul>
+
+        <h2>The usual suspects</h2>
+
+        <h3>"OpenAI rejected that key"</h3>
+        <p>
+          The key is checked with your provider before it is stored, so this message means the provider itself said no,
+          not that Flowkite mis-read it. Copy the key again from your provider's dashboard: the common causes are a
+          missing character at either end, a key that was revoked, or a project key pasted into a different account.
+        </p>
+
+        <h3>Ollama: "nothing answered at that address"</h3>
+        <p>
+          Ollama refuses requests from browser extensions until you tell it they are welcome. Start it with the
+          extension's origin allowed:
+        </p>
+        <pre class="doc__code"><code>OLLAMA_ORIGINS="chrome-extension://*" ollama serve</code></pre>
+        <p>
+          Then check the address in the panel matches where it is listening, normally
+          <code>http://localhost:11434</code>.
+        </p>
+
+        <h3>"Flowkite started debugging this browser"</h3>
+        <p>
+          That banner is Chrome's, and it is telling you the truth: Flowkite drives the page through the DevTools
+          protocol, because clicks synthesised by an ordinary content script are rejected by many sites and fail on
+          exactly the forms people want automated. It appears while a task runs and goes when the task ends. Closing it
+          yourself stops the task, which is the point of it being there.
+        </p>
+
+        <h3>The panel will not take a task</h3>
+        <p>
+          It opens once a model is configured. Paste a key in the panel itself and press
+          <strong>Save and start</strong>; the Planner and Navigator are pointed at your provider automatically. If it
+          still refuses, open <strong>Options → Models</strong> and check a model is selected for each of them.
+        </p>
+
+        <h3>Updating a sideloaded build</h3>
+        <p>
+          Download the new zip from the
+          <a href="https://github.com/itsnevu/Flowkite/releases" rel="noopener noreferrer">releases page</a>, unzip it
+          over the old folder, then press <strong>Reload</strong> on the Flowkite card at
+          <code>chrome://extensions</code>. Your providers, history and settings survive the swap.
+        </p>
+
+        <h2>What we cannot help with</h2>
+        <p>
+          Your model provider's bill, quota or outage. Flowkite has no server and no account: your key talks straight to
+          the provider you chose, so anything about spending, rate limits or a model being down belongs in their
+          dashboard, not here.
+        </p>
+
+        <div class="doc__actions">
+          <a class="key" href="https://github.com/itsnevu/Flowkite/discussions" rel="noopener noreferrer"
+            >Ask in Discussions</a
+          >
+          <a class="key key--ghost" href="/privacy-policy/">Privacy policy</a>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

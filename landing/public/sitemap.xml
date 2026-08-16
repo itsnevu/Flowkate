@@ -9,6 +9,15 @@
     <xhtml:link rel="alternate" hreflang="zh-TW" href="https://flowkite.vercel.app/zh-TW/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://flowkite.vercel.app/" />
   </url>
+  <!-- The two document pages carry no translations, so they list no alternates. -->
+  <url>
+    <loc>https://flowkite.vercel.app/support/</loc>
+    <lastmod>2026-08-16</lastmod>
+  </url>
+  <url>
+    <loc>https://flowkite.vercel.app/privacy-policy/</loc>
+    <lastmod>2026-08-16</lastmod>
+  </url>
   <url>
     <loc>https://flowkite.vercel.app/pt-BR/</loc>
     <lastmod>2026-08-16</lastmod>

@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Privacy Policy · Flowkite</title>
+    <meta
+      name="description"
+      content="Flowkite has no backend and no account. Your keys, history and settings stay in your browser; page context goes only to the model provider you configured, using your own key." />
+    <link rel="canonical" href="https://flowkite.vercel.app/privacy-policy/" />
+
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#eef0f4" />
+    <link rel="icon" href="/favicon-16.png" type="image/png" sizes="16x16" />
+    <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="256x256" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+
+  <!--
+    This page is the hosted copy of PRIVACY.md, section for section. It is the URL
+    the Chrome Web Store listing points at, so it must keep saying exactly what the
+    repository file says: when one changes, change the other in the same commit.
+
+    Like 404.html it loads no main.ts. A privacy policy should render before, and
+    without, half a megabyte of renderer.
+  -->
+  <body>
+    <main class="doc">
+      <div class="container container--narrow">
+        <a class="doc__back" href="/">← Flowkite</a>
+
+        <p class="eyebrow">Privacy Policy</p>
+        <h1 class="doc__title">What leaves your machine, and what does not.</h1>
+        <p class="lede">
+          Flowkite is an open-source AI web automation Chrome extension. This policy explains how your data is handled.
+        </p>
+
+        <h2>Open source</h2>
+        <p>
+          Flowkite is licensed under Apache 2.0 and all source code is public in the
+          <a href="https://github.com/itsnevu/Flowkite" rel="noopener noreferrer">GitHub repository</a>, so every claim
+          below can be checked against the code rather than taken on trust.
+        </p>
+
+        <h2>Where your data lives</h2>
+        <p>
+          Flowkite has no backend. There is no Flowkite account, no Flowkite server, and nothing you do is uploaded to
+          us. Everything the extension stores lives in your browser's local extension storage
+          (<code>chrome.storage.local</code>) and is removed when you uninstall the extension. That covers:
+        </p>
+        <ul class="doc__list">
+          <li>Your <strong>API keys</strong> for LLM providers</li>
+          <li><strong>Conversation history</strong> and saved prompts</li>
+          <li><strong>Settings</strong>, including firewall allow and deny lists</li>
+          <li><strong>Remembered preferences</strong>, described below</li>
+        </ul>
+        <p>
+          None of this is synced across your devices, and none of it leaves your machine except as described under "What
+          is sent to your LLM provider".
+        </p>
+
+        <h2>Remembered preferences (Memory)</h2>
+        <p>
+          Flowkite can remember preferences you tell it, so they carry across sessions, for example a delivery address
+          or a preferred unit.
+        </p>
+        <ul class="doc__list">
+          <li>
+            Memories are stored <strong>on this device only</strong>, in <code>chrome.storage.local</code>. They are
+            never sent to a server and never synced.
+          </li>
+          <li>
+            The agent only writes a memory when it decides you told it a preference directly. It is instructed not to
+            store passwords, card numbers or other secrets, and not to store things it merely read on a page.
+          </li>
+          <li>
+            You can see every stored memory, delete any single one, delete all of them, or turn memory off entirely,
+            under <strong>Options → Memory</strong>.
+          </li>
+        </ul>
+
+        <h2>What is sent to your LLM provider</h2>
+        <p>
+          To do anything useful, Flowkite sends page context to whichever LLM provider <strong>you</strong> configured,
+          using <strong>your</strong> API key. Depending on your settings, that includes:
+        </p>
+        <ul class="doc__list">
+          <li>A text description of the page's interactive elements</li>
+          <li>The page URL and title</li>
+          <li>
+            <strong>Screenshots of the page</strong>, when vision is enabled, and also automatically when the page
+            cannot be read from the DOM at all
+          </li>
+          <li>Your task instructions and the conversation so far</li>
+          <li>Your remembered preferences, when memory is enabled</li>
+        </ul>
+        <p>
+          This data goes directly from your browser to your provider. It does not pass through any Flowkite
+          infrastructure. <strong>Once it reaches your provider, their privacy policy governs it, not this one.</strong>
+          If a page contains sensitive information and you run a task on it, that information may be included in what is
+          sent.
+        </p>
+        <p>
+          Page content is treated as untrusted input and is wrapped in explicit delimiters before being given to the
+          model, so that text on a page is not able to act as an instruction to the agent.
+        </p>
+
+        <h2>Browser access and permissions</h2>
+        <p>
+          Flowkite requests broad browser access because a web automation agent cannot work without it. Specifically:
+        </p>
+        <ul class="doc__list">
+          <li>
+            <strong><code>debugger</code></strong> — Flowkite attaches Chrome's debugger to the tab it is working on.
+            This is how it reads the page structure, takes screenshots, and performs clicks and typing reliably across
+            sites. Chrome shows a visible "Flowkite started debugging this browser" banner the whole time it is
+            attached. The debugger is detached when a task finishes, when a task fails, and when you close the side
+            panel.
+          </li>
+          <li>
+            <strong><code>tabs</code> and <code>activeTab</code></strong> — to see the current page and to open, switch
+            and close tabs. Parallel research tasks open additional tabs and close them again when they finish.
+          </li>
+          <li>
+            <strong><code>scripting</code></strong> — to inject the script that reads a page's interactive elements into
+            the page being worked on.
+          </li>
+          <li>
+            <strong><code>webNavigation</code></strong> — to know when a page has finished loading, so the agent acts on
+            a settled page rather than a half-rendered one.
+          </li>
+          <li>
+            <strong><code>storage</code> and <code>unlimitedStorage</code></strong> — for everything described under
+            "Where your data lives". Conversation history with long tasks can exceed the default extension storage
+            quota.
+          </li>
+          <li>
+            <strong><code>sidePanel</code></strong> — to show the chat interface.
+          </li>
+          <li>
+            <strong>Host permissions (<code>&lt;all_urls&gt;</code>)</strong> — Flowkite cannot know in advance which
+            sites you will ask it to work on, so it requests access to all of them. You can narrow this yourself with
+            the firewall allow and deny lists under <strong>Options → Firewall</strong>.
+          </li>
+        </ul>
+        <p>Flowkite does not read your browsing history, and it does not act on pages outside the task you gave it.</p>
+
+        <h2>Actions that need your permission</h2>
+        <p>
+          Flowkite will not spend money, delete data, submit a form, download a file or type into a password field
+          without stopping to ask you first. It also shows you its plan before it begins acting on a page. Both
+          behaviours are on by default and can be turned off under <strong>Options → General</strong>, which is your
+          decision to make.
+        </p>
+
+        <h2>Anonymous analytics (optional)</h2>
+        <p>
+          Analytics is <strong>enabled by default and can be disabled anytime</strong> under
+          <strong>Options → Analytics</strong>. It is also inert in any build that has no analytics key configured, in
+          which case nothing is collected at all.
+        </p>
+        <p><strong>Collected when enabled:</strong></p>
+        <ul class="doc__list">
+          <li>Task metrics (execution times, error categories)</li>
+          <li>Domain names visited (for example <code>amazon.com</code>, not full URLs)</li>
+          <li>Anonymous usage statistics</li>
+          <li>A randomly generated anonymous identifier</li>
+        </ul>
+        <p><strong>Never collected:</strong></p>
+        <ul class="doc__list">
+          <li>Personal information, credentials, or authentication data</li>
+          <li>Full URLs, page content, screenshots, or task instructions</li>
+          <li>Your remembered preferences</li>
+          <li>Any personally identifiable information</li>
+        </ul>
+        <p>
+          Analytics data is processed by PostHog and used solely to improve the extension. It is never sold or shared
+          with advertisers.
+        </p>
+
+        <h2>Your control</h2>
+        <ul class="doc__list">
+          <li>Review and delete remembered preferences under <strong>Options → Memory</strong></li>
+          <li>Clear conversation history at any time from the side panel</li>
+          <li>Enable or disable analytics under <strong>Options → Analytics</strong></li>
+          <li>Restrict which sites the agent may touch under <strong>Options → Firewall</strong></li>
+          <li>Uninstalling the extension removes all local data</li>
+        </ul>
+
+        <h2>Children</h2>
+        <p>Flowkite is not directed at children and is not intended for use by anyone under 13.</p>
+
+        <h2>Changes to this Privacy Policy</h2>
+        <p>
+          This policy may be updated as the extension changes. Material changes will be noted in the repository's
+          release notes, and the date below will be updated.
+        </p>
+
+        <h2>Contact</h2>
+        <p>
+          Questions or concerns? Please open an issue at
+          <a href="https://github.com/itsnevu/Flowkite/issues" rel="noopener noreferrer"
+            >github.com/itsnevu/Flowkite/issues</a
+          >.
+        </p>
+
+        <p class="doc__note">Last updated: August 11, 2026</p>
+
+        <div class="doc__actions">
+          <a class="key" href="/">Back to the site</a>
+          <a class="key key--ghost" href="/support/">Support</a>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

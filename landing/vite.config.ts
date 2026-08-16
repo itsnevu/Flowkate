@@ -47,6 +47,10 @@ export default defineConfig({
         'zh-TW': 'zh-TW/index.html',
         // Vercel serves dist/404.html for any unmatched path on a static deployment.
         notFound: '404.html',
+        // The two document pages. English only, and deliberately: they are
+        // reference text the store listing points at, not marketing.
+        support: 'support/index.html',
+        privacyPolicy: 'privacy-policy/index.html',
       },
       output: {
         // three.js is by far the heaviest dependency; give it its own chunk so

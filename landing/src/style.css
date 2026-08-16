@@ -1933,3 +1933,138 @@ html.js .chips.reveal.is-visible .chip {
     display: none;
   }
 }
+
+/* --------------------------------------------------------------------------
+   14. Document pages: /support, /privacy-policy
+   --------------------------------------------------------------------------
+   Long-form prose, and the only pages here without the nav, the scene or
+   main.ts. Two reasons: a support page has to render when everything else is
+   going wrong, and a policy is the one document that should never wait on a
+   renderer. So the styles below stand alone rather than leaning on anything the
+   home page sets up.
+   -------------------------------------------------------------------------- */
+
+.doc {
+  padding-block: clamp(2.5rem, 7vw, 5rem) clamp(4rem, 9vw, 7rem);
+}
+
+/* Back to the site, and back to the top of the reading order. Placed before the
+   eyebrow so it is the first thing a keyboard or screen reader reaches. */
+.doc__back {
+  display: inline-block;
+  margin-bottom: clamp(1.75rem, 4vw, 2.75rem);
+  font-size: 0.9rem;
+  font-weight: 550;
+  color: var(--ink-faint);
+  text-decoration: none;
+  transition: color 0.15s var(--ease-press);
+}
+
+.doc__back:hover {
+  color: var(--ink);
+}
+
+.doc__title {
+  margin-top: 0.5rem;
+  font-size: clamp(2rem, 4.6vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+}
+
+.doc .lede {
+  margin-top: 1.1rem;
+}
+
+.doc h2 {
+  margin-top: clamp(2.25rem, 5vw, 3rem);
+  font-size: clamp(1.25rem, 2.2vw, 1.5rem);
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+
+.doc h3 {
+  margin-top: 1.9rem;
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+.doc p {
+  margin-top: 0.85rem;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
+.doc__list {
+  margin-top: 0.85rem;
+  padding-left: 1.15rem;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
+.doc__list li + li {
+  margin-top: 0.6rem;
+}
+
+.doc strong {
+  color: var(--ink);
+  font-weight: 620;
+}
+
+.doc a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-color: rgba(0, 0, 0, 0.25);
+  transition: text-decoration-color 0.15s var(--ease-press);
+}
+
+.doc a:hover {
+  text-decoration-color: currentcolor;
+}
+
+/* Inline code and command blocks: sunk into the page, the same well the panel's
+   inputs use, so a terminal line reads as something to copy rather than to read. */
+.doc code {
+  padding: 0.12em 0.38em;
+  border-radius: 0.35rem;
+  background: var(--canvas-sunk);
+  box-shadow: var(--neu-inset-sm);
+  font-family: var(--mono);
+  font-size: 0.875em;
+}
+
+.doc__code {
+  margin-top: 0.9rem;
+  padding: 0.9rem 1.1rem;
+  border-radius: 0.75rem;
+  background: var(--canvas-sunk);
+  box-shadow: var(--neu-inset);
+  overflow-x: auto;
+}
+
+.doc__code code {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  font-size: 0.85rem;
+  white-space: pre;
+}
+
+.doc__note {
+  margin-top: 1.1rem;
+  font-size: 0.9rem;
+  color: var(--ink-faint);
+}
+
+.doc__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: clamp(2.5rem, 5vw, 3.5rem);
+}
+
+/* The keys are the site's, but they carry the doc link underline otherwise. */
+.doc__actions .key {
+  text-decoration: none;
+}
