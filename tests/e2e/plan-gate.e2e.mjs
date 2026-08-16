@@ -41,6 +41,12 @@ async function runToGate(decision) {
       callsAtGate,
       callsAfter: mock.callCount(),
       panelText: await panel.evaluate(() => document.body.innerText),
+      // A parked task leaves the composer disabled, so this is the state that says the run
+      // really ended rather than merely printing that it did.
+      composerUsable: await panel.evaluate(() => {
+        const box = document.querySelector('textarea');
+        return !!box && !box.disabled;
+      }),
     };
   } finally {
     await close();
@@ -56,9 +62,11 @@ check('approving lets the agent continue', approved.callsAfter > approved.callsA
 
 const rejected = await runToGate('Reject');
 check('rejecting invokes nothing further', rejected.callsAfter, rejected.callsAtGate);
-check('rejecting reports the task stopped', rejected.panelText.includes('Plan rejected'), true);
-// a gate that neither proceeds nor cancels would leave the agent parked forever
-check('rejecting does not hang the task', rejected.panelText.includes('Task cancelled'), true);
+check('rejecting reports the task stopped', rejected.panelText.includes('Plan rejected, task stopped'), true);
+// A gate that neither proceeds nor cancels would leave the agent parked forever. This used to
+// look for a second "Task cancelled" message, which the one-task-one-answer consolidation
+// folded into the line above; the composer coming back is the durable signal.
+check('rejecting does not hang the task', rejected.composerUsable, true);
 
 const failed = results.filter(r => !r.ok);
 console.log(`\n${results.length - failed.length}/${results.length} passed`);

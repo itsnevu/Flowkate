@@ -1,14 +1,14 @@
 /**
  * Launching the extension for end-to-end runs.
  *
- * Chrome 137 removed `--load-extension`, and as of Chrome 151 the escape-hatch feature flag no longer
- * works either — a normal Chrome silently starts with no extensions at all. Runs therefore need a
- * Chrome for Testing build, which still honours the switch:
+ * Chrome 137 removed `--load-extension` for automated sessions and Chrome 151 dropped the
+ * escape-hatch feature flag too, so a run built on that switch starts with no extension loaded at
+ * all: every navigation to a chrome-extension:// URL then fails with ERR_BLOCKED_BY_CLIENT, which
+ * is what this harness used to do against any current Chrome.
  *
- *     npx @puppeteer/browsers install chrome@stable
- *
- * and then point CHROME_PATH at the binary it prints. This affects automation only; installing an
- * unpacked extension by hand through chrome://extensions works normally.
+ * `browser.installExtension()` is the supported replacement. It works on an ordinary Chrome, so
+ * CHROME_PATH can point at the one already installed, and it returns the id rather than leaving it
+ * to be derived from the path.
  */
 import os from 'node:os';
 import fs from 'node:fs';
@@ -21,26 +21,31 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const DIST = path.resolve(HERE, '..', '..', 'dist');
 
 /**
- * Chrome derives an unpacked extension's id from the absolute path it was loaded from, so it can be
- * computed up front instead of racing the service worker target to find out.
+ * Chrome derives an unpacked extension's id from the absolute path it was loaded from.
+ *
+ * Kept for the id's stability across runs, which is what makes a seeded profile reusable; the
+ * launch itself no longer has to rely on it, since installExtension() reports the real one.
  */
 export function extensionIdFor(extensionPath) {
   const hash = crypto.createHash('sha256').update(extensionPath).digest('hex').slice(0, 32);
   return [...hash].map(c => String.fromCharCode(97 + parseInt(c, 16))).join('');
 }
 
+/** Where Chrome lives on a stock macOS install, so CHROME_PATH is optional there. */
+const DEFAULT_CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+
 /**
- * Launch Chrome for Testing with the built extension loaded, in a throwaway profile.
+ * Launch Chrome with the built extension installed, in a throwaway profile.
+ *
+ * Headful on purpose: an MV3 service worker does not start in headless Chrome, and the whole
+ * point of these runs is to exercise the background.
  *
  * @returns {Promise<{browser: import('puppeteer-core').Browser, extensionId: string, close: () => Promise<void>}>}
  */
 export async function launchWithExtension({ distPath = DIST, headless = false } = {}) {
-  const executablePath = process.env.CHROME_PATH;
+  const executablePath = process.env.CHROME_PATH || (fs.existsSync(DEFAULT_CHROME) ? DEFAULT_CHROME : undefined);
   if (!executablePath) {
-    throw new Error(
-      'Set CHROME_PATH to a Chrome for Testing binary. Install one with:\n' +
-        '  npx @puppeteer/browsers install chrome@stable',
-    );
+    throw new Error('Set CHROME_PATH to a Chrome binary.');
   }
   if (!fs.existsSync(path.join(distPath, 'manifest.json'))) {
     throw new Error(`No built extension at ${distPath}. Run \`pnpm build\` first.`);
@@ -51,17 +56,17 @@ export async function launchWithExtension({ distPath = DIST, headless = false } 
     executablePath,
     headless,
     userDataDir,
-    args: [
-      `--disable-extensions-except=${distPath}`,
-      `--load-extension=${distPath}`,
-      '--no-first-run',
-      '--no-default-browser-check',
-    ],
+    // Required before installExtension() may be called; without it the call throws rather than
+    // quietly doing nothing.
+    enableExtensions: true,
+    args: ['--no-first-run', '--no-default-browser-check'],
   });
+
+  const extensionId = await browser.installExtension(distPath);
 
   return {
     browser,
-    extensionId: extensionIdFor(distPath),
+    extensionId,
     close: async () => {
       await browser.close();
       fs.rmSync(userDataDir, { recursive: true, force: true });

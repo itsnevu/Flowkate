@@ -6,24 +6,23 @@ resolver that never fires produces a silent hang rather than an error.
 
 ## Setup
 
-Chrome 137 removed `--load-extension`, and as of Chrome 151 the escape-hatch feature flag no longer
-works either — a normal Chrome starts with **no extensions at all** and reports no error. These tests
-therefore need a **Chrome for Testing** build:
+Build the extension, then run a test:
 
 ```bash
-npx @puppeteer/browsers install chrome@stable
-```
-
-That prints a path. Export it, build the extension, then run a test:
-
-```bash
-export CHROME_PATH="/path/to/Google Chrome for Testing"
 pnpm build
-node tests/e2e/plan-gate.e2e.mjs
+pnpm e2e
 ```
 
-This affects automation only. Installing an unpacked extension by hand through `chrome://extensions`
-works normally in regular Chrome.
+Your ordinary Chrome is enough. On macOS it is found automatically; anywhere else, point
+`CHROME_PATH` at the binary.
+
+Chrome 137 removed `--load-extension` for automated sessions and Chrome 151 dropped the escape-hatch
+feature flag with it, so a run built on that switch starts with **no extension at all** and fails
+every `chrome-extension://` navigation with `ERR_BLOCKED_BY_CLIENT`. The harness uses puppeteer's
+`browser.installExtension()` instead, which is the supported path and needs no special Chrome build.
+
+Runs are headful, and not by preference: an MV3 service worker never starts in headless Chrome, and
+the background is the thing under test.
 
 ## How it works
 
