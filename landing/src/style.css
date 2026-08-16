@@ -1748,15 +1748,38 @@ html.js .reveal.is-visible {
 html.js .reveal--wipe {
   --reveal-y: 10px;
   --reveal-blur: 0px;
-  clip-path: inset(0 0 105% 0);
-  transition:
-    opacity var(--reveal-duration) cubic-bezier(0.2, 0.8, 0.2, 1),
-    transform var(--reveal-duration) cubic-bezier(0.2, 0.8, 0.2, 1),
-    clip-path calc(var(--reveal-duration) + 0.2s) cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* The wipe plays on arrival instead of being the hidden state, and that is not a
+   stylistic choice. A clip-path that empties the box also empties what an
+   IntersectionObserver measures: a heading clipped to nothing reported ratio 0
+   while an unclipped clone of it reported 1, so the observer that adds
+   .is-visible never fired and every h2 on the page stayed at opacity 0. The
+   element was hiding from the thing whose job was to reveal it.
+
+   Opacity in the base .reveal already does the hiding, so nothing here needs to.
+   `backwards` holds the clipped first frame through the stagger delay, and the
+   property is left with no clip once the animation ends rather than parked on
+   the final inset, the same way the base rule drops its blur to `none`. */
+@keyframes reveal-wipe {
+  from {
+    clip-path: inset(0 0 105% 0);
+  }
+
+  to {
+    clip-path: inset(-15% -15% -15% -15%);
+  }
 }
 
 html.js .reveal--wipe.is-visible {
-  clip-path: inset(-15% -15% -15% -15%);
+  animation: reveal-wipe calc(var(--reveal-duration) + 0.2s) cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 80ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.js .reveal--wipe.is-visible {
+    animation: none;
+  }
 }
 
 /* Prose and pull-quotes enter from the side they sit on, so the eye is carried
