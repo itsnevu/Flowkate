@@ -135,7 +135,7 @@ page exists.
 | --- | --- | --- |
 | Store icon | 128×128 PNG | [`assets/mark-128.png`](assets/mark-128.png) |
 | Screenshots | 1280×800 PNG, up to 5 | [`assets/store/`](assets/store/) — `1-task` … `5-schedules` |
-| Small promo tile | 440×280 PNG | not made; only needed to be eligible for featuring |
+| Small promo tile | 440×280 PNG | [`assets/store/promo-440x280.png`](assets/store/promo-440x280.png) |
 
 The screenshots are the real UI, captured from a build of `dist/` loaded into Chrome, with the
 provider seeded so the panel is past its setup state — the API key behind those dots is a
