@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AgentNameEnum, agentModelStore, getDefaultAgentModelParams } from '@extension/storage';
 import { defaultReasoningEffortFor, isAnthropicModel, isOpenAIReasoningModel } from './helpers';
 import type { ModelParameters, ReasoningEffort } from './types';
@@ -28,47 +28,54 @@ export const useAgentModelConfig = () => {
     [AgentNameEnum.Fast]: undefined,
   });
 
-  // Load existing agent models and parameters on mount
-  useEffect(() => {
-    const loadAgentModels = async () => {
-      try {
-        const models: Record<AgentNameEnum, string> = {
-          [AgentNameEnum.Planner]: '',
-          [AgentNameEnum.Navigator]: '',
-          [AgentNameEnum.Fast]: '',
-        };
+  /**
+   * Read every agent's stored model back into the cards.
+   *
+   * Exposed as well as run on mount because storage can change from outside this hook — saving
+   * a provider seeds the agents on a fresh setup, and the cards would otherwise sit empty until
+   * the page was reloaded.
+   */
+  const reloadAgentModels = useCallback(async () => {
+    try {
+      const models: Record<AgentNameEnum, string> = {
+        [AgentNameEnum.Planner]: '',
+        [AgentNameEnum.Navigator]: '',
+        [AgentNameEnum.Fast]: '',
+      };
 
-        for (const agent of Object.values(AgentNameEnum)) {
-          const config = await agentModelStore.getAgentModel(agent);
-          if (config) {
-            // Store in provider>model format
-            models[agent] = `${config.provider}>${config.modelName}`;
-            if (config.parameters?.temperature !== undefined || config.parameters?.topP !== undefined) {
-              setModelParameters(prev => ({
-                ...prev,
-                [agent]: {
-                  temperature: config.parameters?.temperature ?? prev[agent].temperature,
-                  topP: config.parameters?.topP ?? prev[agent].topP,
-                },
-              }));
-            }
-            // Also load reasoningEffort if available
-            if (config.reasoningEffort) {
-              setReasoningEffort(prev => ({
-                ...prev,
-                [agent]: config.reasoningEffort as ReasoningEffort,
-              }));
-            }
+      for (const agent of Object.values(AgentNameEnum)) {
+        const config = await agentModelStore.getAgentModel(agent);
+        if (config) {
+          // Store in provider>model format
+          models[agent] = `${config.provider}>${config.modelName}`;
+          if (config.parameters?.temperature !== undefined || config.parameters?.topP !== undefined) {
+            setModelParameters(prev => ({
+              ...prev,
+              [agent]: {
+                temperature: config.parameters?.temperature ?? prev[agent].temperature,
+                topP: config.parameters?.topP ?? prev[agent].topP,
+              },
+            }));
+          }
+          // Also load reasoningEffort if available
+          if (config.reasoningEffort) {
+            setReasoningEffort(prev => ({
+              ...prev,
+              [agent]: config.reasoningEffort as ReasoningEffort,
+            }));
           }
         }
-        setSelectedModels(models);
-      } catch (error) {
-        console.error('Error loading agent models:', error);
       }
-    };
-
-    loadAgentModels();
+      setSelectedModels(models);
+    } catch (error) {
+      console.error('Error loading agent models:', error);
+    }
   }, []);
+
+  // Load existing agent models and parameters on mount
+  useEffect(() => {
+    reloadAgentModels();
+  }, [reloadAgentModels]);
 
   const handleModelChange = async (agentName: AgentNameEnum, modelValue: string) => {
     // modelValue will be in format "provider>model"
@@ -196,5 +203,6 @@ export const useAgentModelConfig = () => {
     handleModelChange,
     handleReasoningEffortChange,
     handleParameterChange,
+    reloadAgentModels,
   };
 };

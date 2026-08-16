@@ -5,6 +5,7 @@ import {
   ProviderTypeEnum,
   getDefaultDisplayNameFromProviderId,
   getDefaultProviderConfig,
+  seedAgentModelsFromProvider,
 } from '@extension/storage';
 import { t } from '@extension/i18n';
 import { maxCustomProviderNumber, sortProviderEntries } from './helpers';
@@ -19,8 +20,11 @@ import type { AvailableModel, ProviderButtonProps } from './types';
  * Storage is the source of truth and is only written on an explicit save, so the edited copy
  * lives here in state. `modifiedProviders` is what separates the two: a provider with edits
  * offers a save key, an untouched stored provider offers delete instead.
+ *
+ * @param onAgentModelsSeeded called when saving a provider also filled in the agents' models,
+ * so the agent cards can re-read what was chosen for them.
  */
-export const useProviderConfigs = () => {
+export const useProviderConfigs = (onAgentModelsSeeded?: () => void) => {
   const [providers, setProviders] = useState<Record<string, ProviderConfig>>({});
   const [modifiedProviders, setModifiedProviders] = useState<Set<string>>(new Set());
   const [providersFromStorage, setProvidersFromStorage] = useState<Set<string>>(new Set());
@@ -386,6 +390,12 @@ export const useProviderConfigs = () => {
       // Refresh available models
       const models = await getAvailableModelsCallback();
       setAvailableModels(models);
+
+      // On a setup with no agent configured yet, this provider is enough to start: point the
+      // agents at it rather than leaving the side panel locked behind two more picks the setup
+      // screen never mentions. Does nothing once anything is configured.
+      const seeded = await seedAgentModelsFromProvider(provider, configToSave as ProviderConfig);
+      if (seeded.length > 0) onAgentModelsSeeded?.();
     } catch (error) {
       console.error('Error saving API key:', error);
     }

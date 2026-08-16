@@ -1,6 +1,7 @@
 export * from './types';
 export * from './llmProviders';
 export * from './agentModels';
+export * from './defaultAgentModels';
 export * from './generalSettings';
 export * from './modelPricing';
 export * from './schedules';

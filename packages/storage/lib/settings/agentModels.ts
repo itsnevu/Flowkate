@@ -1,6 +1,8 @@
 import { StorageEnum } from '../base/enums';
 import { createStorage } from '../base/base';
 import { AgentNameEnum, llmProviderParameters } from './types';
+import { pickDefaultAgentModels, providerModelCatalogue } from './defaultAgentModels';
+import type { ProviderConfig } from './llmProviders';
 import type { BaseStorage } from '../base/types';
 
 // Interface for a single model configuration
@@ -119,3 +121,32 @@ export const agentModelStore: AgentModelStorage = {
     });
   },
 };
+
+/**
+ * Point the agents at a freshly saved provider, but only on a setup that has none.
+ *
+ * The side panel is gated on `getConfiguredAgents()`, not on having an API key, so a user who
+ * pasted a key and saved it used to land back on the same "configure your API keys" screen with
+ * nothing telling them two more picks were required. Seeding closes that gap: a saved provider
+ * is enough to start.
+ *
+ * Deliberately a no-op once anything is configured — a second provider, or a re-save of the
+ * first, must never move a choice the user made themselves.
+ *
+ * @returns the agents it wrote; an empty array means storage was left alone.
+ */
+export async function seedAgentModelsFromProvider(
+  providerId: string,
+  config: ProviderConfig,
+): Promise<AgentNameEnum[]> {
+  const configured = await agentModelStore.getConfiguredAgents();
+  if (configured.length > 0) return [];
+
+  const picks = pickDefaultAgentModels(providerId, providerModelCatalogue(providerId, config));
+  const seeded: AgentNameEnum[] = [];
+  for (const [agent, modelConfig] of Object.entries(picks) as [AgentNameEnum, ModelConfig][]) {
+    await agentModelStore.setAgentModel(agent, modelConfig);
+    seeded.push(agent);
+  }
+  return seeded;
+}

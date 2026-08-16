@@ -20,6 +20,18 @@ import { useSpeechToTextConfig } from './model-settings/useSpeechToTextConfig';
 import { DIVIDER } from './model-settings/styles';
 
 export const ModelSettings = () => {
+  // Before the provider list, which needs `reloadAgentModels` to show what saving a provider
+  // picked for the agents on a setup that had nothing configured.
+  const {
+    selectedModels,
+    modelParameters,
+    reasoningEffort,
+    handleModelChange,
+    handleReasoningEffortChange,
+    handleParameterChange,
+    reloadAgentModels,
+  } = useAgentModelConfig();
+
   const {
     providers,
     modifiedProviders,
@@ -45,16 +57,7 @@ export const ModelSettings = () => {
     handleDelete,
     handleCancelProvider,
     handleProviderSelection,
-  } = useProviderConfigs();
-
-  const {
-    selectedModels,
-    modelParameters,
-    reasoningEffort,
-    handleModelChange,
-    handleReasoningEffortChange,
-    handleParameterChange,
-  } = useAgentModelConfig();
+  } = useProviderConfigs(reloadAgentModels);
 
   const { selectedSpeechToTextModel, handleSpeechToTextModelChange } = useSpeechToTextConfig();
 
