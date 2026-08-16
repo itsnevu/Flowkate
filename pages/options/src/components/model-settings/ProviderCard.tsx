@@ -129,13 +129,20 @@ export const ProviderCard = ({
       <div>
         <label htmlFor={`${providerId}-api-key`} className={FIELD_LABEL}>
           {t('options_models_providers_apiKey')}
-          {/* Show asterisk only if required */}
-          {providerType !== ProviderTypeEnum.CustomOpenAI && providerType !== ProviderTypeEnum.Ollama ? '*' : ''}
+          {providerType !== ProviderTypeEnum.CustomOpenAI && providerType !== ProviderTypeEnum.Ollama && (
+          <span className="ml-0.5 text-signal-bad" aria-hidden="true">
+            *
+          </span>
+          )}
         </label>
         <div className="flex items-center gap-2">
           <input
             id={`${providerId}-api-key`}
-            type="password"
+            // Revealing the key swaps this field to plain text, which is what the eye
+            // beside it has always promised. It used to echo the key into a separate
+            // block underneath instead, and that block looked exactly like a second,
+            // unlabelled input.
+            type={apiKeyVisible ? 'text' : 'password'}
             placeholder={
               providerType === ProviderTypeEnum.CustomOpenAI
                 ? t('options_models_providers_apiKey_placeholder_optional')
@@ -147,8 +154,9 @@ export const ProviderCard = ({
             onChange={e => onApiKeyChange(e.target.value, providerConfig.baseUrl)}
             className={`${FIELD_WELL} font-mono`}
           />
-          {/* Show eye button only for newly added providers */}
-          {isNewProvider && (
+          {/* Offered whenever there is a key to check, not only on a provider added in
+              this session: a saved key is exactly the one you come back to verify. */}
+          {providerConfig.apiKey && (
             <button
               type="button"
               className={ICON_KEY}
@@ -188,12 +196,6 @@ export const ProviderCard = ({
           )}
         </div>
 
-        {/* Display API key for newly added providers only when visible */}
-        {isNewProvider && apiKeyVisible && providerConfig.apiKey && (
-          <p className="mt-2 break-words rounded-soft bg-canvas-sunk px-3 py-2 font-mono text-xs text-ink shadow-neu-inset">
-            {providerConfig.apiKey}
-          </p>
-        )}
       </div>
 
       {/* Base URL input (for custom_openai, ollama, azure_openai, openrouter, and llama) */}
@@ -208,9 +210,12 @@ export const ProviderCard = ({
             {providerType === ProviderTypeEnum.AzureOpenAI
               ? t('options_models_providers_endpoint')
               : t('options_models_providers_baseUrl')}
-            {/* Show asterisk only if required */}
             {/* OpenRouter has a default, so not strictly required, but needed for save button */}
-            {providerType === ProviderTypeEnum.CustomOpenAI || providerType === ProviderTypeEnum.AzureOpenAI ? '*' : ''}
+            {(providerType === ProviderTypeEnum.CustomOpenAI || providerType === ProviderTypeEnum.AzureOpenAI) && (
+            <span className="ml-0.5 text-signal-bad" aria-hidden="true">
+              *
+            </span>
+            )}
           </label>
           <input
             id={`${providerId}-base-url`}
@@ -339,15 +344,11 @@ export const ProviderCard = ({
                       </button>
                     </span>
                   ))
-                ) : (
-                  <span className="px-1 text-xs text-ink-faint">
-                    {t('options_models_providers_models_openrouter_empty')}
-                  </span>
-                )}
+                ) : null}
                 <input
                   id={`${providerId}-models-input`}
                   type="text"
-                  placeholder=""
+                  placeholder={t('options_models_providers_placeholders_models')}
                   value={modelInput}
                   onChange={e => onModelInputChange(e.target.value)}
                   onKeyDown={onModelInputKeyDown}
@@ -392,7 +393,7 @@ export const ProviderCard = ({
                 <input
                   id={`${providerId}-models-input`}
                   type="text"
-                  placeholder=""
+                  placeholder={t('options_models_providers_placeholders_models')}
                   value={modelInput}
                   onChange={e => onModelInputChange(e.target.value)}
                   onKeyDown={onModelInputKeyDown}

@@ -159,10 +159,10 @@
     "message": "Excluir favorito"
   },
   "chat_bookmarks_template": {
-    "message": "Modelo — tem lacunas a preencher"
+    "message": "Modelo, tem lacunas a preencher"
   },
   "chat_template_hint": {
-    "message": "Um modelo: preencha cada {lacuna} — Tab pula para a próxima"
+    "message": "Um modelo: preencha cada {lacuna}, Tab pula para a próxima"
   },
   "chat_replay_starting": {
     "message": "Iniciando reprodução da tarefa:\n\n\"$TASK$\"",
@@ -330,7 +330,7 @@
     "message": "Preços dos modelos"
   },
   "options_pricing_desc": {
-    "message": "USD por 1 milhão de tokens, inserido por você — o Flowkite não traz tabela de preços. Modelos sem preço mostram apenas tokens e não contam para o orçamento."
+    "message": "USD por 1 milhão de tokens, inserido por você, o Flowkite não traz tabela de preços. Modelos sem preço mostram apenas tokens e não contam para o orçamento."
   },
   "options_pricing_input": {
     "message": "$ / 1M entrada"
@@ -339,7 +339,7 @@
     "message": "$ / 1M saída"
   },
   "options_pricing_empty": {
-    "message": "Atribua modelos na aba Modelos primeiro — as linhas de preço aparecem para os modelos que você usa."
+    "message": "Atribua modelos na aba Modelos primeiro, as linhas de preço aparecem para os modelos que você usa."
   },
   "options_tabs_schedules": {
     "message": "Agendamentos"
@@ -348,13 +348,13 @@
     "message": "Tarefas agendadas"
   },
   "options_sched_desc": {
-    "message": "Execute um prompt salvo todos os dias em um horário fixo, sem ninguém presente. Agendar pré-aprova os planos; ações sensíveis são recusadas automaticamente — uma tarefa sem supervisão pode ler e relatar, nunca gastar. Os resultados vão para o histórico do painel lateral, com uma notificação ao final de cada execução."
+    "message": "Execute um prompt salvo todos os dias em um horário fixo, sem ninguém presente. Agendar pré-aprova os planos; ações sensíveis são recusadas automaticamente, uma tarefa sem supervisão pode ler e relatar, nunca gastar. Os resultados vão para o histórico do painel lateral, com uma notificação ao final de cada execução."
   },
   "options_sched_title_label": {
     "message": "Nome"
   },
   "options_sched_prompt_label": {
-    "message": "Prompt da tarefa — executa exatamente como escrito"
+    "message": "Prompt da tarefa, executa exatamente como escrito"
   },
   "options_sched_time_label": {
     "message": "Todos os dias às"
@@ -384,13 +384,13 @@
     "message": "Ainda não executou"
   },
   "options_sched_hasSlots": {
-    "message": "Este prompt ainda tem {lacunas} a preencher — uma tarefa agendada executa exatamente como escrita, então preencha antes."
+    "message": "Este prompt ainda tem {lacunas} a preencher, uma tarefa agendada executa exatamente como escrita, então preencha antes."
   },
   "options_webhook_header": {
     "message": "Webhook de saída"
   },
   "options_webhook_desc": {
-    "message": "Quando uma tarefa termina, envia o resultado como JSON via POST para uma URL escolhida por você — n8n, Zapier, um webhook do Discord. Apenas saída, desativado por padrão; o Flowkite continua sem servidor. HTTPS em qualquer lugar, HTTP simples só para localhost."
+    "message": "Quando uma tarefa termina, envia o resultado como JSON via POST para uma URL escolhida por você, n8n, Zapier, um webhook do Discord. Apenas saída, desativado por padrão; o Flowkite continua sem servidor. HTTPS em qualquer lugar, HTTP simples só para localhost."
   },
   "options_webhook_enable": {
     "message": "Ativar webhook"
@@ -420,7 +420,7 @@
     "message": "Permitir tarefas de follow-up na resposta"
   },
   "options_webhook_allowFollowUp_desc": {
-    "message": "A resposta pode conter {\"followUp\": \"próxima tarefa\"} e o Flowkite a executa — seu pipeline decide o próximo passo. Executa sem supervisão (ações sensíveis são recusadas), máx. 3 por cadeia."
+    "message": "A resposta pode conter {\"followUp\": \"próxima tarefa\"} e o Flowkite a executa, seu pipeline decide o próximo passo. Executa sem supervisão (ações sensíveis são recusadas), máx. 3 por cadeia."
   },
   "options_webhook_test": {
     "message": "Enviar teste"
@@ -432,7 +432,7 @@
     "message": "Entregue"
   },
   "options_webhook_testFail": {
-    "message": "Falhou — verifique a URL e o receptor"
+    "message": "Falhou, verifique a URL e o receptor"
   },
   "options_tabs_privacy": {
     "message": "Privacidade"
@@ -441,7 +441,7 @@
     "message": "Painel de privacidade"
   },
   "options_privacy_desc": {
-    "message": "Uma resposta verificável para \"o que saiu desta máquina?\" — montada inteiramente com registros locais, sem buscar nada de fora. Suas chaves de API ficam locais e vão apenas para o provedor a que pertencem."
+    "message": "Uma resposta verificável para \"o que saiu desta máquina?\", montada inteiramente com registros locais, sem buscar nada de fora. Suas chaves de API ficam locais e vão apenas para o provedor a que pertencem."
   },
   "options_privacy_models_header": {
     "message": "Enviado aos provedores de modelos"
@@ -462,7 +462,7 @@
     "message": "Hosts visitados pelo agente"
   },
   "options_privacy_visits_desc": {
-    "message": "Apenas navegação feita pelo próprio agente — sua navegação pessoal nunca é registrada."
+    "message": "Apenas navegação feita pelo próprio agente, sua navegação pessoal nunca é registrada."
   },
   "options_privacy_visits_empty": {
     "message": "Nenhuma navegação do agente registrada ainda."
@@ -570,22 +570,22 @@
     "message": "Nome"
   },
   "options_models_providers_custom_name_desc": {
-    "message": "Nome do provedor (espaços não são permitidos ao salvar)"
+    "message": "Letras, números e sublinhados. Sem espaços."
   },
   "options_models_providers_custom_name_placeholder": {
-    "message": "Nome do provedor"
+    "message": "Por exemplo, Meu servidor local"
   },
   "options_models_providers_apiKey": {
     "message": "Chave de API"
   },
   "options_models_providers_apiKey_placeholder_optional": {
-    "message": "Chave de API (opcional)"
+    "message": "Opcional para este provedor"
   },
   "options_models_providers_apiKey_placeholder_required": {
-    "message": "Chave de API (obrigatório)"
+    "message": "Cole sua chave de API"
   },
   "options_models_providers_apiKey_placeholder_ollama": {
-    "message": "Chave de API (deixe em branco para Ollama)"
+    "message": "Não é necessária para o Ollama"
   },
   "options_models_providers_apiKey_hide": {
     "message": "Ocultar chave de API"
@@ -645,31 +645,31 @@
     "message": "Modelos"
   },
   "options_models_providers_placeholders_baseUrl_custom": {
-    "message": "Endpoint de API compatível com OpenAI obrigatório"
+    "message": "https://api.example.com/v1"
   },
   "options_models_providers_placeholders_baseUrl_azure": {
     "message": "https://SEU_NOME_DE_RECURSO.openai.azure.com/"
   },
   "options_models_providers_placeholders_baseUrl_openrouter": {
-    "message": "URL Base do OpenRouter (opcional, padrão para https://openrouter.ai/api/v1)"
+    "message": "Padrão: https://openrouter.ai/api/v1"
   },
   "options_models_providers_placeholders_baseUrl_llama": {
-    "message": "URL Base da API Llama (padrão para https://api.llama.com/v1)"
+    "message": "Padrão: https://api.llama.com/v1"
   },
   "options_models_providers_placeholders_baseUrl_ollama": {
-    "message": "URL base do Ollama"
+    "message": "http://localhost:11434"
   },
   "options_models_providers_placeholders_azureDeployment": {
-    "message": "Insira o nome do modelo Azure (ex: gpt-4o, gpt-4o-mini)"
+    "message": "Por exemplo, gpt-4o"
   },
   "options_models_providers_placeholders_azureApiVersion": {
-    "message": "ex: 2025-04-01-preview"
+    "message": "Por exemplo, 2025-04-01-preview"
   },
   "options_models_providers_deployment_desc": {
-    "message": "Digite o nome do modelo e pressione Enter ou Espaço para definir. O nome da implantação deve corresponder ao nome do modelo OpenAI (ex: gpt-4o) para melhor compatibilidade."
+    "message": "Digite um nome de deployment e pressione Enter. Use o mesmo nome do modelo OpenAI (por exemplo gpt-4o) para melhor compatibilidade."
   },
   "options_models_providers_models_instructions": {
-    "message": "Digite e pressione Enter ou Espaço para adicionar."
+    "message": "Pressione Enter para adicionar cada modelo."
   },
   "options_models_providers_models_openrouter_empty": {
     "message": "Nenhum modelo selecionado. Adicione nomes de modelos manualmente, se necessário."
@@ -1394,10 +1394,10 @@
     }
   },
   "exec_plan_approved": {
-    "message": "Plano aprovado — executando"
+    "message": "Plano aprovado, executando"
   },
   "exec_plan_rejected": {
-    "message": "Plano rejeitado — tarefa interrompida"
+    "message": "Plano rejeitado, tarefa interrompida"
   },
   "exec_undo_ok": {
     "message": "Última etapa desfeita. A página foi restaurada e o agente vai replanejar."
@@ -1472,16 +1472,16 @@
     "message": "Permitir"
   },
   "handoff_title": {
-    "message": "Sua vez — o agente está esperando"
+    "message": "Sua vez, o agente está esperando"
   },
   "handoff_onPage": {
     "message": "Na página"
   },
   "handoff_note": {
-    "message": "Tudo o que você digitar vai direto para a página — nunca passa pelo modelo nem pelo chat."
+    "message": "Tudo o que você digitar vai direto para a página, nunca passa pelo modelo nem pelo chat."
   },
   "handoff_done": {
-    "message": "Concluído — continuar"
+    "message": "Concluído, continuar"
   },
   "handoff_stop": {
     "message": "Parar tarefa"
@@ -1503,7 +1503,7 @@
     }
   },
   "budgetPause_unpriced": {
-    "message": "Sem preço informado para: $MODELS$ — o gasto real é maior.",
+    "message": "Sem preço informado para: $MODELS$, o gasto real é maior.",
     "placeholders": {
       "models": {
         "content": "$1",
@@ -1558,7 +1558,7 @@
     }
   },
   "act_remember_disabled": {
-    "message": "Nada foi memorizado — a memória está desativada ou a nota estava vazia"
+    "message": "Nada foi memorizado, a memória está desativada ou a nota estava vazia"
   },
   "options_tabs_memory": {
     "message": "Memória"
@@ -1674,7 +1674,7 @@
     "message": "Os custos são calculados com os preços que você inseriu nas Configurações."
   },
   "chat_usage_unpriced": {
-    "message": "Sem preço informado para: $MODELS$ — os totais em dólar são um piso.",
+    "message": "Sem preço informado para: $MODELS$, os totais em dólar são um piso.",
     "placeholders": {
       "models": {
         "content": "$1",
@@ -1704,7 +1704,7 @@
     "message": "Tarefa concluída."
   },
   "chat_task_interrupted": {
-    "message": "A tarefa parou antes do fim — a conexão com o service worker caiu."
+    "message": "A tarefa parou antes do fim, a conexão com o service worker caiu."
   },
   "chat_trail_steps": {
     "message": "$STEPS$ passos",
@@ -1796,5 +1796,8 @@
         "example": "planner"
       }
     }
+  },
+  "options_models_providers_placeholders_models": {
+    "message": "Digite um modelo e pressione Enter"
   }
 }

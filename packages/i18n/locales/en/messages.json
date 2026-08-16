@@ -159,10 +159,10 @@
     "message": "Delete bookmark"
   },
   "chat_bookmarks_template": {
-    "message": "Template — has blanks to fill in"
+    "message": "Template, has blanks to fill in"
   },
   "chat_template_hint": {
-    "message": "A template: fill in each {blank} — Tab jumps to the next one"
+    "message": "A template: fill in each {blank}, Tab jumps to the next one"
   },
   "chat_replay_starting": {
     "message": "Starting replay of task:\n\n\"$TASK$\"",
@@ -330,7 +330,7 @@
     "message": "Model pricing"
   },
   "options_pricing_desc": {
-    "message": "USD per 1 million tokens, entered by you — Flowkite ships no price table. Unpriced models show token counts only and never count toward the budget."
+    "message": "USD per 1 million tokens, entered by you, Flowkite ships no price table. Unpriced models show token counts only and never count toward the budget."
   },
   "options_pricing_input": {
     "message": "$ / 1M in"
@@ -339,7 +339,7 @@
     "message": "$ / 1M out"
   },
   "options_pricing_empty": {
-    "message": "Assign models in the Models tab first — pricing rows appear for the models you use."
+    "message": "Assign models in the Models tab first, pricing rows appear for the models you use."
   },
   "options_tabs_schedules": {
     "message": "Schedules"
@@ -348,13 +348,13 @@
     "message": "Scheduled tasks"
   },
   "options_sched_desc": {
-    "message": "Run a saved prompt every day at a set time, with nobody watching. Scheduling pre-approves its plans; sensitive actions are automatically declined — an unattended task can read and report, never spend. Results land in the side panel history, with a notification when each run finishes."
+    "message": "Run a saved prompt every day at a set time, with nobody watching. Scheduling pre-approves its plans; sensitive actions are automatically declined, an unattended task can read and report, never spend. Results land in the side panel history, with a notification when each run finishes."
   },
   "options_sched_title_label": {
     "message": "Name"
   },
   "options_sched_prompt_label": {
-    "message": "Task prompt — runs exactly as written"
+    "message": "Task prompt, runs exactly as written"
   },
   "options_sched_time_label": {
     "message": "Every day at"
@@ -384,13 +384,13 @@
     "message": "Has not run yet"
   },
   "options_sched_hasSlots": {
-    "message": "This prompt still has {slots} to fill — a scheduled task runs exactly as written, so fill them in first."
+    "message": "This prompt still has {slots} to fill, a scheduled task runs exactly as written, so fill them in first."
   },
   "options_webhook_header": {
     "message": "Outbound webhook"
   },
   "options_webhook_desc": {
-    "message": "When a task finishes, POST its outcome as JSON to one URL you choose — n8n, Zapier, a Discord webhook. Outbound only, off by default; Flowkite still has no server. HTTPS anywhere, plain HTTP only to localhost."
+    "message": "When a task finishes, POST its outcome as JSON to one URL you choose, n8n, Zapier, a Discord webhook. Outbound only, off by default; Flowkite still has no server. HTTPS anywhere, plain HTTP only to localhost."
   },
   "options_webhook_enable": {
     "message": "Enable webhook"
@@ -420,7 +420,7 @@
     "message": "Allow follow-up tasks from the response"
   },
   "options_webhook_allowFollowUp_desc": {
-    "message": "The response may answer {\"followUp\": \"next task\"} and Flowkite runs it — your pipeline decides the next step. Runs unattended (sensitive actions auto-decline), max 3 per chain."
+    "message": "The response may answer {\"followUp\": \"next task\"} and Flowkite runs it, your pipeline decides the next step. Runs unattended (sensitive actions auto-decline), max 3 per chain."
   },
   "options_webhook_test": {
     "message": "Send test"
@@ -432,7 +432,7 @@
     "message": "Delivered"
   },
   "options_webhook_testFail": {
-    "message": "Failed — check the URL and the receiver"
+    "message": "Failed, check the URL and the receiver"
   },
   "options_tabs_privacy": {
     "message": "Privacy"
@@ -441,7 +441,7 @@
     "message": "Privacy dashboard"
   },
   "options_privacy_desc": {
-    "message": "A checkable answer to \"what left this machine?\" — assembled entirely from local records, fetched from nowhere. Your API keys are stored locally and go only to the provider they belong to."
+    "message": "A checkable answer to \"what left this machine?\", assembled entirely from local records, fetched from nowhere. Your API keys are stored locally and go only to the provider they belong to."
   },
   "options_privacy_models_header": {
     "message": "Sent to model providers"
@@ -462,7 +462,7 @@
     "message": "Hosts the agent visited"
   },
   "options_privacy_visits_desc": {
-    "message": "Only navigation the agent itself performed — your own browsing is never logged."
+    "message": "Only navigation the agent itself performed, your own browsing is never logged."
   },
   "options_privacy_visits_empty": {
     "message": "No agent navigation recorded yet."
@@ -570,22 +570,22 @@
     "message": "Name"
   },
   "options_models_providers_custom_name_desc": {
-    "message": "Provider name (spaces are not allowed when saving)"
+    "message": "Letters, numbers and underscores. No spaces."
   },
   "options_models_providers_custom_name_placeholder": {
-    "message": "Provider name"
+    "message": "For example, My local server"
   },
   "options_models_providers_apiKey": {
     "message": "API Key"
   },
   "options_models_providers_apiKey_placeholder_optional": {
-    "message": "API Key (optional)"
+    "message": "Optional for this provider"
   },
   "options_models_providers_apiKey_placeholder_required": {
-    "message": "API Key (required)"
+    "message": "Paste your API key"
   },
   "options_models_providers_apiKey_placeholder_ollama": {
-    "message": "API Key (leave empty for Ollama)"
+    "message": "Not needed for Ollama"
   },
   "options_models_providers_apiKey_hide": {
     "message": "Hide API key"
@@ -645,31 +645,31 @@
     "message": "Models"
   },
   "options_models_providers_placeholders_baseUrl_custom": {
-    "message": "Required OpenAI-compatible API endpoint"
+    "message": "https://api.example.com/v1"
   },
   "options_models_providers_placeholders_baseUrl_azure": {
     "message": "https://YOUR_RESOURCE_NAME.openai.azure.com/"
   },
   "options_models_providers_placeholders_baseUrl_openrouter": {
-    "message": "OpenRouter Base URL (optional, defaults to https://openrouter.ai/api/v1)"
+    "message": "Defaults to https://openrouter.ai/api/v1"
   },
   "options_models_providers_placeholders_baseUrl_llama": {
-    "message": "Llama API Base URL (defaults to https://api.llama.com/v1)"
+    "message": "Defaults to https://api.llama.com/v1"
   },
   "options_models_providers_placeholders_baseUrl_ollama": {
-    "message": "Ollama base URL"
+    "message": "http://localhost:11434"
   },
   "options_models_providers_placeholders_azureDeployment": {
-    "message": "Enter Azure model name (e.g. gpt-4o, gpt-4o-mini)"
+    "message": "For example, gpt-4o"
   },
   "options_models_providers_placeholders_azureApiVersion": {
-    "message": "e.g., 2025-04-01-preview"
+    "message": "For example, 2025-04-01-preview"
   },
   "options_models_providers_deployment_desc": {
-    "message": "Type model name and press Enter or Space to set. Deployment name should match OpenAI model name (e.g., gpt-4o) for best compatibility."
+    "message": "Add one deployment name, then press Enter. Match your OpenAI model name (for example gpt-4o) for best compatibility."
   },
   "options_models_providers_models_instructions": {
-    "message": "Type and Press Enter or Space to add."
+    "message": "Press Enter to add each model."
   },
   "options_models_providers_models_openrouter_empty": {
     "message": "No models selected. Add model names manually if needed."
@@ -1394,10 +1394,10 @@
     }
   },
   "exec_plan_approved": {
-    "message": "Plan approved — running"
+    "message": "Plan approved, running"
   },
   "exec_plan_rejected": {
-    "message": "Plan rejected — task stopped"
+    "message": "Plan rejected, task stopped"
   },
   "exec_undo_ok": {
     "message": "Last step undone. The page was restored and the agent will re-plan."
@@ -1472,16 +1472,16 @@
     "message": "Allow"
   },
   "handoff_title": {
-    "message": "Your turn — the agent is waiting"
+    "message": "Your turn, the agent is waiting"
   },
   "handoff_onPage": {
     "message": "On page"
   },
   "handoff_note": {
-    "message": "Anything you type goes straight into the page — it never passes through the model or the chat."
+    "message": "Anything you type goes straight into the page, it never passes through the model or the chat."
   },
   "handoff_done": {
-    "message": "Done — continue"
+    "message": "Done, continue"
   },
   "handoff_stop": {
     "message": "Stop task"
@@ -1503,7 +1503,7 @@
     }
   },
   "budgetPause_unpriced": {
-    "message": "No price entered for: $MODELS$ — the real spend is higher.",
+    "message": "No price entered for: $MODELS$, the real spend is higher.",
     "placeholders": {
       "models": {
         "content": "$1",
@@ -1558,7 +1558,7 @@
     }
   },
   "act_remember_disabled": {
-    "message": "Nothing was remembered — memory is turned off or the note was empty"
+    "message": "Nothing was remembered, memory is turned off or the note was empty"
   },
   "options_tabs_memory": {
     "message": "Memory"
@@ -1674,7 +1674,7 @@
     "message": "Costs are computed from the prices you entered in Settings."
   },
   "chat_usage_unpriced": {
-    "message": "No price entered for: $MODELS$ — dollar totals are a floor.",
+    "message": "No price entered for: $MODELS$, dollar totals are a floor.",
     "placeholders": {
       "models": {
         "content": "$1",
@@ -1704,7 +1704,7 @@
     "message": "Task completed."
   },
   "chat_task_interrupted": {
-    "message": "The task stopped early — the connection to the background worker dropped."
+    "message": "The task stopped early, the connection to the background worker dropped."
   },
   "chat_trail_steps": {
     "message": "$STEPS$ steps",
@@ -1796,5 +1796,8 @@
         "example": "planner"
       }
     }
+  },
+  "options_models_providers_placeholders_models": {
+    "message": "Add a model name, then press Enter"
   }
 }

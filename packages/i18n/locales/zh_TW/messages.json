@@ -159,7 +159,7 @@
     "message": "刪除書籤"
   },
   "chat_bookmarks_template": {
-    "message": "範本 — 含待填空格"
+    "message": "範本，含待填空格"
   },
   "chat_template_hint": {
     "message": "這是範本：請填寫每個 {空格}，按 Tab 跳到下一個"
@@ -300,7 +300,7 @@
     "message": "最大輸入 Token 數"
   },
   "options_general_maxInputTokens_desc": {
-    "message": "提示長度上限 — 請設定在模型的脈絡視窗以下"
+    "message": "提示長度上限，請設定在模型的脈絡視窗以下"
   },
   "options_general_enableVision": {
     "message": "啟用視覺能力"
@@ -330,7 +330,7 @@
     "message": "模型價格"
   },
   "options_pricing_desc": {
-    "message": "每 100 萬 token 的美元價格，由你自行輸入 — Flowkite 不內建價格表。未定價的模型僅顯示 token 數，且不計入預算。"
+    "message": "每 100 萬 token 的美元價格，由你自行輸入，Flowkite 不內建價格表。未定價的模型僅顯示 token 數，且不計入預算。"
   },
   "options_pricing_input": {
     "message": "$ / 1M 輸入"
@@ -339,7 +339,7 @@
     "message": "$ / 1M 輸出"
   },
   "options_pricing_empty": {
-    "message": "請先在「模型」分頁指派模型 — 價格列會顯示你使用的模型。"
+    "message": "請先在「模型」分頁指派模型，價格列會顯示你使用的模型。"
   },
   "options_tabs_schedules": {
     "message": "排程"
@@ -348,13 +348,13 @@
     "message": "排程任務"
   },
   "options_sched_desc": {
-    "message": "每天在固定時間執行儲存的提示語，無需有人在場。排程即代表預先核准其計畫；敏感操作會自動被拒絕 — 無人值守的任務只能讀取與回報，絕不會消費。結果會存入側邊面板歷史紀錄，每次執行結束都會通知。"
+    "message": "每天在固定時間執行儲存的提示語，無需有人在場。排程即代表預先核准其計畫；敏感操作會自動被拒絕，無人值守的任務只能讀取與回報，絕不會消費。結果會存入側邊面板歷史紀錄，每次執行結束都會通知。"
   },
   "options_sched_title_label": {
     "message": "名稱"
   },
   "options_sched_prompt_label": {
-    "message": "任務提示語 — 將完全按原文執行"
+    "message": "任務提示語，將完全按原文執行"
   },
   "options_sched_time_label": {
     "message": "每天於"
@@ -384,13 +384,13 @@
     "message": "尚未執行"
   },
   "options_sched_hasSlots": {
-    "message": "此提示語仍有待填的 {空格} — 排程任務會完全按原文執行，請先填寫。"
+    "message": "此提示語仍有待填的 {空格}，排程任務會完全按原文執行，請先填寫。"
   },
   "options_webhook_header": {
     "message": "對外 Webhook"
   },
   "options_webhook_desc": {
-    "message": "任務結束時，將結果以 JSON POST 到你指定的網址 — n8n、Zapier、Discord webhook。僅對外送出，預設關閉；Flowkite 依然沒有伺服器。HTTPS 不限主機，純 HTTP 僅限 localhost。"
+    "message": "任務結束時，將結果以 JSON POST 到你指定的網址，n8n、Zapier、Discord webhook。僅對外送出，預設關閉；Flowkite 依然沒有伺服器。HTTPS 不限主機，純 HTTP 僅限 localhost。"
   },
   "options_webhook_enable": {
     "message": "啟用 Webhook"
@@ -420,7 +420,7 @@
     "message": "允許回應中的後續任務"
   },
   "options_webhook_allowFollowUp_desc": {
-    "message": "回應可包含 {\"followUp\": \"下一個任務\"}，Flowkite 會執行它 — 由你的管線決定下一步。以無人值守模式執行（敏感操作自動拒絕），每鏈最多 3 個。"
+    "message": "回應可包含 {\"followUp\": \"下一個任務\"}，Flowkite 會執行它，由你的管線決定下一步。以無人值守模式執行（敏感操作自動拒絕），每鏈最多 3 個。"
   },
   "options_webhook_test": {
     "message": "傳送測試"
@@ -432,7 +432,7 @@
     "message": "已送達"
   },
   "options_webhook_testFail": {
-    "message": "失敗 — 請檢查網址與接收端"
+    "message": "失敗，請檢查網址與接收端"
   },
   "options_tabs_privacy": {
     "message": "隱私"
@@ -441,7 +441,7 @@
     "message": "隱私儀表板"
   },
   "options_privacy_desc": {
-    "message": "「有什麼離開了這台機器？」的可驗證答案 — 完全由本機紀錄組成，不從任何地方擷取。你的 API 金鑰只儲存在本機，且只會送往其所屬的供應商。"
+    "message": "「有什麼離開了這台機器？」的可驗證答案，完全由本機紀錄組成，不從任何地方擷取。你的 API 金鑰只儲存在本機，且只會送往其所屬的供應商。"
   },
   "options_privacy_models_header": {
     "message": "傳送給模型供應商"
@@ -462,7 +462,7 @@
     "message": "代理造訪過的主機"
   },
   "options_privacy_visits_desc": {
-    "message": "僅記錄代理自身的導覽 — 你個人的瀏覽絕不會被記錄。"
+    "message": "僅記錄代理自身的導覽，你個人的瀏覽絕不會被記錄。"
   },
   "options_privacy_visits_empty": {
     "message": "尚未記錄任何代理導覽。"
@@ -570,22 +570,22 @@
     "message": "名稱"
   },
   "options_models_providers_custom_name_desc": {
-    "message": "提供者名稱 (儲存時不允許使用空格)"
+    "message": "可用英數字與底線，不能有空格。"
   },
   "options_models_providers_custom_name_placeholder": {
-    "message": "提供者名稱"
+    "message": "例如：我的本機伺服器"
   },
   "options_models_providers_apiKey": {
     "message": "API 金鑰"
   },
   "options_models_providers_apiKey_placeholder_optional": {
-    "message": "API 金鑰 (選填)"
+    "message": "此供應商可不填"
   },
   "options_models_providers_apiKey_placeholder_required": {
-    "message": "API 金鑰 (必填)"
+    "message": "貼上你的 API 金鑰"
   },
   "options_models_providers_apiKey_placeholder_ollama": {
-    "message": "API 金鑰 (Ollama 可留空)"
+    "message": "Ollama 不需要金鑰"
   },
   "options_models_providers_apiKey_hide": {
     "message": "隱藏 API 金鑰"
@@ -645,31 +645,31 @@
     "message": "模型"
   },
   "options_models_providers_placeholders_baseUrl_custom": {
-    "message": "必須提供與 OpenAI 相容的 API 端點"
+    "message": "https://api.example.com/v1"
   },
   "options_models_providers_placeholders_baseUrl_azure": {
     "message": "https://YOUR_RESOURCE_NAME.openai.azure.com/"
   },
   "options_models_providers_placeholders_baseUrl_openrouter": {
-    "message": "OpenRouter 基礎 URL (選填，預設為 https://openrouter.ai/api/v1)"
+    "message": "預設為 https://openrouter.ai/api/v1"
   },
   "options_models_providers_placeholders_baseUrl_llama": {
-    "message": "Llama API 基礎 URL (預設為 https://api.llama.com/v1)"
+    "message": "預設為 https://api.llama.com/v1"
   },
   "options_models_providers_placeholders_baseUrl_ollama": {
-    "message": "Ollama 基礎 URL"
+    "message": "http://localhost:11434"
   },
   "options_models_providers_placeholders_azureDeployment": {
-    "message": "請輸入 Azure 模型的部署名稱 (例如 gpt-4o, gpt-4o-mini)"
+    "message": "例如：gpt-4o"
   },
   "options_models_providers_placeholders_azureApiVersion": {
     "message": "例如：2025-04-01-preview"
   },
   "options_models_providers_deployment_desc": {
-    "message": "輸入模型名稱後，按下 Enter 或空格鍵以完成設定。為獲得最佳的相容性，部署名稱建議與 OpenAI 的模型名稱 (例如 gpt-4o) 保持一致。"
+    "message": "輸入一個部署名稱後按 Enter。建議與 OpenAI 模型名稱一致（例如 gpt-4o）以獲得最佳相容性。"
   },
   "options_models_providers_models_instructions": {
-    "message": "輸入後按下 Enter 或空格鍵以新增。"
+    "message": "每個模型輸入後按 Enter 新增。"
   },
   "options_models_providers_models_openrouter_empty": {
     "message": "未選擇任何模型。如有需要，請手動新增模型名稱。"
@@ -1157,7 +1157,7 @@
     }
   },
   "act_askUser_declined": {
-    "message": "手動步驟未完成 — 使用者停止了任務，或無人在場。"
+    "message": "手動步驟未完成，使用者停止了任務，或無人在場。"
   },
   "act_extract_start": {
     "message": "正在從頁面擷取：$GOAL$",
@@ -1178,7 +1178,7 @@
     }
   },
   "act_errors_extractFailed": {
-    "message": "擷取失敗 — 請直接讀取頁面狀態並快取所得內容，必要時捲動查看更多。"
+    "message": "擷取失敗，請直接讀取頁面狀態並快取所得內容，必要時捲動查看更多。"
   },
   "act_scrollToPercent_start": {
     "message": "正在捲動至 $PERCENT$ 百分比位置",
@@ -1394,10 +1394,10 @@
     }
   },
   "exec_plan_approved": {
-    "message": "計畫已核准 — 執行中"
+    "message": "計畫已核准，執行中"
   },
   "exec_plan_rejected": {
-    "message": "計畫已拒絕 — 任務已停止"
+    "message": "計畫已拒絕，任務已停止"
   },
   "exec_undo_ok": {
     "message": "已復原上一個步驟。頁面已還原，代理將重新規劃。"
@@ -1472,16 +1472,16 @@
     "message": "允許"
   },
   "handoff_title": {
-    "message": "輪到你了 — 代理正在等待"
+    "message": "輪到你了，代理正在等待"
   },
   "handoff_onPage": {
     "message": "所在頁面"
   },
   "handoff_note": {
-    "message": "你輸入的內容會直接進入頁面 — 絕不會經過模型或聊天記錄。"
+    "message": "你輸入的內容會直接進入頁面，絕不會經過模型或聊天記錄。"
   },
   "handoff_done": {
-    "message": "完成 — 繼續"
+    "message": "完成，繼續"
   },
   "handoff_stop": {
     "message": "停止任務"
@@ -1503,7 +1503,7 @@
     }
   },
   "budgetPause_unpriced": {
-    "message": "尚未輸入價格：$MODELS$ — 實際花費更高。",
+    "message": "尚未輸入價格：$MODELS$，實際花費更高。",
     "placeholders": {
       "models": {
         "content": "$1",
@@ -1558,7 +1558,7 @@
     }
   },
   "act_remember_disabled": {
-    "message": "沒有記住任何內容 — 記憶功能已關閉或內容為空"
+    "message": "沒有記住任何內容，記憶功能已關閉或內容為空"
   },
   "options_tabs_memory": {
     "message": "記憶"
@@ -1674,7 +1674,7 @@
     "message": "費用依你在設定中輸入的價格計算。"
   },
   "chat_usage_unpriced": {
-    "message": "尚未輸入價格：$MODELS$ — 美元總額僅為下限。",
+    "message": "尚未輸入價格：$MODELS$，美元總額僅為下限。",
     "placeholders": {
       "models": {
         "content": "$1",
@@ -1704,7 +1704,7 @@
     "message": "任務已完成。"
   },
   "chat_task_interrupted": {
-    "message": "任務提前中止 — 與背景服務的連線已中斷。"
+    "message": "任務提前中止，與背景服務的連線已中斷。"
   },
   "chat_trail_steps": {
     "message": "$STEPS$ 個步驟",
@@ -1796,5 +1796,8 @@
         "example": "planner"
       }
     }
+  },
+  "options_models_providers_placeholders_models": {
+    "message": "輸入模型名稱後按 Enter"
   }
 }
