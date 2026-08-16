@@ -4,6 +4,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+    <!--
+      Search Console ownership. The tag method, not a DNS TXT record: flowkite.vercel.app is a
+      subdomain of Vercel's own domain, so there is no zone we can add records to. It must stay in
+      the head of the page Search Console was pointed at, and it is checked again periodically -
+      removing it later un-verifies the property.
+    -->
+    <meta name="google-site-verification" content="X2WzU80rl8jPDHeyU2h07Z7kLRNYWoti8JmBS0Bx7Bw" />
+
     <title>Flowkite, the browser agent that asks first</title>
     <meta
       name="description"
