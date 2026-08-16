@@ -27,7 +27,6 @@ export interface BaseAgentOptions {
 }
 export interface ExtraAgentOptions {
   id?: string;
-  toolCallingMethod?: string;
   callOptions?: CallOptions;
 }
 
@@ -43,8 +42,6 @@ export abstract class BaseAgent<T extends z.ZodType, M = unknown> {
   protected context: AgentContext;
   protected actions: Record<string, Action> = {};
   protected modelOutputSchema: T;
-  protected toolCallingMethod: string | null;
-  protected chatModelLibrary: string;
   protected modelName: string;
   protected provider: string;
   protected withStructuredOutput: boolean;
@@ -59,13 +56,10 @@ export abstract class BaseAgent<T extends z.ZodType, M = unknown> {
     this.prompt = options.prompt;
     this.context = options.context;
     this.provider = options.provider || '';
-    // TODO: fix this, the name is not correct in production environment
-    this.chatModelLibrary = this.chatLLM.constructor.name;
     this.modelName = this.getModelName();
     this.withStructuredOutput = this.setWithStructuredOutput();
     // extra options
     this.id = extraOptions?.id || 'agent';
-    this.toolCallingMethod = this.setToolCallingMethod(extraOptions?.toolCallingMethod);
     this.callOptions = extraOptions?.callOptions;
     this.modelOutputToolName = `${this.id}_output`;
   }
@@ -82,24 +76,6 @@ export abstract class BaseAgent<T extends z.ZodType, M = unknown> {
       return this.chatLLM.model as string;
     }
     return 'Unknown';
-  }
-
-  // Set the tool calling method
-  private setToolCallingMethod(toolCallingMethod?: string): string | null {
-    if (toolCallingMethod === 'auto') {
-      switch (this.chatModelLibrary) {
-        case 'ChatGoogleGenerativeAI':
-          return null;
-        case 'ChatOpenAI':
-        case 'AzureChatOpenAI':
-        case 'ChatGroq':
-        case 'ChatXAI':
-          return 'function_calling';
-        default:
-          return null;
-      }
-    }
-    return toolCallingMethod || null;
   }
 
   // Check if model is a Llama model (only for Llama-specific handling)
