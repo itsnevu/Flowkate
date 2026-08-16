@@ -159,6 +159,31 @@ let stuck = false;
 let lastProgress = -1;
 /** The back-to-top key; created later, once, in its own section below. */
 let totop: HTMLButtonElement | null = null;
+/** The reading-progress hairline, created alongside it. */
+let progressBar: HTMLElement | null = null;
+
+/**
+ * How far the page can scroll, cached for the same reason `heroHeight` is:
+ * `scrollHeight` is a layout read, and the progress bar updates on every frame
+ * of every scroll.
+ */
+let maxScroll = 0;
+
+const measureScrollRange = (): void => {
+  maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+};
+
+measureScrollRange();
+
+if (typeof ResizeObserver !== 'undefined') {
+  // The body, not the viewport: sections that reveal, fonts that land late and
+  // FAQ items that open all change the scrollable range without a resize event.
+  const rangeObserver = new ResizeObserver(measureScrollRange);
+  rangeObserver.observe(document.body);
+  signal.addEventListener('abort', () => rangeObserver.disconnect(), { once: true });
+} else {
+  window.addEventListener('resize', measureScrollRange, { passive: true, signal });
+}
 
 /**
  * The single place scroll position is turned into page state. Called from the
@@ -175,6 +200,10 @@ const applyScroll = (scrollY: number): void => {
   // A viewport down is where "scroll back" starts beating "just scroll" — earlier
   // than that the button is noise next to the hero.
   totop?.classList.toggle('is-visible', scrollY > window.innerHeight);
+
+  if (progressBar) {
+    progressBar.style.transform = `scaleX(${maxScroll > 0 ? clamp(scrollY / maxScroll, 0, 1) : 0})`;
+  }
 
   const activeScene = scene;
   if (!activeScene) return;
@@ -377,8 +406,41 @@ const reveals = Array.from(document.querySelectorAll<HTMLElement>('.reveal'));
 // This loop is the SOLE owner of `--i`. Do not put `style="--i: N"` back into
 // index.html: hand-written indices go stale the moment an element is inserted,
 // removed or reordered, and they are silently overwritten here anyway.
+/**
+ * Which flavour of entrance an element gets. Decided here rather than spelled
+ * out in the markup so all three language pages inherit it from one bundle, and
+ * so a new section picks up the right motion by being the right kind of thing.
+ * Every class it can return is defined in style.css; returning null leaves the
+ * element on the base rise-and-focus.
+ */
+const revealVariant = (el: HTMLElement): string | null => {
+  if (el.tagName === 'H2') return 'reveal--wipe';
+  if (el.classList.contains('chips')) return 'reveal--stagger';
+  // The hero's pull-quote sits to the side of the measure, so it arrives across.
+  if (el.classList.contains('hero__try')) return 'reveal--slide-l';
+  if (
+    el.classList.contains('plate') ||
+    el.classList.contains('faq__item') ||
+    el.classList.contains('demo') ||
+    el.classList.contains('cta')
+  ) {
+    return 'reveal--card';
+  }
+  return null;
+};
+
 const seenPerParent = new Map<Element, number>();
 for (const el of reveals) {
+  const variant = revealVariant(el);
+  if (variant) el.classList.add(variant);
+
+  // Chips carry their own stagger index, since the parent hands them its entrance.
+  if (el.classList.contains('chips')) {
+    Array.from(el.children).forEach((chip, index) => {
+      if (chip instanceof HTMLElement) chip.style.setProperty('--ci', String(index));
+    });
+  }
+
   const parent = el.parentElement;
   if (!parent) {
     el.style.setProperty('--i', '0');
@@ -551,6 +613,39 @@ if (nav && menuButton) {
 }
 
 /* -------------------------------------------------------------------------- */
+/* FAQ deep links                                                              */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * A link to a single question has to arrive with that question open, or it lands on
+ * a wall of collapsed summaries and the deep link was pointless. The ids are shared
+ * across the language pages, so /pt-BR/#faq-keys reaches the same answer.
+ *
+ * `scrollToHash` already handles the travel; this only owns the disclosure state.
+ */
+const openFaqFromHash = (hash: string): void => {
+  if (!hash.startsWith('#faq-')) return;
+  const target = document.getElementById(decodeId(hash.slice(1)));
+  if (target instanceof HTMLDetailsElement) target.open = true;
+};
+
+openFaqFromHash(window.location.hash);
+window.addEventListener('hashchange', () => openFaqFromHash(window.location.hash), { signal });
+
+// The delegated anchor handler prevents default and drives Lenis itself, so a click
+// on an in-page FAQ link never fires `hashchange`. Catch those on the way past.
+document.addEventListener(
+  'click',
+  (event: MouseEvent) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const anchor = target.closest<HTMLAnchorElement>('a[href^="#faq-"]');
+    if (anchor) openFaqFromHash(anchor.getAttribute('href') ?? '');
+  },
+  { signal },
+);
+
+/* -------------------------------------------------------------------------- */
 /* GitHub stars                                                                */
 /* -------------------------------------------------------------------------- */
 
@@ -648,7 +743,33 @@ const setUpTaskRotation = (): void => {
     chip.textContent = `${quoteOpen}${text}${quoteClose}`;
   };
 
+  /**
+   * Set while a pointer rests on the chip or focus is inside it. Only checked
+   * between examples, never mid-word: pausing halfway through typing would read
+   * as the page having stalled rather than as a deliberate hold.
+   */
+  let paused = false;
+  // The whole pill, not just the text node: a bigger, more forgiving hover target,
+  // and the one a reader's cursor actually lands on.
+  const hoverTarget = chip.closest<HTMLElement>('.hero__try') ?? chip;
+  const hold = (): void => {
+    paused = true;
+  };
+  const release = (): void => {
+    paused = false;
+  };
+  hoverTarget.addEventListener('pointerenter', hold, { signal });
+  hoverTarget.addEventListener('pointerleave', release, { signal });
+  hoverTarget.addEventListener('focusin', hold, { signal });
+  hoverTarget.addEventListener('focusout', release, { signal });
+
   const cycle = (): void => {
+    // Someone is reading this one. Keep it on screen and ask again shortly.
+    if (paused) {
+      later(cycle, 600);
+      return;
+    }
+
     const current = examples[index];
     let pos = current.length;
 
@@ -685,6 +806,58 @@ const setUpTaskRotation = (): void => {
 };
 
 setUpTaskRotation();
+
+/* -------------------------------------------------------------------------- */
+/* Reading progress                                                            */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * A hairline across the top edge, scaled to how far down the page the reader is.
+ * Created here rather than in the markup for the same reason as the button
+ * below: one bundle, three language pages, nothing to keep in sync by hand.
+ *
+ * Left out entirely under reduced motion — a bar that tracks the scroll is
+ * motion the reader did not ask for, and it carries no information the
+ * scrollbar is not already giving them.
+ */
+if (!prefersReducedMotion) {
+  const bar = document.createElement('div');
+  bar.className = 'progress';
+  // Decorative: it mirrors the scrollbar, so it has nothing to announce.
+  bar.setAttribute('aria-hidden', 'true');
+  document.body.append(bar);
+  progressBar = bar;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Card sheen                                                                  */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Moves each card's highlight toward the pointer. The gradient itself lives in
+ * style.css and already has a sensible resting position, so this only ever
+ * refines an effect that is complete without it — which is why the whole thing
+ * is skipped on touch, where there is no pointer to follow.
+ *
+ * This does read layout per move, but only while the pointer is genuinely over
+ * a card, and pointer events are already coalesced to one per frame.
+ */
+if (window.matchMedia('(hover: hover)').matches) {
+  document.addEventListener(
+    'pointermove',
+    (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const card = target.closest<HTMLElement>('.plate, .faq__item');
+      if (!card) return;
+
+      const rect = card.getBoundingClientRect();
+      card.style.setProperty('--mx', `${((event.clientX - rect.left) / rect.width) * 100}%`);
+      card.style.setProperty('--my', `${((event.clientY - rect.top) / rect.height) * 100}%`);
+    },
+    { passive: true, signal },
+  );
+}
 
 /* -------------------------------------------------------------------------- */
 /* Back to top                                                                 */
@@ -853,6 +1026,8 @@ const teardown = (): void => {
   cleanUpCopyButtons();
   totop?.remove();
   totop = null;
+  progressBar?.remove();
+  progressBar = null;
   // Fires the abort listeners above (observers) and drops every DOM listener.
   // Also latches `signal.aborted`, which is what stops an in-flight `loadScene`
   // from attaching a scene to a page that is already being dismantled.

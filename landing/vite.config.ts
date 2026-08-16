@@ -1,9 +1,35 @@
+import type { Plugin } from 'vite';
 import { defineConfig } from 'vite';
+
+/**
+ * Rewrite the error page's asset URLs to root-absolute.
+ *
+ * Vercel serves dist/404.html for every unmatched path, at whatever depth the
+ * bad URL happened to have. `base: './'` is right for the real pages — each one
+ * always sits at its own known path — but wrong for this one: a broken link at
+ * /a/b/c would resolve `./assets/style.css` against /a/b/, and the error page
+ * would arrive with no stylesheet and no mark. Only 404.html needs this.
+ */
+const rootAbsolute404 = (): Plugin => ({
+  name: 'flowkite:root-absolute-404',
+  transformIndexHtml: {
+    // After Vite has injected and base-rewritten the asset tags, so there is
+    // something to rewrite.
+    order: 'post',
+    handler(html, ctx) {
+      if (!ctx.path.endsWith('404.html')) return html;
+      // Deliberately narrow: only `./`-prefixed hrefs/srcs, so absolute links
+      // and external URLs on the page are left exactly as authored.
+      return html.replace(/(href|src)="\.\//g, '$1="/');
+    },
+  },
+});
 
 // The landing site ships as a plain static bundle, so `base: './'` keeps every
 // asset URL relative and the built output works from a subpath as well as root.
 export default defineConfig({
   base: './',
+  plugins: [rootAbsolute404()],
   build: {
     target: 'es2022',
     rollupOptions: {

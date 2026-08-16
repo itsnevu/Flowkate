@@ -3,6 +3,7 @@
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://flowkite.vercel.app/</loc>
+    <lastmod>2026-08-16</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://flowkite.vercel.app/" />
     <xhtml:link rel="alternate" hreflang="pt-BR" href="https://flowkite.vercel.app/pt-BR/" />
     <xhtml:link rel="alternate" hreflang="zh-TW" href="https://flowkite.vercel.app/zh-TW/" />
@@ -10,6 +11,7 @@
   </url>
   <url>
     <loc>https://flowkite.vercel.app/pt-BR/</loc>
+    <lastmod>2026-08-16</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://flowkite.vercel.app/" />
     <xhtml:link rel="alternate" hreflang="pt-BR" href="https://flowkite.vercel.app/pt-BR/" />
     <xhtml:link rel="alternate" hreflang="zh-TW" href="https://flowkite.vercel.app/zh-TW/" />
@@ -17,6 +19,7 @@
   </url>
   <url>
     <loc>https://flowkite.vercel.app/zh-TW/</loc>
+    <lastmod>2026-08-16</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://flowkite.vercel.app/" />
     <xhtml:link rel="alternate" hreflang="pt-BR" href="https://flowkite.vercel.app/pt-BR/" />
     <xhtml:link rel="alternate" hreflang="zh-TW" href="https://flowkite.vercel.app/zh-TW/" />

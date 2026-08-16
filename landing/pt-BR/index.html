@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Flowkite — o agente de navegador que pergunta antes</title>
+    <title>Flowkite, o agente de navegador que pergunta antes</title>
     <meta
       name="description"
       content="Flowkite é uma extensão open source para Chrome que roda um sistema de agentes Planner e Navigator localmente no seu navegador. Ela mostra o plano antes, pede permissão para ações sensíveis e mantém suas chaves de API na sua máquina." />
@@ -26,7 +26,7 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Flowkite" />
     <meta property="og:locale" content="pt_BR" />
-    <meta property="og:title" content="Flowkite — o agente de navegador que pergunta antes" />
+    <meta property="og:title" content="Flowkite, o agente de navegador que pergunta antes" />
     <meta
       property="og:description"
       content="Extensão open source para Chrome com um sistema de agentes Planner / Navigator rodando localmente no seu navegador. Prévia do plano, desfazer, e suas próprias chaves de API." />
@@ -40,7 +40,7 @@
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@Flowkiteai" />
-    <meta name="twitter:title" content="Flowkite — o agente de navegador que pergunta antes" />
+    <meta name="twitter:title" content="Flowkite, o agente de navegador que pergunta antes" />
     <meta
       name="twitter:description"
       content="Extensão open source para Chrome com um sistema de agentes Planner / Navigator rodando localmente no seu navegador. Prévia do plano, desfazer, e suas próprias chaves de API." />
@@ -73,7 +73,7 @@
             "name": "É gratuito?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "A extensão é gratuita e open source — sem plano pago, sem trial, sem conta. O que custa dinheiro é o modelo: você traz sua própria chave de API e o provedor cobra diretamente de você. Rodando um modelo local via Ollama, até isso cai para zero."
+              "text": "A extensão é gratuita e open source, sem plano pago, sem trial, sem conta. O que custa dinheiro é o modelo: você traz sua própria chave de API e o provedor cobra diretamente de você. Rodando um modelo local via Ollama, até isso cai para zero."
             }
           },
           {
@@ -89,7 +89,7 @@
             "name": "Funciona com modelos locais?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Sim — o Ollama é suportado diretamente, e qualquer endpoint compatível com a API da OpenAI funciona informando a URL base. Nessa configuração o custo de API é zero e nada sai da sua máquina. Modelos locais pedem prompts mais específicos: divida a tarefa em passos explícitos."
+              "text": "Sim, o Ollama é suportado diretamente, e qualquer endpoint compatível com a API da OpenAI funciona informando a URL base. Nessa configuração o custo de API é zero e nada sai da sua máquina. Modelos locais pedem prompts mais específicos: divida a tarefa em passos explícitos."
             }
           },
           {
@@ -97,7 +97,7 @@
             "name": "Está na Chrome Web Store?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Ainda não. Hoje a instalação é via Load unpacked — a partir de um build feito por você ou de um zip de release. Para atualizar, substitua a pasta e aperte atualizar no cartão da Flowkite em chrome://extensions."
+              "text": "Ainda não. Hoje a instalação é via Load unpacked, a partir de um build feito por você ou de um zip de release. Para atualizar, substitua a pasta e aperte atualizar no cartão da Flowkite em chrome://extensions."
             }
           },
           {
@@ -105,7 +105,7 @@
             "name": "Que dados saem da minha máquina?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "A estrutura da página e — apenas se você ativar visão — capturas de tela, enviadas ao provedor de LLM que você escolheu com a sua chave. Builds que incluem chave de analytics também enviam eventos anônimos de uso ao PostHog, que Opções → Analytics desliga; uma cópia compilada por você não carrega chave nenhuma. Configurações, histórico, chaves de API e memórias ficam no chrome.storage.local."
+              "text": "A estrutura da página e, apenas se você ativar visão, capturas de tela, enviadas ao provedor de LLM que você escolheu com a sua chave. Builds que incluem chave de analytics também enviam eventos anônimos de uso ao PostHog, que Opções → Analytics desliga; uma cópia compilada por você não carrega chave nenhuma. Configurações, histórico, chaves de API e memórias ficam no chrome.storage.local."
             }
           },
           {
@@ -113,7 +113,7 @@
             "name": "Quais navegadores são suportados?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Chrome e Edge são totalmente suportados. Firefox e Safari não — a Flowkite é uma extensão Manifest V3 construída sobre as APIs do próprio Chrome. Outros navegadores Chromium como Brave, Arc e Opera podem funcionar, mas não são testados."
+              "text": "Chrome e Edge são totalmente suportados. Firefox e Safari não, a Flowkite é uma extensão Manifest V3 construída sobre as APIs do próprio Chrome. Outros navegadores Chromium como Brave, Arc e Opera podem funcionar, mas não são testados."
             }
           }
         ]
@@ -140,6 +140,11 @@
           <a class="nav__link" href="#providers">Provedores</a>
           <a class="nav__link" href="#quickstart">Comece rápido</a>
           <a class="nav__link" href="#faq">FAQ</a>
+          <span class="nav__langs" role="group" aria-label="Idioma">
+            <a class="nav__lang" href="/" lang="en">EN</a>
+            <a class="nav__lang" href="/pt-BR/" lang="pt-BR" aria-current="page">PT</a>
+            <a class="nav__lang" href="/zh-TW/" lang="zh-TW">中文</a>
+          </span>
           <a class="key key--sm" href="https://github.com/itsnevu/Flowkite" rel="noopener noreferrer"> GitHub </a>
           <button class="nav__menu" type="button" aria-expanded="false" aria-controls="nav-sheet" aria-label="Menu">
             <span class="nav__menu-bar" aria-hidden="true"></span>
@@ -157,6 +162,11 @@
             <a class="nav__sheet-link" href="#providers">Provedores</a>
             <a class="nav__sheet-link" href="#quickstart">Comece rápido</a>
             <a class="nav__sheet-link" href="#faq">FAQ</a>
+            <span class="nav__sheet-langs" role="group" aria-label="Idioma">
+              <a class="nav__sheet-lang" href="/" lang="en">EN</a>
+              <a class="nav__sheet-lang" href="/pt-BR/" lang="pt-BR" aria-current="page">PT</a>
+              <a class="nav__sheet-lang" href="/zh-TW/" lang="zh-TW">中文</a>
+            </span>
           </div>
         </div>
       </nav>
@@ -174,7 +184,7 @@
           <h1 id="hero-title" class="hero__title reveal">Um agente de navegador que <em>pergunta antes</em>.</h1>
 
           <p class="hero__lede reveal">
-            Descreva uma tarefa em linguagem natural e a Flowkite a executa no seu próprio navegador — um Planner define
+            Descreva uma tarefa em linguagem natural e a Flowkite a executa no seu próprio navegador, um Planner define
             a abordagem, um Navigator clica e digita, e você acompanha tudo pelo painel lateral. Ela mostra o plano
             antes de tocar em qualquer página, para e pergunta antes de qualquer coisa irreversível, e envia seus dados
             direto ao provedor de modelo que você escolheu, com a chave que é sua. Não existe servidor da Flowkite no
@@ -186,7 +196,7 @@
             <span
               class="hero__try-text"
               id="hero-task"
-              data-tasks='["Ache os filtros de AeroPress mais baratos em três lojas e faça o pedido.","Compare as análises do MacBook Air M4 em três sites e me dê o consenso.","Preencha este formulário de despesas com meus recibos — e pare antes de enviar.","Vigie estas quatro lojas e me avise quando a mesa regulável cair abaixo de R$ 1.500."]'
+              data-tasks='["Ache os filtros de AeroPress mais baratos em três lojas e faça o pedido.","Compare as análises do MacBook Air M4 em três sites e me dê o consenso.","Preencha este formulário de despesas com meus recibos, e pare antes de enviar.","Vigie estas quatro lojas e me avise quando a mesa regulável cair abaixo de R$ 1.500."]'
               >“Ache os filtros de AeroPress mais baratos em três lojas e faça o pedido.”</span
             >
           </p>
@@ -205,7 +215,7 @@
           </div>
 
           <p class="hero__note reveal">
-            Ainda não está na Chrome Web Store. A instalação é do jeito desenvolvedor — compile e use
+            Ainda não está na Chrome Web Store. A instalação é do jeito desenvolvedor, compile e use
             <strong>Carregar sem compactação</strong> em <code>chrome://extensions</code>.
           </p>
         </div>
@@ -219,7 +229,7 @@
             <h2 id="demo-title" class="reveal">É assim que “perguntar antes” se parece.</h2>
             <p class="lede reveal">
               Uma tarefa, reproduzida no painel lateral. O Planner propõe e espera, abas somente leitura fazem a
-              pesquisa — e o único passo que gasta dinheiro para e pede um sim antes de acontecer.
+              pesquisa, e o único passo que gasta dinheiro para e pede um sim antes de acontecer.
             </p>
           </div>
 
@@ -250,7 +260,7 @@
               <figcaption class="demo__bar">
                 <img src="/mark.png" alt="" width="20" height="20" decoding="async" />
                 <span class="demo__name">Flowkite</span>
-                <span class="demo__hint">painel lateral — replay</span>
+                <span class="demo__hint">painel lateral · replay</span>
               </figcaption>
 
               <div class="demo__chat">
@@ -259,11 +269,11 @@
                 </p>
 
                 <div class="demo__card demo-seq" style="--d: 1s">
-                  <p class="demo__who">Planner — plano proposto</p>
+                  <p class="demo__who">Planner · plano proposto</p>
                   <ol class="demo__plan">
                     <li>Buscar em três lojas em paralelo, abas somente leitura</li>
                     <li>Comparar os totais com frete incluído</li>
-                    <li>Finalizar na mais barata — <strong>é uma compra, então vai parar e perguntar</strong></li>
+                    <li>Finalizar na mais barata, <strong>é uma compra, então vai parar e perguntar</strong></li>
                   </ol>
                   <div class="demo__keys">
                     <span class="demo__key demo__key--dark demo-press" style="--d: 2.3s">Aprovar e executar</span>
@@ -274,7 +284,7 @@
 
                 <p class="demo__step demo-seq" style="--d: 3.7s">
                   <span class="demo__tick" aria-hidden="true"></span>
-                  Três lojas pesquisadas de uma vez — abas sem clique, sem digitação, sem envio
+                  Três lojas pesquisadas de uma vez, abas sem clique, sem digitação, sem envio
                 </p>
                 <p class="demo__step demo-seq" style="--d: 4.5s">
                   <span class="demo__tick" aria-hidden="true"></span>
@@ -282,7 +292,7 @@
                 </p>
 
                 <div class="demo__card demo__card--gate demo-seq" style="--d: 5.4s">
-                  <p class="demo__who">Ação sensível — precisa de um sim</p>
+                  <p class="demo__who">Ação sensível · precisa de um sim</p>
                   <p class="demo__gate-copy">
                     O Navigator quer clicar em <code>Fechar pedido</code>. Isso é uma compra real de R$ 71,20.
                   </p>
@@ -294,11 +304,11 @@
 
                 <p class="demo__step demo-seq" style="--d: 7.5s">
                   <span class="demo__tick" aria-hidden="true"></span>
-                  Pedido feito — número de confirmação salvo no chat
+                  Pedido feito, número de confirmação salvo no chat
                 </p>
 
                 <p class="demo__msg demo__msg--done demo-seq" style="--d: 8.2s">
-                  Pronto. Pedido na loja mais barata por R$ 71,20 — R$ 15,50 abaixo da segunda melhor.
+                  Pronto. Pedido na loja mais barata por R$ 71,20, R$ 15,50 abaixo da segunda melhor.
                 </p>
               </div>
             </figure>
@@ -312,7 +322,7 @@
               <figcaption class="demo__bar">
                 <img src="/mark.png" alt="" width="20" height="20" decoding="async" />
                 <span class="demo__name">Flowkite</span>
-                <span class="demo__hint">painel lateral — replay</span>
+                <span class="demo__hint">painel lateral · replay</span>
               </figcaption>
 
               <div class="demo__chat">
@@ -322,11 +332,11 @@
                 </p>
 
                 <div class="demo__card demo-seq" style="--d: 1s">
-                  <p class="demo__who">Planner — plano proposto</p>
+                  <p class="demo__who">Planner · plano proposto</p>
                   <ol class="demo__plan">
                     <li>Abrir três sites de análise em paralelo, abas somente leitura</li>
                     <li>Extrair veredito, bateria e preço de cada um</li>
-                    <li>Fundir num consenso curto — nada a comprar, nada a enviar</li>
+                    <li>Fundir num consenso curto, nada a comprar, nada a enviar</li>
                   </ol>
                   <div class="demo__keys">
                     <span class="demo__key demo__key--dark demo-press" style="--d: 2.3s">Aprovar e executar</span>
@@ -337,11 +347,11 @@
 
                 <p class="demo__step demo-seq" style="--d: 3.7s">
                   <span class="demo__tick" aria-hidden="true"></span>
-                  Memória anotada: “prefere resumos curtos” — guardada localmente, apague quando quiser
+                  Memória anotada: “prefere resumos curtos”, guardada localmente, apague quando quiser
                 </p>
                 <p class="demo__step demo-seq" style="--d: 4.5s">
                   <span class="demo__tick" aria-hidden="true"></span>
-                  Três análises lidas de uma vez — abas sem clique, sem digitação, sem envio
+                  Três análises lidas de uma vez, abas sem clique, sem digitação, sem envio
                 </p>
                 <p class="demo__step demo-seq" style="--d: 5.3s">
                   <span class="demo__tick" aria-hidden="true"></span>
@@ -389,7 +399,7 @@
                 aconteceu.
               </p>
               <p>
-                Desfazer reverte o último passo — a página navega de volta <em>e</em> o agente esquece o passo, então
+                Desfazer reverte o último passo, a página navega de volta <em>e</em> o agente esquece o passo, então
                 replaneja a partir do estado restaurado em vez de construir sobre algo que você recusou.
               </p>
             </li>
@@ -409,8 +419,7 @@
                 e pergunta primeiro.
               </p>
               <p>
-                A checagem lê o <em>elemento real do DOM que o agente escolheu</em> — o rótulo, o tipo, o aria-label —
-                e não a descrição do modelo sobre o que ele acha que está fazendo.
+                A checagem lê o <em>elemento real do DOM que o agente escolheu</em>, o rótulo, o tipo, o aria-label, e não a descrição do modelo sobre o que ele acha que está fazendo.
               </p>
             </li>
 
@@ -425,7 +434,7 @@
               <h3>Memória que nunca sai do aparelho</h3>
               <p>
                 Diga uma preferência uma vez e ela persiste entre sessões. As memórias vivem em
-                <code>chrome.storage.local</code> — nunca enviadas, nunca sincronizadas.
+                <code>chrome.storage.local</code>, nunca enviadas, nunca sincronizadas.
               </p>
               <p>
                 As configurações listam cada fato guardado com um botão de apagar ao lado, e um único interruptor
@@ -443,7 +452,7 @@
               </span>
               <h3>Pesquisa em abas paralelas</h3>
               <p>
-                Consultas independentes — o mesmo produto em três lojas — rodam ao mesmo tempo, cada uma na sua aba em
+                Consultas independentes, o mesmo produto em três lojas, rodam ao mesmo tempo, cada uma na sua aba em
                 segundo plano, e se fundem numa única resposta.
               </p>
               <p>
@@ -502,7 +511,7 @@
             <h2 id="how-title" class="reveal">Dois agentes, um navegador, nenhum servidor.</h2>
             <p class="lede reveal">
               A Flowkite divide o trabalho em dois papéis: um decide o que fazer, o outro faz. Tudo roda dentro do
-              service worker da extensão, na sua máquina — a única coisa que sai é a requisição ao provedor de modelo
+              service worker da extensão, na sua máquina, a única coisa que sai é a requisição ao provedor de modelo
               que você configurou.
             </p>
           </div>
@@ -512,7 +521,7 @@
               <span class="step__num" aria-hidden="true">1</span>
               <h3>Planner</h3>
               <p>
-                Lê sua tarefa e define a abordagem — quais sites, em que ordem, como será o “pronto”. Replaneja quando
+                Lê sua tarefa e define a abordagem, quais sites, em que ordem, como será o “pronto”. Replaneja quando
                 a página se revela diferente do que todos esperavam.
               </p>
               <p class="step__meta">Decide quando a tarefa terminou. Obrigatório.</p>
@@ -535,7 +544,7 @@
           <div class="well well--wide reveal">
             <p>
               <strong>O portão do plano fica na frente dos dois.</strong> O primeiro plano de cada tarefa é mostrado a
-              você e espera aprovação — e só o primeiro, para que replanejar no meio não vire amolação. Com as coisas
+              você e espera aprovação, e só o primeiro, para que replanejar no meio não vire amolação. Com as coisas
               andando, desfazer é a saída de emergência: leva a página de volta e apaga o passo do histórico do agente,
               então o próximo plano é construído sobre o estado que você manteve, não sobre o que você rejeitou.
             </p>
@@ -550,7 +559,7 @@
             <p class="eyebrow reveal">Traga seu próprio modelo</p>
             <h2 id="providers-title" class="reveal">Onze provedores, mais qualquer um compatível com a OpenAI.</h2>
             <p class="lede reveal">
-              Atribua um modelo a cada papel — Planner, Navigator e, opcionalmente, um modelo Fast barato para passos
+              Atribua um modelo a cada papel, Planner, Navigator e, opcionalmente, um modelo Fast barato para passos
               rotineiros. Misture fornecedores à vontade; nada pressupõe que vieram do mesmo lugar.
             </p>
           </div>
@@ -573,7 +582,7 @@
           <div class="well well--wide reveal">
             <p>
               As chaves ficam guardadas localmente em <code>chrome.storage.local</code> e vão direto do seu navegador
-              ao provedor escolhido. Nunca passam por um servidor da Flowkite, porque ele não existe — sem backend, sem
+              ao provedor escolhido. Nunca passam por um servidor da Flowkite, porque ele não existe, sem backend, sem
               conta, sem cadastro. Se o seu endpoint fala a API da OpenAI, aponte a Flowkite para a URL base e
               funciona, inclusive um modelo rodando na sua própria máquina via Ollama.
             </p>
@@ -589,7 +598,7 @@
             <h2 id="quickstart-title" class="reveal">Compile, carregue, adicione uma chave.</h2>
             <p class="lede reveal">
               Uns cinco minutos numa máquina que já tem Node e pnpm. Não há listagem em loja para clicar, então a
-              instalação é a de desenvolvedor — o que também significa que você pode ler cada linha que vai executar.
+              instalação é a de desenvolvedor, o que também significa que você pode ler cada linha que vai executar.
             </p>
           </div>
 
@@ -597,7 +606,7 @@
             <li class="well reveal">
               <h3><span class="install__num" aria-hidden="true">1</span> Clone o repositório e compile</h3>
               <p>
-                Requer Node.js 22.12 ou mais novo e pnpm 9.15 ou mais novo. <strong>pnpm é obrigatório</strong> — este
+                Requer Node.js 22.12 ou mais novo e pnpm 9.15 ou mais novo. <strong>pnpm é obrigatório</strong>, este
                 é um workspace pnpm e o npm não resolve as dependências <code>workspace:*</code>.
               </p>
               <pre class="code"><code><span class="c"># Node.js &gt;= 22.12.0 e pnpm &gt;= 9.15.1</span>
@@ -609,7 +618,7 @@ pnpm build          <span class="c"># a saída fica em dist/</span></code></pre>
 
             <li class="well reveal">
               <h3><span class="install__num" aria-hidden="true">2</span> Abra a página de extensões</h3>
-              <p>Cole isto na barra de endereço — não é um link que o Chrome deixa uma página web abrir por você.</p>
+              <p>Cole isto na barra de endereço, não é um link que o Chrome deixa uma página web abrir por você.</p>
               <pre class="code"><code>chrome://extensions/</code></pre>
             </li>
 
@@ -628,7 +637,7 @@ pnpm build          <span class="c"># a saída fica em dist/</span></code></pre>
               </h3>
               <p>
                 Clique em <strong>Carregar sem compactação</strong> e selecione a pasta <code>dist/</code> que o build
-                acabou de gerar — a pasta em si, não um arquivo dentro dela. A Flowkite aparece na barra de
+                acabou de gerar, a pasta em si, não um arquivo dentro dela. A Flowkite aparece na barra de
                 ferramentas.
               </p>
               <p class="note">
@@ -669,21 +678,21 @@ pnpm build          <span class="c"># a saída fica em dist/</span></code></pre>
           </div>
 
           <div class="faq">
-            <details class="faq__item reveal">
+            <details class="faq__item reveal" id="faq-free">
               <summary>
                 <span>É gratuito?</span>
                 <span class="faq__icon" aria-hidden="true"></span>
               </summary>
               <div class="faq__body">
                 <p>
-                  A extensão é gratuita e open source — sem plano pago, sem trial e sem conta. O que custa dinheiro é o
+                  A extensão é gratuita e open source, sem plano pago, sem trial e sem conta. O que custa dinheiro é o
                   modelo: você traz sua própria chave de API e o provedor cobra diretamente de você pelo que o agente
                   usa. Rodando um modelo local via Ollama, até isso cai para zero.
                 </p>
               </div>
             </details>
 
-            <details class="faq__item reveal">
+            <details class="faq__item reveal" id="faq-keys">
               <summary>
                 <span>Para onde vão minhas chaves de API?</span>
                 <span class="faq__icon" aria-hidden="true"></span>
@@ -698,14 +707,14 @@ pnpm build          <span class="c"># a saída fica em dist/</span></code></pre>
               </div>
             </details>
 
-            <details class="faq__item reveal">
+            <details class="faq__item reveal" id="faq-local-models">
               <summary>
                 <span>Funciona com modelos locais?</span>
                 <span class="faq__icon" aria-hidden="true"></span>
               </summary>
               <div class="faq__body">
                 <p>
-                  Sim — o Ollama é suportado diretamente, e qualquer endpoint compatível com a OpenAI funciona
+                  Sim, o Ollama é suportado diretamente, e qualquer endpoint compatível com a OpenAI funciona
                   informando a URL base. Essa configuração tem custo zero de API e nada sai da sua máquina. Uma
                   ressalva: modelos locais pedem prompts mais específicos. Divida a tarefa em passos explícitos em vez
                   de entregar uma única instrução vaga de alto nível.
@@ -713,14 +722,14 @@ pnpm build          <span class="c"># a saída fica em dist/</span></code></pre>
               </div>
             </details>
 
-            <details class="faq__item reveal">
+            <details class="faq__item reveal" id="faq-web-store">
               <summary>
                 <span>Está na Chrome Web Store?</span>
                 <span class="faq__icon" aria-hidden="true"></span>
               </summary>
               <div class="faq__body">
                 <p>
-                  Ainda não. Hoje a instalação é com <strong>Carregar sem compactação</strong> — a partir de um build
+                  Ainda não. Hoje a instalação é com <strong>Carregar sem compactação</strong>, a partir de um build
                   seu ou de um zip de release. Atualizar significa substituir a pasta e apertar atualizar no cartão da
                   Flowkite em <code>chrome://extensions</code>. Veja o <a href="#quickstart">Comece rápido</a> para a
                   sequência completa.
@@ -728,32 +737,32 @@ pnpm build          <span class="c"># a saída fica em dist/</span></code></pre>
               </div>
             </details>
 
-            <details class="faq__item reveal">
+            <details class="faq__item reveal" id="faq-data">
               <summary>
                 <span>Que dados saem da minha máquina?</span>
                 <span class="faq__icon" aria-hidden="true"></span>
               </summary>
               <div class="faq__body">
                 <p>
-                  A estrutura da página e — apenas se você ligar a visão — capturas de tela, enviadas ao provedor de
+                  A estrutura da página e, apenas se você ligar a visão, capturas de tela, enviadas ao provedor de
                   LLM que você escolheu usando a sua chave; quando os dados chegam a ele, vale a política dele, então
                   escolha um com o qual você se sinta confortável. Builds que incluem uma chave de analytics também
-                  enviam eventos anônimos de uso ao PostHog — tarefa iniciada, concluída, falhada ou cancelada, mais o
-                  hostname de cada domínio visitado — que <strong>Opções → Analytics</strong> desliga; uma cópia
+                  enviam eventos anônimos de uso ao PostHog, tarefa iniciada, concluída, falhada ou cancelada, mais o
+                  hostname de cada domínio visitado, que <strong>Opções → Analytics</strong> desliga; uma cópia
                   compilada por você não carrega chave nenhuma, então isso nunca roda. Suas configurações, histórico de
                   tarefas, chaves de API e memórias ficam no <code>chrome.storage.local</code> e nunca são enviados.
                 </p>
               </div>
             </details>
 
-            <details class="faq__item reveal">
+            <details class="faq__item reveal" id="faq-browsers">
               <summary>
                 <span>Quais navegadores são suportados?</span>
                 <span class="faq__icon" aria-hidden="true"></span>
               </summary>
               <div class="faq__body">
                 <p>
-                  Chrome e Edge são totalmente suportados. Firefox e Safari não — a Flowkite é uma extensão Manifest V3
+                  Chrome e Edge são totalmente suportados. Firefox e Safari não, a Flowkite é uma extensão Manifest V3
                   construída sobre as APIs do próprio Chrome. Outros navegadores Chromium como Brave, Arc e Opera podem
                   até funcionar, mas não são testados.
                 </p>

@@ -809,20 +809,195 @@ export function initScene(canvas: HTMLCanvasElement): { setScroll(p: number): vo
   });
   materials.push(distantMaterial);
 
-  const distantKite = new THREE.Group();
-  for (const sail of sailMeshes) {
-    const mini = new THREE.Mesh(sail.geometry, distantMaterial);
-    mini.rotation.copy(sail.rotation);
-    distantKite.add(mini);
+  interface DistantSpec {
+    /** Where it begins its crossing. Spread apart so they never travel as a clump. */
+    x: number;
+    y: number;
+    z: number;
+    scale: number;
+    speed: number;
+    /** Haze: the further back, the closer to the canvas colour it is allowed to sit. */
+    opacity: number;
+    /** Detunes the bob and yaw, so three kites never nod in unison. */
+    phase: number;
   }
-  distantKite.scale.setScalar(0.26);
-  distantKite.position.set(0, 2.1, -7);
-  air.add(distantKite);
 
-  /** Where the distant kite starts its crossing, and how fast the wind carries it.
-   *  Starts left of the hero kite so a first visit sees it in open sky within seconds. */
-  const DISTANT_START_X = 0;
-  const DISTANT_SPEED = 0.42;
+  /**
+   * Three of them, on three depth planes. Aerial perspective does the work: the nearest
+   * is the darkest, largest and quickest, the furthest is barely more than a smudge with
+   * a kite's outline. Together they turn one object in empty air into a sky with weather
+   * and company in it.
+   */
+  const distantSpecs: DistantSpec[] = [
+    { x: 0, y: 2.1, z: -7, scale: 0.26, speed: 0.42, opacity: 0.9, phase: 0 },
+    { x: 9, y: 3.15, z: -9.5, scale: 0.19, speed: 0.3, opacity: 0.62, phase: 2.1 },
+    { x: -8, y: 1.35, z: -5.5, scale: 0.14, speed: 0.55, opacity: 0.45, phase: 4.3 },
+  ];
+
+  /** Stations down a distant kite's line. It is a lazy curve, so it needs very few. */
+  const DISTANT_LINE_STATIONS = 20;
+
+  /**
+   * The line a distant kite is flown on, authored in world units so it does not inherit
+   * the kite's scale. It leaves the tail, bows downwind as it drops, and runs out of the
+   * bottom of the frame toward whoever is holding it. Without it these kites read as
+   * ornaments floating in the sky rather than as kites someone is flying.
+   */
+  function distantLineGeometry(scale: number): THREE.BufferGeometry {
+    const length = 11 * scale;
+    const position = new Float32Array((DISTANT_LINE_STATIONS + 1) * 3);
+    // Four components: three's line shader multiplies material opacity by this alpha,
+    // so the thread can dissolve along its own length while the scroll fade still owns
+    // the overall level.
+    const color = new Float32Array((DISTANT_LINE_STATIONS + 1) * 4);
+    for (let i = 0; i <= DISTANT_LINE_STATIONS; i++) {
+      const s = i / DISTANT_LINE_STATIONS;
+      const a = i * 3;
+      // Downwind is -X here, the same direction the hero kite's line bows.
+      position[a] = -Math.pow(s, 1.6) * length * 0.42;
+      // Starts just inside the sail, so the join is hidden behind the tail-ward point.
+      position[a + 1] = TIP_BOTTOM.y * scale - s * length;
+      position[a + 2] = 0;
+
+      const c = i * 4;
+      color[c] = 1;
+      color[c + 1] = 1;
+      color[c + 2] = 1;
+      // Full where it leaves the sail, gone by the two-thirds mark. A background kite
+      // has to read as flown without dragging a hard diagonal across the headline.
+      color[c + 3] = Math.max(0, 1 - Math.pow(s / 0.66, 1.5));
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(position, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(color, 4));
+    return geometry;
+  }
+
+  /** Fainter than the sails: a thread seen at this distance is barely a mark at all. */
+  const distantLineMaterial = new THREE.LineBasicMaterial({
+    color: 0xb9c0cd,
+    vertexColors: true,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+  });
+  materials.push(distantLineMaterial);
+
+  const distantKites: Array<{ spec: DistantSpec; holder: THREE.Group; body: THREE.Group }> = [];
+
+  for (const spec of distantSpecs) {
+    // Two groups, because the two parts move differently: the holder carries the kite
+    // and its line across the sky together, while only the body is allowed to bank and
+    // yaw. Rotating the line with it would swing the whole string like a rigid rod.
+    const holder = new THREE.Group();
+    holder.position.set(spec.x, spec.y, spec.z);
+
+    const body = new THREE.Group();
+    for (const sail of sailMeshes) {
+      // Geometry is shared with the hero kite — three extra kites cost four draw calls
+      // each and not one byte of new vertex data.
+      const mini = new THREE.Mesh(sail.geometry, distantMaterial);
+      mini.rotation.copy(sail.rotation);
+      body.add(mini);
+    }
+    body.scale.setScalar(spec.scale);
+    holder.add(body);
+
+    const lineGeometry = distantLineGeometry(spec.scale);
+    holder.add(new THREE.Line(lineGeometry, distantLineMaterial));
+    geometries.push(lineGeometry);
+
+    air.add(holder);
+    distantKites.push({ spec, holder, body });
+  }
+
+  // --- birds ------------------------------------------------------------------------------
+
+  /**
+   * A skein of birds, drawn the way a pencil would: five points per bird, two strokes
+   * from wingtip to wingtip through the body. No bodies, no beaks — at this distance a
+   * bird *is* the flap, so the flap is the whole model.
+   */
+  const BIRD_COUNT = 7;
+  const BIRD_WRAP = 34;
+  /** Local half-span; the per-bird scale takes it from here. */
+  const BIRD_POINTS = 5;
+
+  interface BirdSpec {
+    x: number;
+    y: number;
+    z: number;
+    scale: number;
+    speed: number;
+    /** Wingbeats per second. Small birds beat faster, which also reads as "further". */
+    flap: number;
+    phase: number;
+  }
+
+  /** A loose skein rather than a tidy V — staggered, so it reads as birds, not as a logo. */
+  const birdSpecs: BirdSpec[] = [
+    { x: 0, y: 3.5, z: -8, scale: 0.2, speed: 0.62, flap: 5.2, phase: 0 },
+    { x: 0.9, y: 3.72, z: -8.3, scale: 0.17, speed: 0.62, flap: 5.6, phase: 0.9 },
+    { x: 1.7, y: 3.34, z: -8.1, scale: 0.16, speed: 0.62, flap: 6.0, phase: 1.7 },
+    { x: 2.5, y: 3.95, z: -8.6, scale: 0.15, speed: 0.62, flap: 5.4, phase: 2.4 },
+    { x: 3.4, y: 3.55, z: -8.2, scale: 0.14, speed: 0.62, flap: 6.3, phase: 3.1 },
+    { x: 4.4, y: 3.85, z: -8.8, scale: 0.13, speed: 0.62, flap: 5.8, phase: 3.9 },
+    { x: 5.2, y: 3.42, z: -8.4, scale: 0.12, speed: 0.62, flap: 6.6, phase: 4.6 },
+  ];
+
+  const birdMaterial = new THREE.LineBasicMaterial({
+    // Darker than the kites they share the sky with: a one-pixel line needs more contrast
+    // than a filled silhouette to read at all, let alone read as a bird.
+    color: 0x69717f,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+  });
+  materials.push(birdMaterial);
+
+  const birds: Array<{ spec: BirdSpec; line: THREE.Line; position: THREE.BufferAttribute }> = [];
+
+  for (const spec of birdSpecs) {
+    const position = new THREE.BufferAttribute(new Float32Array(BIRD_POINTS * 3), 3);
+    position.setUsage(THREE.DynamicDrawUsage);
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', position);
+
+    const line = new THREE.Line(geometry, birdMaterial);
+    line.position.set(spec.x, spec.y, spec.z);
+    line.scale.setScalar(spec.scale);
+    // Wings sweep well past the resting bounding box, and the flock wraps the sky.
+    line.frustumCulled = false;
+    air.add(line);
+
+    birds.push({ spec, line, position });
+    geometries.push(geometry);
+  }
+
+  /**
+   * Beat every bird's wings for time `t`. The wing is a shallow arc — the tip travels
+   * roughly twice as far as the elbow — and the downstroke is snapped while the upstroke
+   * glides, which is the asymmetry that stops a flap looking like a metronome.
+   */
+  function updateBirds(t: number): void {
+    for (const bird of birds) {
+      const { spec, position } = bird;
+      const raw = Math.sin(t * spec.flap + spec.phase);
+      // Bias toward the top of the stroke: cheap stand-in for a fast down, slow up.
+      const beat = Math.sign(raw) * Math.pow(Math.abs(raw), 0.65);
+      const tip = beat * 0.55;
+      const elbow = beat * 0.26 + 0.03;
+
+      position.setXYZ(0, -1, tip, 0);
+      position.setXYZ(1, -0.48, elbow, 0);
+      position.setXYZ(2, 0, 0, 0);
+      position.setXYZ(3, 0.48, elbow, 0);
+      position.setXYZ(4, 1, tip, 0);
+      position.needsUpdate = true;
+    }
+  }
+
+  updateBirds(STATIC_POSE_TIME);
 
   /**
    * Advance the air for time `t`. Everything is computed from `t` alone — no integrated
@@ -862,15 +1037,31 @@ export function initScene(canvas: HTMLCanvasElement): { setScroll(p: number): vo
       material.opacity = spec.opacity * visibility;
     }
 
-    {
+    for (const { spec, holder, body } of distantKites) {
       const half = CLOUD_WRAP / 2;
-      const raw = DISTANT_START_X - DISTANT_SPEED * t;
-      distantKite.position.x = ((((raw + half) % CLOUD_WRAP) + CLOUD_WRAP) % CLOUD_WRAP) - half;
-      distantKite.position.y = 2.1 + Math.sin(t * 0.4) * 0.16;
-      distantKite.rotation.z = -0.14 + Math.sin(t * 0.5 + 1.0) * 0.1;
-      distantKite.rotation.y = Math.sin(t * 0.33) * 0.5;
-      distantMaterial.opacity = 0.9 * visibility;
+      const raw = spec.x - spec.speed * t;
+      holder.position.x = ((((raw + half) % CLOUD_WRAP) + CLOUD_WRAP) % CLOUD_WRAP) - half;
+      holder.position.y = spec.y + Math.sin(t * 0.4 + spec.phase) * 0.16;
+      // Only the sail banks; the line below it keeps hanging toward its flyer.
+      body.rotation.z = -0.14 + Math.sin(t * 0.5 + spec.phase + 1.0) * 0.1;
+      body.rotation.y = Math.sin(t * 0.33 + spec.phase) * 0.5;
+      // A lazy sway on the whole rig, which is what actually reads as "on a string".
+      holder.rotation.z = Math.sin(t * 0.24 + spec.phase) * 0.05;
     }
+    // One shared material, so the haze is set once from the nearest kite's value and the
+    // rest read as further away through scale and height alone.
+    distantMaterial.opacity = distantSpecs[0].opacity * visibility;
+    distantLineMaterial.opacity = 0.7 * visibility;
+
+    updateBirds(t);
+    for (const { spec, line } of birds) {
+      const half = BIRD_WRAP / 2;
+      const raw = spec.x - spec.speed * t;
+      line.position.x = ((((raw + half) % BIRD_WRAP) + BIRD_WRAP) % BIRD_WRAP) - half;
+      // A slow rise and fall over the crossing, so the skein is never a straight line.
+      line.position.y = spec.y + Math.sin(t * 0.21 + spec.phase) * 0.22;
+    }
+    birdMaterial.opacity = 0.9 * visibility;
   }
 
   // --- light ----------------------------------------------------------------------------

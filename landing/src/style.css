@@ -66,6 +66,14 @@
 
   /* Motion */
   --ease-press: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Pointer-tracked card highlight. `--mx`/`--my` default to the page's light
+     source (upper-left) and are only overwritten while a pointer is over the
+     card, so a touch device gets a perfectly good static sheen. */
+  --sheen: radial-gradient(
+    22rem circle at var(--mx, 22%) var(--my, 0%),
+    rgba(255, 255, 255, 0.85),
+    rgba(255, 255, 255, 0) 60%
+  );
   --reveal-duration: 0.7s;
 
   /* Type stacks — system only, nothing fetched */
@@ -326,7 +334,12 @@ html.is-anchoring .section:not(.hero) {
 .plate {
   padding: clamp(1.5rem, 2.6vw, 2rem);
   border-radius: var(--r-slab);
-  background: var(--canvas-raised);
+  background-color: var(--canvas-raised);
+  /* A soft highlight sitting where the page's light comes from. main.ts moves it
+     to follow the pointer on hover-capable devices; everywhere else it simply
+     stays at the light source, which is why the default is upper-left and not
+     centred. It is a background layer, so it always paints beneath the text. */
+  background-image: var(--sheen);
   box-shadow: var(--neu-lg);
 }
 
@@ -1218,6 +1231,103 @@ html.js .demo__replay {
 }
 
 /* --------------------------------------------------------------------------
+   4c. Language switcher — in the header, and again in the phone sheet
+   -------------------------------------------------------------------------- */
+
+/* Short codes rather than language names: this sits in a row that already has six
+   links and a key, and "Português" would push the GitHub key off the end. The full
+   names still live in the footer, where there is room to be polite. */
+.nav__langs {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.2rem;
+  margin-right: 0.15rem;
+  border-radius: var(--r-pill, 999px);
+  background: var(--canvas-sunk);
+  box-shadow: var(--neu-inset-sm);
+}
+
+.nav__lang {
+  padding: 0.28rem 0.5rem;
+  border-radius: var(--r-pill, 999px);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--ink-faint);
+  transition:
+    color 0.15s var(--ease-press),
+    background-color 0.15s var(--ease-press),
+    box-shadow 0.15s var(--ease-press);
+}
+
+.nav__lang:hover {
+  color: var(--ink);
+}
+
+/* The raised chip marks where you are: the same "pressed out of the canvas" move
+   the rest of the page uses for a current state. */
+.nav__lang[aria-current='page'] {
+  color: var(--ink);
+  background: var(--canvas-raised);
+  box-shadow: var(--neu-sm);
+}
+
+/* The switcher is the first thing to go when the row runs out of room; the sheet
+   below carries it from here down. */
+@media (max-width: 1080px) {
+  .nav__langs {
+    display: none;
+  }
+}
+
+.nav__sheet-langs {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.55rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--hairline, rgba(159, 167, 183, 0.28));
+}
+
+.nav__sheet-lang {
+  flex: 1;
+  padding: 0.5rem 0.25rem;
+  border-radius: var(--r-soft);
+  background: var(--canvas-sunk);
+  box-shadow: var(--neu-inset-sm);
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.nav__sheet-lang[aria-current='page'] {
+  background: var(--canvas-raised);
+  box-shadow: var(--neu-sm);
+  color: var(--ink);
+}
+
+/* --------------------------------------------------------------------------
+   12b2. Reading progress — a hairline across the very top, created by main.ts
+   -------------------------------------------------------------------------- */
+
+/* Above the nav (100) so it rides the top edge, below the skip link (200) so
+   keyboard users still get their target first. Driven by scaleX from a cached
+   scroll maximum, so the scroll handler stays free of layout reads. */
+.progress {
+  position: fixed;
+  inset: 0 0 auto;
+  height: 2px;
+  z-index: 110;
+  pointer-events: none;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, rgba(90, 98, 112, 0.35), var(--ink));
+  /* No transition on transform: it is already driven frame-by-frame by Lenis,
+     and easing it on top would make the bar lag the page it is describing. */
+}
+
+/* --------------------------------------------------------------------------
    12c. Back to top — created by main.ts, shown once the reader is a viewport
         down. Fixed above the content but below the nav and its sheet.
    -------------------------------------------------------------------------- */
@@ -1287,7 +1397,8 @@ html.js .demo__replay {
 
 .faq__item {
   border-radius: var(--r-slab);
-  background: var(--canvas-raised);
+  background-color: var(--canvas-raised);
+  background-image: var(--sheen);
   box-shadow: var(--neu);
   overflow: hidden;
   transition: box-shadow 0.25s var(--ease-press);
@@ -1600,16 +1711,93 @@ html.js .demo__replay {
    anything else. Only the script that can clear the hidden state is allowed to
    apply it, so a bundle that fails, is blocked, or has not parsed yet leaves the
    page fully readable instead of blank. Bare `.reveal` is always visible. */
+/* One engine, several flavours. Every variant below only re-points these four
+   custom properties, so there is a single transition to keep honest and the
+   hidden state can never drift apart from the shown one. The blur is what makes
+   it read as expensive: content arrives out of focus and settles, like a lens
+   pulling focus, rather than simply sliding. */
 html.js .reveal {
+  --reveal-x: 0px;
+  --reveal-y: 18px;
+  --reveal-scale: 1;
+  --reveal-blur: 6px;
+
   opacity: 0;
-  transform: translateY(18px);
+  /* translate3d, not translateY: keeps the whole settle on the compositor. */
+  transform: translate3d(var(--reveal-x), var(--reveal-y), 0) scale(var(--reveal-scale));
+  filter: blur(var(--reveal-blur));
   transition:
     opacity var(--reveal-duration) cubic-bezier(0.2, 0.8, 0.2, 1),
-    transform var(--reveal-duration) cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform var(--reveal-duration) cubic-bezier(0.2, 0.8, 0.2, 1),
+    filter var(--reveal-duration) cubic-bezier(0.2, 0.8, 0.2, 1);
   transition-delay: calc(var(--i, 0) * 80ms);
 }
 
 html.js .reveal.is-visible {
+  opacity: 1;
+  transform: none;
+  /* `none`, not blur(0): drops the stacking context the filter created, so the
+     settled element renders exactly as it would with no reveal at all. */
+  filter: none;
+}
+
+/* Section headings: a wipe rather than a drift. The type is large enough that a
+   blur would read as smeared, so the clip does the work instead. The end state
+   is inset past the box on every side — a hard 0 would shave descenders and the
+   glow of any text shadow. */
+html.js .reveal--wipe {
+  --reveal-y: 10px;
+  --reveal-blur: 0px;
+  clip-path: inset(0 0 105% 0);
+  transition:
+    opacity var(--reveal-duration) cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform var(--reveal-duration) cubic-bezier(0.2, 0.8, 0.2, 1),
+    clip-path calc(var(--reveal-duration) + 0.2s) cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+html.js .reveal--wipe.is-visible {
+  clip-path: inset(-15% -15% -15% -15%);
+}
+
+/* Prose and pull-quotes enter from the side they sit on, so the eye is carried
+   across the measure rather than bounced down it. */
+html.js .reveal--slide-l {
+  --reveal-x: -30px;
+  --reveal-y: 6px;
+}
+
+html.js .reveal--slide-r {
+  --reveal-x: 30px;
+  --reveal-y: 6px;
+}
+
+/* Cards: a touch of scale so the slab appears to rise toward the reader out of
+   the page, which is exactly what its neumorphic shadow already claims. */
+html.js .reveal--card {
+  --reveal-y: 24px;
+  --reveal-scale: 0.975;
+}
+
+/* A container that hands its entrance to its children (see the chips below):
+   the wrapper itself must be present, or it would fade the stagger out. */
+html.js .reveal--stagger {
+  --reveal-y: 0px;
+  --reveal-blur: 0px;
+  opacity: 1;
+}
+
+/* Provider chips pop in one after another. `--ci` is set per chip in main.ts,
+   the same way `--i` is owned there. */
+html.js .chips.reveal .chip {
+  opacity: 0;
+  transform: translate3d(0, 10px, 0) scale(0.94);
+  transition:
+    opacity 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition-delay: calc(var(--ci, 0) * 45ms);
+}
+
+html.js .chips.reveal.is-visible .chip {
   opacity: 1;
   transform: none;
 }
@@ -1703,6 +1891,15 @@ html.js .reveal.is-visible {
   }
 
   html.js .reveal {
+    opacity: 1;
+    transform: none;
+    /* The global rule above only zeroes durations — these two would otherwise
+       stay stuck at their hidden values and blur or clip the page for good. */
+    filter: none;
+    clip-path: none;
+  }
+
+  html.js .chips.reveal .chip {
     opacity: 1;
     transform: none;
   }
