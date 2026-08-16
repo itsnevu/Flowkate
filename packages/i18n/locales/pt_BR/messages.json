@@ -44,7 +44,40 @@
     "message": "Bem-vindo ao Flowkite!"
   },
   "welcome_instruction": {
-    "message": "Para começar, por favor, configure suas chaves de API na página de configurações."
+    "message": "Escolha de onde vem o modelo. Sua chave fica guardada neste dispositivo e vai apenas para esse provedor."
+  },
+  "welcome_provider": {
+    "message": "Provedor do modelo"
+  },
+  "welcome_apiKey": {
+    "message": "Chave de API"
+  },
+  "welcome_apiKey_placeholder": {
+    "message": "Cole sua chave"
+  },
+  "welcome_baseUrl": {
+    "message": "Endereço do servidor"
+  },
+  "welcome_ollamaNote": {
+    "message": "Roda na sua própria máquina, então não há chave nem cobrança. O Ollama precisa ser iniciado com acesso pelo navegador liberado."
+  },
+  "welcome_start": {
+    "message": "Salvar e começar"
+  },
+  "welcome_saving": {
+    "message": "Salvando"
+  },
+  "welcome_errors_apiKeyRequired": {
+    "message": "Este provedor precisa de uma chave de API."
+  },
+  "welcome_errors_baseUrlRequired": {
+    "message": "Informe o endereço em que o Ollama está escutando."
+  },
+  "welcome_errors_saveFailed": {
+    "message": "Não foi possível salvar. Confira os dados e tente de novo."
+  },
+  "welcome_errors_noModel": {
+    "message": "Esse provedor não oferece modelos para começar. Abra as configurações para adicionar um."
   },
   "welcome_openSettings": {
     "message": "Abrir Configurações"

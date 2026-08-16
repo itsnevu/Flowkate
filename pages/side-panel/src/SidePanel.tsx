@@ -71,7 +71,7 @@ const SidePanel = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const setInputTextRef = useRef<((text: string) => void) | null>(null);
 
-  const { hasConfiguredModels, replayEnabled } = useModelConfigGate();
+  const { hasConfiguredModels, replayEnabled, recheck: recheckModelConfig } = useModelConfigGate();
   const { favoritePrompts, addPrompt, updatePromptTitle, removePrompt, reorderPrompts } = useFavoritePrompts();
 
   useEffect(() => {
@@ -459,7 +459,7 @@ const SidePanel = () => {
           )}
 
           {/* Show setup message when no models are configured */}
-          {hasConfiguredModels === false && <SetupGuide />}
+          {hasConfiguredModels === false && <SetupGuide onConfigured={recheckModelConfig} />}
 
           {/* Show normal chat interface when models are configured */}
           {hasConfiguredModels === true && (

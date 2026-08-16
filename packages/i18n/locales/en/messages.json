@@ -44,7 +44,40 @@
     "message": "Welcome to Flowkite!"
   },
   "welcome_instruction": {
-    "message": "To get started, please configure your API keys in the settings page."
+    "message": "Choose where the model comes from. Your key is stored on this device and goes only to that provider."
+  },
+  "welcome_provider": {
+    "message": "Model provider"
+  },
+  "welcome_apiKey": {
+    "message": "API key"
+  },
+  "welcome_apiKey_placeholder": {
+    "message": "Paste your key"
+  },
+  "welcome_baseUrl": {
+    "message": "Server address"
+  },
+  "welcome_ollamaNote": {
+    "message": "Runs on your own machine, so there is no key and no bill. Ollama has to be started with browser access allowed."
+  },
+  "welcome_start": {
+    "message": "Save and start"
+  },
+  "welcome_saving": {
+    "message": "Saving"
+  },
+  "welcome_errors_apiKeyRequired": {
+    "message": "This provider needs an API key."
+  },
+  "welcome_errors_baseUrlRequired": {
+    "message": "Enter the address Ollama is listening on."
+  },
+  "welcome_errors_saveFailed": {
+    "message": "Could not save that. Check the details and try again."
+  },
+  "welcome_errors_noModel": {
+    "message": "That provider offers no models to start with. Open settings to add one."
   },
   "welcome_openSettings": {
     "message": "Open Settings"

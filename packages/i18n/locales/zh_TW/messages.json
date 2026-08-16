@@ -44,7 +44,40 @@
     "message": "歡迎使用 Flowkite！"
   },
   "welcome_instruction": {
-    "message": "開始使用前，請先完成 API 金鑰的設定。"
+    "message": "選擇模型的來源。金鑰只存在這台裝置上，也只會送往你選的服務商。"
+  },
+  "welcome_provider": {
+    "message": "模型服務商"
+  },
+  "welcome_apiKey": {
+    "message": "API 金鑰"
+  },
+  "welcome_apiKey_placeholder": {
+    "message": "貼上你的金鑰"
+  },
+  "welcome_baseUrl": {
+    "message": "伺服器位址"
+  },
+  "welcome_ollamaNote": {
+    "message": "在你自己的機器上執行，不需要金鑰，也不會產生費用。Ollama 必須以允許瀏覽器存取的方式啟動。"
+  },
+  "welcome_start": {
+    "message": "儲存並開始"
+  },
+  "welcome_saving": {
+    "message": "儲存中"
+  },
+  "welcome_errors_apiKeyRequired": {
+    "message": "這個服務商需要 API 金鑰。"
+  },
+  "welcome_errors_baseUrlRequired": {
+    "message": "請輸入 Ollama 監聽的位址。"
+  },
+  "welcome_errors_saveFailed": {
+    "message": "無法儲存，請檢查內容後再試一次。"
+  },
+  "welcome_errors_noModel": {
+    "message": "這個服務商沒有可直接開始的模型，請開啟設定新增一個。"
   },
   "welcome_openSettings": {
     "message": "開啟設定"

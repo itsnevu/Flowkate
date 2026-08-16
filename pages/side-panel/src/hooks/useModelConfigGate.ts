@@ -70,5 +70,7 @@ export const useModelConfigGate = () => {
     };
   }, [checkModelConfiguration, loadGeneralSettings]);
 
-  return { hasConfiguredModels, replayEnabled };
+  // `recheck` is for the setup screen, which configures a model inside the panel itself: no
+  // focus or visibility change happens on that path, so nothing else would re-open the gate.
+  return { hasConfiguredModels, replayEnabled, recheck: checkModelConfiguration };
 };
