@@ -5,7 +5,7 @@
   },
   "app_metadata_name": {
     "description": "Extension name",
-    "message": "Flowkite: AI Web Agent & Automation"
+    "message": "Flowkite"
   },
   "app_commands_openPanel": {
     "description": "Keyboard shortcut listed at chrome://extensions/shortcuts",

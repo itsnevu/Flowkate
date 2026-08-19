@@ -9,12 +9,16 @@ file is everything else the submission form asks for.
 ## Item name (max 45 characters)
 
 ```
-Flowkite: AI Web Agent & Automation
+Flowkite
 ```
 
-35 characters, and identical to what the extension installs as (`app_metadata_name` in
+8 characters, and identical to what the extension installs as (`app_metadata_name` in
 [`packages/i18n/locales/en/messages.json`](packages/i18n/locales/en/messages.json)) — a store name
 that differs from the installed name is a common review note.
+
+The name carries no keywords on purpose: the product is the word, and the tagline underneath it is
+where "AI", "web agent" and "automation" belong. Store search still reads the short description,
+which leads with all three.
 
 ## Short description (max 132 characters)
 

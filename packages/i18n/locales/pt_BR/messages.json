@@ -5,7 +5,7 @@
   },
   "app_metadata_name": {
     "description": "Nome da extensão",
-    "message": "Flowkite: Agente Web de IA e Automação"
+    "message": "Flowkite"
   },
   "app_commands_openPanel": {
     "description": "Atalho de teclado listado em chrome://extensions/shortcuts",

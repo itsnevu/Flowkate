@@ -5,7 +5,7 @@
   },
   "app_metadata_name": {
     "description": "Extension name",
-    "message": "Flowkite：AI 網頁代理程式與自動化"
+    "message": "Flowkite"
   },
   "app_commands_openPanel": {
     "description": "Keyboard shortcut listed at chrome://extensions/shortcuts",
