@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ProviderTypeEnum } from '@extension/storage';
 import { ProviderCard } from '../ProviderCard';
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import type { ProviderConfig } from '@extension/storage';
 
 /**
@@ -71,5 +71,40 @@ describe('ProviderCard stacking', () => {
 
     expect(className).toContain('animate-rise');
     expect(className).toContain('focus-within:z-30');
+  });
+});
+
+/** Every element in the tree whose className carries the given fragment. */
+function findByClass(node: ReactNode, fragment: string): ReactElement[] {
+  const found: ReactElement[] = [];
+  const visit = (current: unknown) => {
+    if (Array.isArray(current)) return current.forEach(visit);
+    if (typeof current !== 'object' || current === null || !('props' in current)) return;
+    const element = current as ReactElement;
+    const className = (element.props as { className?: string }).className ?? '';
+    if (className.includes(fragment)) found.push(element);
+    visit((element.props as { children?: ReactNode }).children);
+  };
+  visit(node);
+  return found;
+}
+
+describe('destructive keys', () => {
+  // Cancel and Delete used to be red text on the same pale slab every other button sits on, which
+  // read as a disabled link rather than as a key you are about to press on purpose.
+  it('gives a new provider a destructive Cancel key', () => {
+    const keys = findByClass(renderRoot(ProviderTypeEnum.OpenRouter, true), 'bg-danger');
+
+    expect(keys.length).toBeGreaterThan(0);
+    expect((keys[0].props as { className: string }).className).toContain('hover:bg-danger-hover');
+    expect((keys[0].props as { className: string }).className).toContain('active:bg-danger-active');
+  });
+
+  // The label has to stay legible on the gradient, which is the whole reason the mid stop was
+  // chosen: graphite-50 on it clears AA.
+  it('keeps the pale key label on the destructive key', () => {
+    const keys = findByClass(renderRoot(ProviderTypeEnum.OpenRouter, true), 'bg-danger');
+
+    expect((keys[0].props as { className: string }).className).toContain('text-graphite-50');
   });
 });

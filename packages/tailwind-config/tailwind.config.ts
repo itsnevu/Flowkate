@@ -58,6 +58,13 @@ export default {
         graphite: 'linear-gradient(160deg, #3c414a 0%, #1c1f24 52%, #0c0d10 100%)',
         'graphite-hover': 'linear-gradient(160deg, #4a505a 0%, #24282e 52%, #101216 100%)',
         'graphite-active': 'linear-gradient(160deg, #16181c 0%, #23262b 52%, #34383f 100%)',
+        // The destructive twin of the graphite family, built the same way: lit shoulder, darker
+        // base, and inverted when pressed. Desaturated to sit on the pale ground rather than shout
+        // at it. The mid stop clears 5.8:1 against the graphite-50 text the keys carry, so the
+        // label stays readable where it actually sits.
+        danger: 'linear-gradient(160deg, #c4544d 0%, #a83a34 52%, #7d221e 100%)',
+        'danger-hover': 'linear-gradient(160deg, #d1615a 0%, #b8443d 52%, #8e2a25 100%)',
+        'danger-active': 'linear-gradient(160deg, #7d221e 0%, #8e2a25 52%, #a83a34 100%)',
         // A brushed sheen for larger slabs, so big surfaces are not flat black.
         sheen: 'linear-gradient(105deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 38%)',
         // Deliberately NOT named `canvas`: a backgroundImage key of that name emits a

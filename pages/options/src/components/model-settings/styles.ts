@@ -15,6 +15,12 @@ export const KEY_PRIMARY =
   'inline-flex items-center justify-center gap-2 rounded-soft bg-graphite px-4 py-2 text-sm font-medium text-graphite-50 shadow-key transition-all duration-150 ease-press hover:bg-graphite-hover active:translate-y-px active:bg-graphite-active active:shadow-key-pressed disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none disabled:hover:bg-graphite disabled:active:translate-y-0';
 export const KEY_SECONDARY =
   'inline-flex items-center justify-center gap-2 rounded-soft bg-canvas-raised px-4 py-2 text-sm font-medium text-ink shadow-neu-sm transition-all duration-150 ease-press hover:shadow-neu active:shadow-neu-inset-sm disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none';
+// The destructive key. Same skeuomorphic build as KEY_PRIMARY - it is the same object, cut from a
+// different material - so a Cancel or a Delete reads as a real key rather than as red text on grey.
+export const KEY_DANGER =
+  'inline-flex items-center justify-center gap-2 rounded-soft bg-danger px-4 py-2 text-sm font-medium text-graphite-50 shadow-key transition-all duration-150 ease-press hover:bg-danger-hover active:translate-y-px active:bg-danger-active active:shadow-key-pressed disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none disabled:hover:bg-danger disabled:active:translate-y-0';
+export const KEY_DANGER_SM =
+  'inline-flex items-center justify-center gap-2 rounded-soft bg-danger px-3 py-2 text-sm font-medium text-graphite-50 shadow-key-sm transition-all duration-150 ease-press hover:bg-danger-hover active:translate-y-px active:bg-danger-active active:shadow-key-pressed';
 export const ICON_KEY =
   'grid size-9 shrink-0 place-items-center rounded-soft bg-canvas-raised text-ink-soft shadow-neu-sm transition-all duration-150 ease-press hover:text-ink active:shadow-neu-inset-sm';
 export const CHIP =

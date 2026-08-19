@@ -114,7 +114,7 @@ export const MemorySettings = () => {
                 <button
                   type="button"
                   onClick={() => setConfirmingClear(true)}
-                  className="rounded-soft bg-canvas-raised px-4 py-2 text-sm font-medium text-signal-bad shadow-neu-sm transition-all duration-150 ease-press hover:shadow-neu active:shadow-neu-inset-sm">
+                  className="inline-flex items-center justify-center gap-2 rounded-soft bg-danger px-4 py-2 text-sm font-medium text-graphite-50 shadow-key transition-all duration-150 ease-press hover:bg-danger-hover active:translate-y-px active:bg-danger-active active:shadow-key-pressed">
                   {t('options_memory_forgetAll')}
                 </button>
               )}

@@ -9,8 +9,8 @@ import {
   FIELD_LABEL,
   FIELD_WELL,
   ICON_KEY,
+  KEY_DANGER,
   KEY_PRIMARY,
-  KEY_SECONDARY,
   TAG_INPUT,
   TAG_WELL,
 } from './styles';
@@ -97,13 +97,13 @@ export const ProviderCard = ({
       <div className="flex shrink-0 items-center gap-2">
         {/* Show Cancel button for newly added providers */}
         {isNewProvider && (
-          <button type="button" className={KEY_SECONDARY} onClick={onCancel}>
+          <button type="button" className={KEY_DANGER} onClick={onCancel}>
             {t('options_models_providers_btnCancel')}
           </button>
         )}
         <button
           type="button"
-          className={buttonProps.variant === 'danger' ? `${KEY_SECONDARY} text-signal-bad` : KEY_PRIMARY}
+          className={buttonProps.variant === 'danger' ? KEY_DANGER : KEY_PRIMARY}
           disabled={buttonProps.disabled}
           onClick={onPrimaryAction}>
           {buttonProps.children}

@@ -4,7 +4,7 @@ This file provides guidance to AI coding assistants (e.g., Claude Code, GitHub C
 
 ## Project Overview
 
-Flowkite is an open-source AI web automation Chrome extension that runs multi-agent systems locally in the browser. It's a free alternative to OpenAI Operator with support for multiple LLM providers (OpenAI, Anthropic, Gemini, Ollama, etc.).
+Flowkite is a free AI web automation Chrome extension that runs multi-agent systems locally in the browser. The repository is private; the extension is distributed through the Chrome Web Store and as a zip on the landing page. It's a free alternative to OpenAI Operator with support for multiple LLM providers (OpenAI, Anthropic, Gemini, Ollama, etc.).
 
 ## Development Commands
 
@@ -127,8 +127,8 @@ Agent logic is under `chrome-extension/src/background/agent/`.
 - Framework: Vitest
 - Location/naming: `__tests__` directories with `*.test.ts`, in
   `chrome-extension/src/**` (228 tests), `pages/side-panel/src/**` (144 tests),
-  `pages/options/src/**` (86 tests) and `packages/storage/**` (93 tests)
-- Run everything: `pnpm test` — 551 tests across four workspaces
+  `pages/options/src/**` (88 tests) and `packages/storage/**` (93 tests)
+- Run everything: `pnpm test` — 553 tests across four workspaces
 - The page workspaces each carry their own `vitest.config.mts` rather than reusing
   `vite.config.mts`, which goes through `withPageConfig` and pulls in build-only
   plugins. Environment is `node`: there is no jsdom or testing-library in the
