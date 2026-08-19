@@ -114,19 +114,9 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
   async invoke(inputMessages: BaseMessage[]): Promise<this['ModelOutput']> {
     // Use structured output
     if (this.withStructuredOutput) {
-      const structuredLlm = this.chatLLM.withStructuredOutput(this.jsonSchema, {
-        includeRaw: true,
-        name: this.modelOutputToolName,
-      });
-
       let response = undefined;
       try {
-        response = await this.callModelWithRetry(() =>
-          structuredLlm.invoke(inputMessages, {
-            signal: this.context.controller.signal,
-            ...this.callOptions,
-          }),
-        );
+        response = await this.invokeStructured(this.jsonSchema, inputMessages);
         // the navigator burns most of the tokens and never reaches the base class's structured
         // branch, so without this the headline number would miss almost all of the spend
         this.recordUsage(response.raw);

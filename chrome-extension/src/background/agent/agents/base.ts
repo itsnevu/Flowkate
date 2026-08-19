@@ -4,7 +4,7 @@ import { ProviderTypeEnum } from '@extension/storage';
 import { convertInputMessages, extractJsonFromModelOutput, removeThinkTags } from '../messages/utils';
 import { Actors, ExecutionState } from '../event/types';
 import { readUsage } from '../usage';
-import { isAbortedError, ResponseParseError } from './errors';
+import { extractStatusCode, isAbortedError, isBadRequestError, ResponseParseError } from './errors';
 import { callWithRetry } from './retry';
 import type { z } from 'zod';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
@@ -14,6 +14,62 @@ import type { BaseMessage } from '@langchain/core/messages';
 import type { Action } from '../actions/builder';
 
 const logger = createLogger('agent');
+
+/** How a structured-output request is put to the provider. */
+type StructuredOutputMethod = 'functionCalling';
+
+/**
+ * What `withStructuredOutput(..., {includeRaw: true})` resolves to. Named rather than written
+ * inline because `this['ModelOutput']` is not allowed inside an anonymous object type.
+ */
+type StructuredResponse<M> = { raw: BaseMessage; parsed: M | null };
+
+/**
+ * Models whose provider answered LangChain's default structured-output request with a 400.
+ *
+ * ChatOpenAI picks `response_format: {type: 'json_schema'}` for every model whose name is not a
+ * gpt-3/gpt-4 string, which is wrong for the many OpenRouter models that advertise `tools` but not
+ * `response_format` - stepfun/step-3.5-flash among them. The first task on such a model pays one
+ * rejected request to find that out; this set is module-scoped so later tasks do not, since the
+ * agents themselves are rebuilt for every task. Keyed by provider as well as model, because the
+ * same model id can be served by two endpoints that differ on this.
+ */
+const modelsNeedingToolCalling = new Set<string>();
+
+/**
+ * Provider types whose LangChain client already leads with tool calling.
+ *
+ * Retrying one of these under `functionCalling` would repeat the identical request, so a 400 from
+ * them would be answered by a second 400 and nothing else: a wasted call against the user's quota
+ * and twice the wait before they see what actually went wrong. Everything not listed here leads
+ * with a JSON-schema response format - ChatOpenAI and Gemini send `response_format`, Ollama sends
+ * `format: 'json'` - which is the case the fallback exists for.
+ *
+ * Read off the installed clients: @langchain/anthropic 0.3.33, xai 0.1.0, deepseek 0.1.0,
+ * cerebras 0.0.4 and groq 0.2.4 each either default `method` to 'functionCalling' outright or
+ * branch to tool calling for anything that is not 'jsonMode'. Being wrong here is not dangerous -
+ * a missing entry costs one extra request on a path that has already failed - so it does not need
+ * to track every future version exactly.
+ */
+const PROVIDERS_ALREADY_TOOL_CALLING = new Set<string>([
+  ProviderTypeEnum.Anthropic,
+  ProviderTypeEnum.Grok,
+  ProviderTypeEnum.DeepSeek,
+  ProviderTypeEnum.Cerebras,
+  ProviderTypeEnum.Groq,
+]);
+
+/**
+ * Whether a failed call looks like the provider refusing the default structured-output format.
+ *
+ * A 400 is the whole of the signal: OpenRouter forwards an upstream rejection as a bare
+ * "400 Provider returned error" that names no parameter, and `isBadRequestError` looks for ' 400'
+ * with a leading space, which that message does not have. So the status on the SDK error is what
+ * classifies it here, and the message-shaped check is left in only for clients that attach none.
+ */
+function isFormatRejection(error: unknown): boolean {
+  return extractStatusCode(error) === 400 || isBadRequestError(error);
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type CallOptions = Record<string, any>;
@@ -128,6 +184,55 @@ export abstract class BaseAgent<T extends z.ZodType, M = unknown> {
     });
   }
 
+  /**
+   * One structured-output call, retried under tool calling when the provider rejects the format
+   * LangChain chose.
+   *
+   * The first attempt passes no `method`, so every provider keeps the default it has always used
+   * here. Tool calling is the wider of the two formats - a model that takes a JSON schema in
+   * `response_format` almost always takes one in `tools` as well, and OpenRouter lists plenty that
+   * take only the latter - which makes it the thing to fall back to rather than the thing to lead
+   * with. The fallback is remembered only once it works, so a 400 about the request itself (an
+   * oversized context, an image a text-only model cannot read) is still reported as itself.
+   */
+  protected async invokeStructured(
+    schema: T | Record<string, unknown>,
+    inputMessages: BaseMessage[],
+  ): Promise<StructuredResponse<this['ModelOutput']>> {
+    const call = (method: StructuredOutputMethod | undefined) =>
+      this.callModelWithRetry(() =>
+        this.chatLLM
+          .withStructuredOutput(schema, { includeRaw: true, name: this.modelOutputToolName, method })
+          .invoke(inputMessages, {
+            signal: this.context.controller.signal,
+            ...this.callOptions,
+          }),
+      ) as Promise<StructuredResponse<this['ModelOutput']>>;
+
+    const modelKey = `${this.provider}:${this.modelName}`;
+    if (modelsNeedingToolCalling.has(modelKey)) {
+      return call('functionCalling');
+    }
+
+    try {
+      return await call(undefined);
+    } catch (error) {
+      if (isAbortedError(error) || !isFormatRejection(error) || PROVIDERS_ALREADY_TOOL_CALLING.has(this.provider)) {
+        throw error;
+      }
+      logger.warning(`[${this.modelName}] rejected the default structured output, retrying with tool calling`);
+      let response: StructuredResponse<this['ModelOutput']>;
+      try {
+        response = await call('functionCalling');
+      } catch (fallbackError) {
+        // The format was not what the 400 was about, so the first error is the one that says why.
+        throw isAbortedError(fallbackError) ? fallbackError : error;
+      }
+      modelsNeedingToolCalling.add(modelKey);
+      return response;
+    }
+  }
+
   async invoke(inputMessages: BaseMessage[]): Promise<this['ModelOutput']> {
     // Use structured output
     if (this.withStructuredOutput) {
@@ -137,20 +242,10 @@ export abstract class BaseAgent<T extends z.ZodType, M = unknown> {
         modelProvider: this.provider,
       });
 
-      const structuredLlm = this.chatLLM.withStructuredOutput(this.modelOutputSchema, {
-        includeRaw: true,
-        name: this.modelOutputToolName,
-      });
-
       let response = undefined;
       try {
         logger.debug(`[${this.modelName}] Invoking LLM with structured output...`);
-        response = await this.callModelWithRetry(() =>
-          structuredLlm.invoke(inputMessages, {
-            signal: this.context.controller.signal,
-            ...this.callOptions,
-          }),
-        );
+        response = await this.invokeStructured(this.modelOutputSchema, inputMessages);
         // before the parsed/unparsed branch: a call that returned unusable JSON still cost money,
         // and that is exactly when you want to know it did
         this.recordUsage(response.raw);
