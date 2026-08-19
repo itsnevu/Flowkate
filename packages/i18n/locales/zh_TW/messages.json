@@ -260,6 +260,21 @@
   "permissions_microphone_alreadyGrantedButton": {
     "message": "已授予權限"
   },
+  "permissions_microphone_blocked": {
+    "message": "Chrome 記住了先前的「封鎖」，所以不會再自動詢問。"
+  },
+  "permissions_microphone_blockedHelp": {
+    "message": "開啟這個擴充功能的網站設定，把「麥克風」改回「詢問」或「允許」，再回到這裡按「再試一次」。"
+  },
+  "permissions_microphone_openSettings": {
+    "message": "開啟麥克風設定"
+  },
+  "permissions_microphone_tryAgain": {
+    "message": "再試一次"
+  },
+  "permissions_microphone_settingsFallback": {
+    "message": "無法開啟設定頁。請把這段貼到網址列："
+  },
   "options_nav_header": {
     "message": "設定"
   },

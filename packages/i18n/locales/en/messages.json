@@ -260,6 +260,21 @@
   "permissions_microphone_alreadyGrantedButton": {
     "message": "Permission Already Granted"
   },
+  "permissions_microphone_blocked": {
+    "message": "Chrome is remembering an earlier Block, so it will not ask again on its own."
+  },
+  "permissions_microphone_blockedHelp": {
+    "message": "Open this extension's site settings, set Microphone back to Ask or Allow, then come back here and press Try again."
+  },
+  "permissions_microphone_openSettings": {
+    "message": "Open microphone settings"
+  },
+  "permissions_microphone_tryAgain": {
+    "message": "Try again"
+  },
+  "permissions_microphone_settingsFallback": {
+    "message": "Could not open the settings page. Paste this into the address bar:"
+  },
   "options_nav_header": {
     "message": "Settings"
   },

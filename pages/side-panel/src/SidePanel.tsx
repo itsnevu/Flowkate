@@ -13,6 +13,7 @@ import ChatHistoryList from './components/ChatHistoryList';
 import ChatView from './components/ChatView';
 import SetupGuide from './components/SetupGuide';
 import SidePanelHeader from './components/SidePanelHeader';
+import { bookmarkTitleForSession } from './utils';
 import { useApprovalMode } from './hooks/useApprovalMode';
 import { useBackgroundConnection } from './hooks/useBackgroundConnection';
 import { useFavoritePrompts } from './hooks/useFavoritePrompts';
@@ -73,6 +74,10 @@ const SidePanel = () => {
 
   const { hasConfiguredModels, replayEnabled, recheck: recheckModelConfig } = useModelConfigGate();
   const { favoritePrompts, addPrompt, updatePromptTitle, removePrompt, reorderPrompts } = useFavoritePrompts();
+  // Bookmarks are keyed by content and sessions by id, and the history list only ever holds
+  // metadata - the derived title is the one thing both sides can be compared on without loading
+  // every session's messages.
+  const bookmarkedTitles = new Set(favoritePrompts.map(prompt => prompt.title));
 
   useEffect(() => {
     sessionIdRef.current = currentSessionId;
@@ -353,25 +358,25 @@ const SidePanel = () => {
     }
   };
 
+  /**
+   * Pin a past session to the bookmark strip.
+   *
+   * Two things this deliberately does not do. It does not bail when the session has no stored
+   * messages - a task that died on its first step still has a title worth keeping, and bailing
+   * showed the user nothing at all, which is indistinguishable from the button being broken. And
+   * it does not navigate back to the chat: bookmarking is not leaving, and being thrown out of the
+   * list was the only feedback the action had. The filled icon is the feedback now.
+   */
   const handleSessionBookmark = async (sessionId: string) => {
     try {
       const fullSession = await chatHistoryStore.getSession(sessionId);
+      if (!fullSession) return;
 
-      if (fullSession && fullSession.messages.length > 0) {
-        // Get the session title
-        const sessionTitle = fullSession.title;
-        // Get the first 8 words of the title
-        const title = sessionTitle.split(' ').slice(0, 8).join(' ');
+      const title = bookmarkTitleForSession(fullSession.title);
+      // The first message is the task the user typed; the title stands in when nothing was stored.
+      const taskContent = fullSession.messages[0]?.content || fullSession.title;
 
-        // Get the first message content (the task)
-        const taskContent = fullSession.messages[0]?.content || '';
-
-        // Add to favorites storage and update the UI
-        await addPrompt(title, taskContent);
-
-        // Return to chat view after pinning
-        handleBackToChat(true);
-      }
+      await addPrompt(title, taskContent);
     } catch (error) {
       console.error('Failed to pin session to favorites:', error);
     }
@@ -443,6 +448,7 @@ const SidePanel = () => {
             onSessionSelect={handleSessionSelect}
             onSessionDelete={handleSessionDelete}
             onSessionBookmark={handleSessionBookmark}
+            bookmarkedTitles={bookmarkedTitles}
             visible={true}
           />
         </div>

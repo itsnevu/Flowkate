@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { generateNewTaskId, getCurrentTimestampStr } from '../utils';
+import { generateNewTaskId, getCurrentTimestampStr, bookmarkTitleForSession } from '../utils';
 
 afterEach(() => {
   vi.useRealTimers();
@@ -42,5 +42,24 @@ describe('getCurrentTimestampStr', () => {
 
   it('carries no comma between the date and the time', () => {
     expect(getCurrentTimestampStr()).not.toContain(',');
+  });
+});
+
+describe('bookmarkTitleForSession', () => {
+  // The history list can only tell whether a session is already pinned by deriving the same title
+  // the pin action stores, so the two have to agree exactly - that is the whole reason it is shared.
+  it('keeps the first eight words', () => {
+    expect(bookmarkTitleForSession('one two three four five six seven eight nine ten')).toBe(
+      'one two three four five six seven eight',
+    );
+  });
+
+  it('leaves a short title alone', () => {
+    expect(bookmarkTitleForSession('halo')).toBe('halo');
+  });
+
+  it('round-trips: a stored title derives to itself, so an already-pinned session matches', () => {
+    const stored = bookmarkTitleForSession('Compare the M4 Air reviews on three sites and give me the consensus');
+    expect(bookmarkTitleForSession(stored)).toBe(stored);
   });
 });

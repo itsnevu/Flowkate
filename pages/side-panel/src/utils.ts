@@ -24,3 +24,15 @@ export function getCurrentTimestampStr(): string {
     })
     .replace(',', '');
 }
+
+/**
+ * The title a session gets when it is pinned to the bookmark strip.
+ *
+ * Shared rather than inlined at the one call site, because the history list has to answer "is this
+ * session already bookmarked?" from session metadata alone - it never loads the messages - and the
+ * only thing the two sides can compare on is this title. Two copies of the rule would drift, and
+ * the drift would show up as a bookmark icon that never fills.
+ */
+export function bookmarkTitleForSession(sessionTitle: string): string {
+  return sessionTitle.split(' ').slice(0, 8).join(' ');
+}

@@ -260,6 +260,21 @@
   "permissions_microphone_alreadyGrantedButton": {
     "message": "Permissão Já Concedida"
   },
+  "permissions_microphone_blocked": {
+    "message": "O Chrome está lembrando de um Bloquear anterior, então não vai perguntar de novo sozinho."
+  },
+  "permissions_microphone_blockedHelp": {
+    "message": "Abra as configurações deste site, mude Microfone para Perguntar ou Permitir, volte aqui e clique em Tentar de novo."
+  },
+  "permissions_microphone_openSettings": {
+    "message": "Abrir configurações do microfone"
+  },
+  "permissions_microphone_tryAgain": {
+    "message": "Tentar de novo"
+  },
+  "permissions_microphone_settingsFallback": {
+    "message": "Não foi possível abrir a página de configurações. Cole isto na barra de endereços:"
+  },
   "options_nav_header": {
     "message": "Configurações"
   },

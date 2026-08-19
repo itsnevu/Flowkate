@@ -1,7 +1,8 @@
 /* eslint-disable react/prop-types */
 import { FaTrash } from 'react-icons/fa';
-import { BsBookmark } from 'react-icons/bs';
+import { BsBookmark, BsBookmarkFill } from 'react-icons/bs';
 import { t } from '@extension/i18n';
+import { bookmarkTitleForSession } from '../utils';
 
 interface ChatSession {
   id: string;
@@ -14,6 +15,8 @@ interface ChatHistoryListProps {
   onSessionSelect: (sessionId: string) => void;
   onSessionDelete: (sessionId: string) => void;
   onSessionBookmark: (sessionId: string) => void;
+  /** Derived titles of the sessions already on the bookmark strip. */
+  bookmarkedTitles?: Set<string>;
   visible: boolean;
 }
 
@@ -33,6 +36,7 @@ const ChatHistoryList: React.FC<ChatHistoryListProps> = ({
   onSessionSelect,
   onSessionDelete,
   onSessionBookmark,
+  bookmarkedTitles,
   visible,
 }) => {
   if (!visible) return null;
@@ -51,42 +55,46 @@ const ChatHistoryList: React.FC<ChatHistoryListProps> = ({
         </div>
       ) : (
         <div className="space-y-2 rounded-soft bg-canvas-sunk p-2 shadow-neu-inset">
-          {sessions.map(session => (
-            <div key={session.id} className={SESSION_ROW}>
-              <button onClick={() => onSessionSelect(session.id)} className="w-full text-left" type="button">
-                <h3 className="truncate pr-16 text-sm font-medium text-ink">{session.title}</h3>
-                <p className="mt-1 text-xs text-ink-faint">{formatDate(session.createdAt)}</p>
-              </button>
+          {sessions.map(session => {
+            const isBookmarked = bookmarkedTitles?.has(bookmarkTitleForSession(session.title)) ?? false;
+            return (
+              <div key={session.id} className={SESSION_ROW}>
+                <button onClick={() => onSessionSelect(session.id)} className="w-full text-left" type="button">
+                  <h3 className="truncate pr-16 text-sm font-medium text-ink">{session.title}</h3>
+                  <p className="mt-1 text-xs text-ink-faint">{formatDate(session.createdAt)}</p>
+                </button>
 
-              <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5">
-                {/* Bookmark this session */}
-                {onSessionBookmark && (
+                <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5">
+                  {/* Bookmark this session */}
+                  {onSessionBookmark && (
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        onSessionBookmark(session.id);
+                      }}
+                      className={`${ROW_ACTION} ${isBookmarked ? 'text-ink' : 'text-ink-faint hover:text-ink'}`}
+                      aria-label={t('chat_history_bookmark')}
+                      aria-pressed={isBookmarked}
+                      type="button">
+                      {isBookmarked ? <BsBookmarkFill size={13} /> : <BsBookmark size={13} />}
+                    </button>
+                  )}
+
+                  {/* Delete this session */}
                   <button
                     onClick={e => {
                       e.stopPropagation();
-                      onSessionBookmark(session.id);
+                      onSessionDelete(session.id);
                     }}
-                    className={`${ROW_ACTION} text-ink-faint hover:text-ink`}
-                    aria-label={t('chat_history_bookmark')}
+                    className={`${ROW_ACTION} text-ink-faint hover:text-signal-bad`}
+                    aria-label={t('chat_history_delete')}
                     type="button">
-                    <BsBookmark size={13} />
+                    <FaTrash size={12} />
                   </button>
-                )}
-
-                {/* Delete this session */}
-                <button
-                  onClick={e => {
-                    e.stopPropagation();
-                    onSessionDelete(session.id);
-                  }}
-                  className={`${ROW_ACTION} text-ink-faint hover:text-signal-bad`}
-                  aria-label={t('chat_history_delete')}
-                  type="button">
-                  <FaTrash size={12} />
-                </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

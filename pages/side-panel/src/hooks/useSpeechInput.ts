@@ -69,16 +69,11 @@ export const useSpeechInput = ({
       // First check if permission is already granted
       const permissionStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName });
 
-      if (permissionStatus.state === 'denied') {
-        appendMessage({
-          actor: Actors.SYSTEM,
-          content: t('chat_stt_microphone_permissionDenied'),
-          timestamp: Date.now(),
-        });
-        return;
-      }
-
-      // If permission is not granted, open permission page
+      // A denied permission opens the same window a fresh one does, rather than dead-ending in a
+      // message telling the user to go and find a browser setting. Denied is the state a single
+      // mis-click produces, and it is the state Chrome will never re-prompt out of on its own -
+      // which makes it exactly the case that needs somewhere to go, not the one case that has
+      // nowhere. The window explains what happened and opens the right settings page directly.
       if (permissionStatus.state !== 'granted') {
         const permissionUrl = chrome.runtime.getURL('permission/index.html');
 

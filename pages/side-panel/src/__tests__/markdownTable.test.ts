@@ -14,9 +14,16 @@ describe('splitMarkdownTables', () => {
   });
 
   it('parses a piped table with surrounding text', () => {
-    const text = ['The cheapest options:', '', '| Shop | Price |', '| --- | --- |', '| A | $10 |', '| B | $12 |', '', 'B ships faster.'].join(
-      '\n',
-    );
+    const text = [
+      'The cheapest options:',
+      '',
+      '| Shop | Price |',
+      '| --- | --- |',
+      '| A | $10 |',
+      '| B | $12 |',
+      '',
+      'B ships faster.',
+    ].join('\n');
     const blocks = splitMarkdownTables(text);
     expect(blocks).toHaveLength(3);
     expect(blocks[0]).toMatchObject({ type: 'text' });
