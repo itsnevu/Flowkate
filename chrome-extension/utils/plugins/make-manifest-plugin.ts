@@ -44,6 +44,26 @@ export default function makeManifestPlugin(config: { outDir: string }): PluginOp
     colorLog(`Manifest file copy complete: ${manifestPath}`, 'success');
   }
 
+  /**
+   * Ship the licence and the attribution notice inside the build.
+   *
+   * Apache-2.0 section 4 attaches to the thing you hand someone, not to the repository you
+   * developed it in: every copy of this extension - the store upload and the zip on the landing
+   * page alike - has to carry the licence text and retain the attribution notices. Leaving them
+   * in the repo only worked while the repo was the thing being distributed.
+   */
+  function copyLegalFiles(to: string) {
+    for (const name of ['LICENSE', 'NOTICE']) {
+      const from = resolve(rootDir, '..', name);
+      if (!fs.existsSync(from)) {
+        colorLog(`Missing ${name} at the repo root - the build would ship without it`, 'error');
+        continue;
+      }
+      fs.copyFileSync(from, resolve(to, name));
+    }
+    colorLog('Licence and notice copied into the build', 'success');
+  }
+
   return {
     name: 'make-manifest',
     buildStart() {
@@ -53,6 +73,7 @@ export default function makeManifestPlugin(config: { outDir: string }): PluginOp
       const outDir = config.outDir;
       const manifest = await getManifestWithCacheBurst();
       makeManifest(manifest.default, outDir);
+      copyLegalFiles(outDir);
     },
   };
 }
