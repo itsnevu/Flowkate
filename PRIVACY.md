@@ -2,11 +2,11 @@
 
 ## Introduction
 
-[Flowkite](https://github.com/itsnevu/Flowkite) is an open-source AI web automation Chrome extension. This Privacy Policy explains how your data is handled.
+[Flowkite](https://chromewebstore.google.com/detail/flowkite-ai-web-agent-aut/kacmblccfhnfcjfpeageldmmbkocafab) is a free AI web automation Chrome extension. This Privacy Policy explains how your data is handled.
 
-## Open Source
+## Licence
 
-Flowkite is licensed under Apache License 2.0. All source code is publicly available in the [GitHub repository](https://github.com/itsnevu/Flowkite), so every claim below can be checked against the code.
+Flowkite is free to download and licensed under Apache License 2.0. The build on the Chrome Web Store and the zip on the website are the same files, and both carry the licence and the attribution notice inside them.
 
 ## Where your data lives
 
@@ -99,6 +99,6 @@ This policy may be updated as the extension changes. Material changes will be no
 
 ## Contact
 
-Questions or concerns? Please open an issue at [github.com/itsnevu/Flowkite/issues](https://github.com/itsnevu/Flowkite/issues).
+Questions or concerns? Reach us on [X](https://x.com/Flowkiteai), or through the support tab on the Chrome Web Store listing.
 
 Last Updated: August 11, 2026

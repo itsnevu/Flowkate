@@ -1,6 +1,6 @@
 # Flowkite landing site
 
-The marketing page for [Flowkite](https://github.com/itsnevu/Flowkite), the open-source
+The marketing page for [Flowkite](https://chromewebstore.google.com/detail/flowkite-ai-web-agent-aut/kacmblccfhnfcjfpeageldmmbkocafab), the free
 Chrome extension that runs a two-agent system — a **Planner** that works out the approach
 and a **Navigator** that reads the page and acts — locally in your browser, with an optional
 cheap **Fast** model handling routine steps to cut cost. Hand-written HTML and CSS, a small

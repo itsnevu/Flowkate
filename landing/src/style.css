@@ -1137,6 +1137,53 @@ html.js .demo__replay {
   box-shadow: var(--key-shadow-sm);
 }
 
+/* A secondary run of steps living inside a well — the load-it-yourself path under
+   the store one. Same rhythm as .install but tighter, and numbered by counter
+   because these steps carry no heading for an .install__num badge to sit in. */
+.install--compact {
+  counter-reset: manual-step;
+  gap: 0.9rem;
+  margin-top: 1.15rem;
+}
+
+.install--compact > li {
+  display: grid;
+  grid-template-columns: 1.75rem 1fr;
+  gap: 0.8rem;
+  align-items: start;
+  min-width: 0;
+}
+
+.install--compact > li::before {
+  counter-increment: manual-step;
+  content: counter(manual-step);
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--r-pill);
+  background: var(--canvas-sunk);
+  color: var(--ink-soft);
+  box-shadow: var(--neu-inset-sm);
+  font-size: 0.78rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.install--compact > li > * {
+  margin: 0;
+}
+
+.install--compact > li > * + * {
+  margin-top: 0.55rem;
+}
+
+/* A key that closes a single step rather than a whole section, so it does not
+   inherit .cta's section-sized top margin. */
+.cta--inline {
+  margin-top: 1.05rem;
+}
+
 .well .note {
   margin-top: 0.85rem;
   font-size: 0.9rem;

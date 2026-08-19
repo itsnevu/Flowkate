@@ -7,7 +7,7 @@ import type { AnalyticsSettingsConfig } from '@extension/storage';
  * Whether this build can send telemetry at all.
  *
  * The PostHog key is a build-time secret that is deliberately absent from the repo (see
- * `.env.example`), so an open-source build compiles it in as empty and `AnalyticsService.init()`
+ * `.env.example`), so a build without one compiles it in as empty and `AnalyticsService.init()`
  * disables itself. Without this check the page shows a live-looking switch and a detailed
  * "what we collect" list describing collection that provably cannot happen - which reads as a
  * false disclosure in the one panel whose entire job is to tell the truth about data.

@@ -1,7 +1,7 @@
 <h1 align="center">Flowkite</h1>
 
 <p align="center">
-  An open-source AI browser agent that runs entirely in your browser — and asks before it does anything that matters.
+  A free AI browser agent that runs entirely in your browser — and asks before it does anything that matters.
 </p>
 
 <div align="center">

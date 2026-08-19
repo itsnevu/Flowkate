@@ -23,7 +23,7 @@ which leads with all three.
 ## Short description (max 132 characters)
 
 ```
-Automate web tasks with AI. Open source, runs locally, uses your own model key. It shows you its plan before it touches a page.
+Automate web tasks with AI. Free, runs locally, uses your own model key. It shows you its plan before it touches a page.
 ```
 
 125 characters.
@@ -41,7 +41,7 @@ English (United States).
 ## Detailed description
 
 ```
-Flowkite is an open-source AI agent that works inside your browser. You type a task in plain
+Flowkite is a free AI agent that works inside your browser. You type a task in plain
 language — "find the cheapest AeroPress filters across three shops", "pull every invoice from
 this dashboard into a table" — and it carries the task out on the pages you already have open.
 
@@ -93,9 +93,9 @@ OpenAI, Anthropic, Google Gemini, DeepSeek, Grok, Groq, Cerebras, Llama, Azure O
 OpenRouter, Ollama, and any OpenAI-compatible endpoint. Point it at a local Ollama and nothing
 leaves your machine at all.
 
-OPEN SOURCE
+FREE TO DOWNLOAD
 
-Apache 2.0. Every line is readable at github.com/itsnevu/Flowkite — including exactly what is
+Apache 2.0 licensed, and free with no paid tier, no trial and no account — including exactly what is
 sent, when, and to whom.
 
 A NOTE ON THE DEBUGGER BANNER
@@ -128,7 +128,7 @@ never evaluated.
 accurate for a build with no `VITE_POSTHOG_API_KEY`, which is what the release is, and would have to
 change for a build that has one.
 
-**Privacy policy URL:** `https://github.com/itsnevu/Flowkite/blob/main/PRIVACY.md` until a hosted
+**Privacy policy URL:** `https://flowkite.vercel.app/privacy-policy/` — a hosted
 page exists.
 
 ---

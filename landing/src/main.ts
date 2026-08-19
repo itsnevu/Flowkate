@@ -646,64 +646,6 @@ document.addEventListener(
 );
 
 /* -------------------------------------------------------------------------- */
-/* GitHub stars                                                                */
-/* -------------------------------------------------------------------------- */
-
-/**
- * Live star count on the hero's GitHub key — social proof fetched from the public
- * API, no token. Strictly additive: the badge starts `hidden` in the markup and is
- * only revealed once a real number is in hand, so a failed fetch, a rate-limited
- * IP or a blocked request leaves the button exactly as designed. Cached per tab
- * session — the count does not need to be fresher than that.
- */
-const setUpStarCount = (): void => {
-  const badge = document.querySelector<HTMLElement>('[data-gh-stars]');
-  if (!badge || typeof fetch !== 'function') return;
-
-  const format = (count: number): string =>
-    count >= 1000 ? `${(count / 1000).toFixed(1).replace(/\.0$/, '')}k` : String(count);
-
-  const apply = (count: number): void => {
-    // A star count of zero is anti-social-proof; the badge only exists once there is
-    // something to show.
-    if (count < 1) return;
-    badge.textContent = `★ ${format(count)}`;
-    badge.hidden = false;
-  };
-
-  let cached: string | null = null;
-  try {
-    cached = sessionStorage.getItem('flowkite:stars');
-  } catch {
-    // Storage can be walled off (privacy modes); the fetch below still works.
-  }
-  if (cached !== null && Number.isFinite(Number(cached))) {
-    apply(Number(cached));
-    return;
-  }
-
-  void fetch('https://api.github.com/repos/itsnevu/Flowkite', {
-    headers: { Accept: 'application/vnd.github+json' },
-  })
-    .then(response => (response.ok ? (response.json() as Promise<{ stargazers_count?: number }>) : null))
-    .then(data => {
-      const count = data?.stargazers_count;
-      if (typeof count !== 'number') return;
-      try {
-        sessionStorage.setItem('flowkite:stars', String(count));
-      } catch {
-        // Same walled-off storage as above; showing the number still works.
-      }
-      apply(count);
-    })
-    .catch(() => {
-      // Offline or blocked: the badge simply never appears.
-    });
-};
-
-setUpStarCount();
-
-/* -------------------------------------------------------------------------- */
 /* Hero: rotating task examples                                                */
 /* -------------------------------------------------------------------------- */
 

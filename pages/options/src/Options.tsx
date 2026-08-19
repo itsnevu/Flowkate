@@ -40,7 +40,7 @@ const Options = () => {
 
   const handleTabClick = (tabId: TabTypes) => {
     if (tabId === 'help') {
-      window.open('https://github.com/itsnevu/Flowkite#readme', '_blank');
+      window.open('https://flowkite.vercel.app/support/', '_blank');
     } else {
       setActiveTab(tabId);
     }

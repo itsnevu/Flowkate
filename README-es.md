@@ -31,7 +31,7 @@ Flowkite es una herramienta de automatización web con IA que se ejecuta en tu n
 - **100% Gratis** - Sin suscripciones ni costos ocultos. Solo instala y usa tus propias claves de API, pagando únicamente por lo que tú consumas.
 - **Enfoque En Privacidad** - Todo se ejecuta en tu navegador local. Tus credenciales permanecen contigo y nunca se comparten con ningún servicio en la nube.
 - **Opciones Flexibles de LLM** - Conéctate con tu proveedor de LLM preferido con la libertad de elegir diferentes modelos para diferentes agentes.
-- **Totalmente Open Source** - Transparencia total en cómo se automatiza tu navegador. Sin procesos ocultos ni cajas negras.
+- **Gratis para descargar** - Sin plan de pago, sin prueba, sin cuenta. Lo único que cuesta es el modelo, y facturas directamente con tu proveedor.
 
 > **Nota:** Actualmente ofrecemos soporte para OpenAI, Anthropic, Gemini, Ollama y proveedores personalizados compatibles con OpenAI, próximamente se ofrecerá soporte a más proveedores.
 
