@@ -674,6 +674,72 @@
   "options_models_providers_models_openrouter_empty": {
     "message": "未選擇任何模型。如有需要，請手動新增模型名稱。"
   },
+  "options_models_providers_openrouter_search": {
+    "message": "依名稱或 ID 搜尋模型"
+  },
+  "options_models_providers_openrouter_loading": {
+    "message": "正在載入 OpenRouter 模型清單..."
+  },
+  "options_models_providers_openrouter_ready": {
+    "message": "有 $COUNT$ 個模型可搭配 Flowkite 使用。輸入關鍵字搜尋，再按 Enter 新增。",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "335"
+      }
+    }
+  },
+  "options_models_providers_openrouter_unavailable": {
+    "message": "無法載入 OpenRouter 模型清單。請直接輸入模型 ID 並按 Enter 新增。"
+  },
+  "options_models_providers_openrouter_noMatch": {
+    "message": "找不到符合的模型。按 Enter 仍可新增。"
+  },
+  "options_models_providers_openrouter_allAdded": {
+    "message": "符合的模型都已經新增了。"
+  },
+  "options_models_providers_openrouter_batchWarning": {
+    "message": "batch 變體只能透過 OpenRouter 的 Batch API 執行，Flowkite 無法使用。"
+  },
+  "options_models_providers_openrouter_unsupportedWarning": {
+    "message": "此模型既不支援 tool calling 也不支援 JSON schema，代理無法解讀它的回覆。"
+  },
+  "options_models_providers_openrouter_useInstead": {
+    "message": "改用 $MODEL$",
+    "placeholders": {
+      "model": {
+        "content": "$1",
+        "example": "google/gemini-3.6-flash"
+      }
+    }
+  },
+  "options_models_providers_openrouter_heads_up": {
+    "message": "提醒："
+  },
+  "options_models_providers_openrouter_context": {
+    "message": "$TOKENS$ 上下文",
+    "placeholders": {
+      "tokens": {
+        "content": "$1",
+        "example": "1M"
+      }
+    }
+  },
+  "options_models_providers_openrouter_perMillion": {
+    "message": "$PRICE$ / M tokens",
+    "placeholders": {
+      "price": {
+        "content": "$1",
+        "example": "$0.3"
+      }
+    }
+  },
+  "options_models_providers_openrouter_free": {
+    "message": "免費"
+  },
+  "options_models_providers_openrouter_vision": {
+    "message": "視覺"
+  },
   "options_models_providers_ollama_reminder": {
     "message": "請務必為 Ollama 伺服器設定環境變數。"
   },

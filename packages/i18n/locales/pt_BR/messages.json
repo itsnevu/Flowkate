@@ -674,6 +674,72 @@
   "options_models_providers_models_openrouter_empty": {
     "message": "Nenhum modelo selecionado. Adicione nomes de modelos manualmente, se necessário."
   },
+  "options_models_providers_openrouter_search": {
+    "message": "Buscar modelos por nome ou ID"
+  },
+  "options_models_providers_openrouter_loading": {
+    "message": "Carregando a lista de modelos do OpenRouter..."
+  },
+  "options_models_providers_openrouter_ready": {
+    "message": "$COUNT$ modelos funcionam com o Flowkite. Digite para buscar e pressione Enter para adicionar.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "335"
+      }
+    }
+  },
+  "options_models_providers_openrouter_unavailable": {
+    "message": "Não foi possível carregar a lista de modelos do OpenRouter. Digite o ID de um modelo e pressione Enter para adicioná-lo."
+  },
+  "options_models_providers_openrouter_noMatch": {
+    "message": "Nenhum modelo corresponde. Pressione Enter para adicionar mesmo assim."
+  },
+  "options_models_providers_openrouter_allAdded": {
+    "message": "Todos os modelos correspondentes já foram adicionados."
+  },
+  "options_models_providers_openrouter_batchWarning": {
+    "message": "Variantes batch funcionam apenas pela Batch API do OpenRouter, então o Flowkite não pode usá-las."
+  },
+  "options_models_providers_openrouter_unsupportedWarning": {
+    "message": "Este modelo não suporta tool calling nem JSON schema, então os agentes não conseguem ler as respostas dele."
+  },
+  "options_models_providers_openrouter_useInstead": {
+    "message": "Usar $MODEL$ no lugar",
+    "placeholders": {
+      "model": {
+        "content": "$1",
+        "example": "google/gemini-3.6-flash"
+      }
+    }
+  },
+  "options_models_providers_openrouter_heads_up": {
+    "message": "Atenção:"
+  },
+  "options_models_providers_openrouter_context": {
+    "message": "contexto de $TOKENS$",
+    "placeholders": {
+      "tokens": {
+        "content": "$1",
+        "example": "1M"
+      }
+    }
+  },
+  "options_models_providers_openrouter_perMillion": {
+    "message": "$PRICE$ / M tokens",
+    "placeholders": {
+      "price": {
+        "content": "$1",
+        "example": "$0.3"
+      }
+    }
+  },
+  "options_models_providers_openrouter_free": {
+    "message": "Grátis"
+  },
+  "options_models_providers_openrouter_vision": {
+    "message": "Visão"
+  },
   "options_models_providers_ollama_reminder": {
     "message": "a variável de ambiente DEVE ser definida para o servidor Ollama."
   },

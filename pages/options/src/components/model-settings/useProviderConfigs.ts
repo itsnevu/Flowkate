@@ -653,6 +653,7 @@ export const useProviderConfigs = (onAgentModelsSeeded?: () => void) => {
     handleNameChange,
     handleModelsChange,
     handleKeyDown,
+    addModel,
     removeModel,
     addAzureDeployment,
     removeAzureDeployment,

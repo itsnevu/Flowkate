@@ -49,6 +49,7 @@ export const ModelSettings = () => {
     handleNameChange,
     handleModelsChange,
     handleKeyDown,
+    addModel,
     removeModel,
     addAzureDeployment,
     removeAzureDeployment,
@@ -98,6 +99,7 @@ export const ModelSettings = () => {
                   onToggleApiKeyVisibility={() => toggleApiKeyVisibility(providerId)}
                   onModelInputChange={value => handleModelsChange(providerId, value)}
                   onModelInputKeyDown={e => handleKeyDown(e, providerId)}
+                  onAddModel={model => addModel(providerId, model)}
                   onRemoveModel={model => removeModel(providerId, model)}
                   onAddAzureDeployment={deploymentName => addAzureDeployment(providerId, deploymentName)}
                   onRemoveAzureDeployment={deploymentName => removeAzureDeployment(providerId, deploymentName)}

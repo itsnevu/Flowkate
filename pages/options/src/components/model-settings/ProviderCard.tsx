@@ -1,9 +1,11 @@
 import { ProviderTypeEnum, llmProviderModelNames } from '@extension/storage';
 import { t } from '@extension/i18n';
 import { getProviderTypeLabel } from './helpers';
+import { OpenRouterModelField } from './OpenRouterModelField';
 import {
   CHIP,
   CHIP_REMOVE,
+  FIELD_HINT,
   FIELD_LABEL,
   FIELD_WELL,
   ICON_KEY,
@@ -33,6 +35,8 @@ interface ProviderCardProps {
   onToggleApiKeyVisibility: () => void;
   onModelInputChange: (value: string) => void;
   onModelInputKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
+  /** Adds one model outright, which is what picking a suggestion from the OpenRouter list does. */
+  onAddModel: (model: string) => void;
   onRemoveModel: (model: string) => void;
   onAddAzureDeployment: (deploymentName: string) => void;
   onRemoveAzureDeployment: (deploymentName: string) => void;
@@ -61,6 +65,7 @@ export const ProviderCard = ({
   onToggleApiKeyVisibility,
   onModelInputChange,
   onModelInputKeyDown,
+  onAddModel,
   onRemoveModel,
   onAddAzureDeployment,
   onRemoveAzureDeployment,
@@ -68,9 +73,20 @@ export const ProviderCard = ({
   onCancel,
   onPrimaryAction,
 }: ProviderCardProps) => (
+  /*
+    `relative z-0 focus-within:z-30` is what keeps this card's own overlays - the OpenRouter model
+    list - above the Add New Provider key that follows it in the DOM.
+
+    `animate-rise` is declared with `animation-fill-mode: both`, so a newly added card keeps
+    `transform: translateY(0)` forever once the animation ends, and any transform other than `none`
+    is a permanent stacking context. That trapped the list's own z-index inside the card, while the
+    card itself - unpositioned - painted below the positioned menu below it. Lifting the whole card
+    on focus fixes it for an animated and a settled card alike, and drops it back to z-0 afterwards
+    so the Add New Provider menu still opens over every card.
+  */
   <div
     id={`provider-${providerId}`}
-    className={`rounded-slab bg-canvas-raised p-5 shadow-neu ${isNewProvider ? 'animate-rise' : ''}`}>
+    className={`relative z-0 rounded-slab bg-canvas-raised p-5 shadow-neu focus-within:z-30 ${isNewProvider ? 'animate-rise' : ''}`}>
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="min-w-0">
         <h3 className="truncate text-base font-semibold text-ink">{providerConfig.name || providerId}</h3>
@@ -130,9 +146,9 @@ export const ProviderCard = ({
         <label htmlFor={`${providerId}-api-key`} className={FIELD_LABEL}>
           {t('options_models_providers_apiKey')}
           {providerType !== ProviderTypeEnum.CustomOpenAI && providerType !== ProviderTypeEnum.Ollama && (
-          <span className="ml-0.5 text-signal-bad" aria-hidden="true">
-            *
-          </span>
+            <span className="ml-0.5 text-signal-bad" aria-hidden="true">
+              *
+            </span>
           )}
         </label>
         <div className="flex items-center gap-2">
@@ -195,7 +211,6 @@ export const ProviderCard = ({
             </button>
           )}
         </div>
-
       </div>
 
       {/* Base URL input (for custom_openai, ollama, azure_openai, openrouter, and llama) */}
@@ -212,9 +227,9 @@ export const ProviderCard = ({
               : t('options_models_providers_baseUrl')}
             {/* OpenRouter has a default, so not strictly required, but needed for save button */}
             {(providerType === ProviderTypeEnum.CustomOpenAI || providerType === ProviderTypeEnum.AzureOpenAI) && (
-            <span className="ml-0.5 text-signal-bad" aria-hidden="true">
-              *
-            </span>
+              <span className="ml-0.5 text-signal-bad" aria-hidden="true">
+                *
+              </span>
             )}
           </label>
           <input
@@ -311,101 +326,68 @@ export const ProviderCard = ({
       )}
 
       {/* Models input section (for non-Azure providers) */}
-      {providerType !== ProviderTypeEnum.AzureOpenAI && (
+      {providerType === ProviderTypeEnum.OpenRouter ? (
+        /*
+          OpenRouter gets a search over its own catalogue rather than a blank box. It is the one
+          provider where the right answer is an exact id out of several hundred, and where a
+          sizeable minority of those ids cannot drive an agent at all.
+        */
+        <OpenRouterModelField
+          providerId={providerId}
+          selected={providerConfig.modelNames ?? []}
+          query={modelInput}
+          onQueryChange={onModelInputChange}
+          onAdd={onAddModel}
+          onRemove={onRemoveModel}
+        />
+      ) : providerType !== ProviderTypeEnum.AzureOpenAI ? (
         <div>
-          <label htmlFor={`${providerId}-models-label`} className={FIELD_LABEL}>
+          <label htmlFor={`${providerId}-models-input`} className={FIELD_LABEL}>
             {t('options_models_providers_models')}
           </label>
-          {/* Conditional UI for OpenRouter */}
-          {providerType === ProviderTypeEnum.OpenRouter ? (
-            <>
-              <div className={TAG_WELL}>
-                {providerConfig.modelNames && providerConfig.modelNames.length > 0 ? (
-                  providerConfig.modelNames.map(model => (
-                    <span key={model} className={CHIP}>
-                      {model}
-                      <button
-                        type="button"
-                        onClick={() => onRemoveModel(model)}
-                        className={CHIP_REMOVE}
-                        aria-label={`Remove ${model}`}>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="size-3"
-                          aria-hidden="true">
-                          <path d="M18 6 6 18M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </span>
-                  ))
-                ) : null}
-                <input
-                  id={`${providerId}-models-input`}
-                  type="text"
-                  placeholder={t('options_models_providers_placeholders_models')}
-                  value={modelInput}
-                  onChange={e => onModelInputChange(e.target.value)}
-                  onKeyDown={onModelInputKeyDown}
-                  className={TAG_INPUT}
-                />
-              </div>
-              <p className="mt-1.5 text-xs text-ink-faint">{t('options_models_providers_models_instructions')}</p>
-            </>
-          ) : (
-            /* Default Tag Input for other providers */
-            <>
-              <div className={TAG_WELL}>
-                {(() => {
-                  const models =
-                    providerConfig.modelNames !== undefined
-                      ? providerConfig.modelNames
-                      : llmProviderModelNames[providerId as keyof typeof llmProviderModelNames] || [];
-                  return models.map(model => (
-                    <span key={model} className={CHIP}>
-                      {model}
-                      <button
-                        type="button"
-                        onClick={() => onRemoveModel(model)}
-                        className={CHIP_REMOVE}
-                        aria-label={`Remove ${model}`}>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="size-3"
-                          aria-hidden="true">
-                          <path d="M18 6 6 18M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </span>
-                  ));
-                })()}
-                <input
-                  id={`${providerId}-models-input`}
-                  type="text"
-                  placeholder={t('options_models_providers_placeholders_models')}
-                  value={modelInput}
-                  onChange={e => onModelInputChange(e.target.value)}
-                  onKeyDown={onModelInputKeyDown}
-                  className={TAG_INPUT}
-                />
-              </div>
-              <p className="mt-1.5 text-xs text-ink-faint">{t('options_models_providers_models_instructions')}</p>
-            </>
-          )}
-          {/* === END: Conditional UI === */}
+          <div className={TAG_WELL}>
+            {(() => {
+              const models =
+                providerConfig.modelNames !== undefined
+                  ? providerConfig.modelNames
+                  : llmProviderModelNames[providerId as keyof typeof llmProviderModelNames] || [];
+              return models.map(model => (
+                <span key={model} className={CHIP}>
+                  {model}
+                  <button
+                    type="button"
+                    onClick={() => onRemoveModel(model)}
+                    className={CHIP_REMOVE}
+                    aria-label={`Remove ${model}`}>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="size-3"
+                      aria-hidden="true">
+                      <path d="M18 6 6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </span>
+              ));
+            })()}
+            <input
+              id={`${providerId}-models-input`}
+              type="text"
+              placeholder={t('options_models_providers_placeholders_models')}
+              value={modelInput}
+              onChange={e => onModelInputChange(e.target.value)}
+              onKeyDown={onModelInputKeyDown}
+              className={TAG_INPUT}
+            />
+          </div>
+          <p className={FIELD_HINT}>{t('options_models_providers_models_instructions')}</p>
         </div>
-      )}
+      ) : null}
 
       {/* Ollama reminder at the bottom of the section */}
       {providerType === ProviderTypeEnum.Ollama && (

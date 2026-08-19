@@ -674,6 +674,72 @@
   "options_models_providers_models_openrouter_empty": {
     "message": "No models selected. Add model names manually if needed."
   },
+  "options_models_providers_openrouter_search": {
+    "message": "Search models by name or ID"
+  },
+  "options_models_providers_openrouter_loading": {
+    "message": "Loading the OpenRouter model list..."
+  },
+  "options_models_providers_openrouter_ready": {
+    "message": "$COUNT$ models work with Flowkite. Type to search, then press Enter to add.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "335"
+      }
+    }
+  },
+  "options_models_providers_openrouter_unavailable": {
+    "message": "Could not load the OpenRouter model list. Type a model ID and press Enter to add it."
+  },
+  "options_models_providers_openrouter_noMatch": {
+    "message": "No model matches that. Press Enter to add it anyway."
+  },
+  "options_models_providers_openrouter_allAdded": {
+    "message": "Every matching model is already added."
+  },
+  "options_models_providers_openrouter_batchWarning": {
+    "message": "Batch variants run only through OpenRouter’s Batch API, so Flowkite cannot use this one."
+  },
+  "options_models_providers_openrouter_unsupportedWarning": {
+    "message": "This model supports neither tool calling nor JSON schema, so the agents cannot read its replies."
+  },
+  "options_models_providers_openrouter_useInstead": {
+    "message": "Use $MODEL$ instead",
+    "placeholders": {
+      "model": {
+        "content": "$1",
+        "example": "google/gemini-3.6-flash"
+      }
+    }
+  },
+  "options_models_providers_openrouter_heads_up": {
+    "message": "Heads up:"
+  },
+  "options_models_providers_openrouter_context": {
+    "message": "$TOKENS$ context",
+    "placeholders": {
+      "tokens": {
+        "content": "$1",
+        "example": "1M"
+      }
+    }
+  },
+  "options_models_providers_openrouter_perMillion": {
+    "message": "$PRICE$ / M tokens",
+    "placeholders": {
+      "price": {
+        "content": "$1",
+        "example": "$0.3"
+      }
+    }
+  },
+  "options_models_providers_openrouter_free": {
+    "message": "Free"
+  },
+  "options_models_providers_openrouter_vision": {
+    "message": "Vision"
+  },
   "options_models_providers_ollama_reminder": {
     "message": "environment variable MUST be set for the Ollama server."
   },
