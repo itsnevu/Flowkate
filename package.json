@@ -1,6 +1,6 @@
 {
   "name": "flowkite",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "AI web automation tool",
   "license": "Apache-2.0",
   "repository": {
@@ -32,7 +32,7 @@
     "react-dom": "18.3.1"
   },
   "devDependencies": {
-    "@types/chrome": "^0.0.330",
+    "@types/chrome": "^0.0.3.1",
     "@types/node": "^22.5.5",
     "@types/react": "^18.3.27",
     "@types/react-dom": "^18.3.7",
