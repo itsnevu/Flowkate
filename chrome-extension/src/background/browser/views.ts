@@ -173,3 +173,17 @@ export class URLNotAllowedError extends BrowserError {
     this.name = 'URLNotAllowedError';
   }
 }
+
+export class PageNotInjectableError extends BrowserError {
+  /**
+   * Error raised when Chrome will not run our scripts in a tab, so its DOM cannot be read.
+   *
+   * Chrome's own error pages are the usual cause, and they are easy to mistake for real ones: the
+   * tab keeps reporting the http(s) URL that failed, so nothing upstream can tell the difference
+   * until an injection is actually attempted.
+   */
+  constructor(message?: string) {
+    super(message);
+    this.name = 'PageNotInjectableError';
+  }
+}

@@ -219,20 +219,44 @@ export default class Page {
    * one, so it is worth doing before reporting the page as empty to the model.
    */
   async getClickableElementsWithRetry(showHighlightElements: boolean, focusElement: number): Promise<DOMState | null> {
-    let content = await this.getClickableElements(showHighlightElements, focusElement);
+    let content = await this._tryGetClickableElements(showHighlightElements, focusElement);
     if (content && content.selectorMap.size > 0) return content;
 
     for (const delay of Page.GROUNDING_RETRY_DELAYS_MS) {
       logger.info(`No interactive elements found, retrying grounding in ${delay}ms`);
       await new Promise(resolve => setTimeout(resolve, delay));
-      content = await this.getClickableElements(showHighlightElements, focusElement);
-      if (content && content.selectorMap.size > 0) {
-        logger.info(`Grounding recovered after ${delay}ms with ${content.selectorMap.size} element(s)`);
-        return content;
+      const retried = await this._tryGetClickableElements(showHighlightElements, focusElement);
+      if (retried && retried.selectorMap.size > 0) {
+        logger.info(`Grounding recovered after ${delay}ms with ${retried.selectorMap.size} element(s)`);
+        return retried;
       }
+      // An empty tree is still a real answer about the page; a failed parse is not. Keep whichever
+      // of the two the page has most recently managed to give us.
+      content = retried ?? content;
     }
 
     return content;
+  }
+
+  /**
+   * One grounding attempt, with a thrown parse reported the same way as an empty one.
+   *
+   * Two of the conditions the retries exist for do not come back as an empty tree at all: a frame
+   * that navigates out from under the parse, and a page Chrome will not script - its own error
+   * pages most of all. Left as exceptions they skip the retries entirely and unwind into the
+   * caller, so the slow-page case gets its second chance while these two, which a redirect settling
+   * would just as often fix, get none.
+   */
+  private async _tryGetClickableElements(
+    showHighlightElements: boolean,
+    focusElement: number,
+  ): Promise<DOMState | null> {
+    try {
+      return await this.getClickableElements(showHighlightElements, focusElement);
+    } catch (error) {
+      logger.warning('Failed to parse the page DOM:', error);
+      return null;
+    }
   }
 
   // Get scroll position information for the current page.
@@ -459,8 +483,7 @@ export default class Page {
       const content = await this.getClickableElementsWithRetry(drawBoxes, focusElement);
       if (!content) {
         logger.warning('Failed to get clickable elements');
-        // Return last known good state if available
-        return this._state;
+        return await this._stateForUnreadablePage();
       }
 
       // If the DOM yielded nothing even after retrying, the page is either genuinely empty or is one
@@ -482,8 +505,11 @@ export default class Page {
         logger.debug('content.elementTree: not found');
       }
 
-      // Take screenshot if needed
-      const screenshot = useVision || domGroundingFailed ? await this.takeScreenshot() : null;
+      // Take screenshot if needed. Everything from here to the assignments below is an extra layered
+      // on top of a tree that has already been read successfully, so none of it may be allowed to
+      // throw: the catch at the bottom answers with the last committed state, which at this point is
+      // still the previous page's. Losing a screenshot is a smaller loss than that.
+      const screenshot = useVision || domGroundingFailed ? await this.takeScreenshot().catch(() => null) : null;
 
       // Boxes drawn only to ground the screenshot have done their job the moment it is captured. Clear
       // them here rather than at the start of the next parse, or they sit on the user's screen for the
@@ -492,13 +518,18 @@ export default class Page {
         await this.removeHighlight();
       }
 
-      const [scrollY, visualViewportHeight, scrollHeight] = await this.getScrollInfo();
+      // Measured through the same injection that read the tree, so a navigation landing between the
+      // two calls takes these out on its own.
+      const [scrollY, visualViewportHeight, scrollHeight] = await this.getScrollInfo().catch(error => {
+        logger.warning('Could not measure the scroll position:', error);
+        return [0, 0, 0] as [number, number, number];
+      });
 
       // update the state
       this._state.elementTree = content.elementTree;
       this._state.selectorMap = content.selectorMap;
       this._state.url = this._puppeteerPage?.url() || '';
-      this._state.title = (await this._puppeteerPage?.title()) || '';
+      this._state.title = (await this._puppeteerPage?.title().catch(() => '')) || '';
       this._state.screenshot = screenshot;
       this._state.domGroundingFailed = domGroundingFailed;
       this._state.scrollY = scrollY;
@@ -506,10 +537,40 @@ export default class Page {
       this._state.scrollHeight = scrollHeight;
       return this._state;
     } catch (error) {
+      // Anything reaching here failed after the DOM had already been read - a screenshot, the scroll
+      // measurements - so the tree in hand is still the tree of the page in front of us. That case
+      // keeps the last good state; a page that could not be read at all does not, and takes the
+      // _stateForUnreadablePage branch instead.
       logger.error('Failed to update state:', error);
-      // Return last known good state if available
       return this._state;
     }
+  }
+
+  /**
+   * What to report for a page whose DOM could not be read on any attempt.
+   *
+   * The obvious answer, and the one this used to give, is the last state that worked. It is the
+   * wrong one: it hands the model a tree belonging to a page the tab has already left, whose element
+   * indices now resolve to nothing, and gives it no way to tell. The model keeps clicking indices
+   * off that stale tree and cannot understand why nothing responds.
+   *
+   * An empty tree grounds worse but grounds honestly. `domGroundingFailed` routes the prompt down
+   * the screenshot path - the one grounding that survives when scripting does not - and the URL and
+   * title say where the tab really is, so the model can decide to go back, retry, or give up. The
+   * scroll figures reset to zero because they are measured by the same injection that just failed;
+   * carrying the old page's numbers forward would only invite a scroll against them.
+   */
+  private async _stateForUnreadablePage(): Promise<PageState> {
+    this._state.elementTree = build_initial_state(this._tabId).elementTree;
+    this._state.selectorMap = new Map();
+    this._state.domGroundingFailed = true;
+    this._state.url = this.url();
+    this._state.title = await this.title().catch(() => this._state.title);
+    this._state.screenshot = await this.takeScreenshot().catch(() => null);
+    this._state.scrollY = 0;
+    this._state.visualViewportHeight = 0;
+    this._state.scrollHeight = 0;
+    return this._state;
   }
 
   async takeScreenshot(fullPage = false): Promise<string | null> {

@@ -1,5 +1,6 @@
 import { createLogger } from '@src/background/log';
 import { isNewTabPage } from '../util';
+import { PageNotInjectableError } from '../views';
 import { type DOMState, type DOMBaseNode, DOMElementNode, DOMTextNode } from './views';
 import type { BuildDomTreeArgs, RawDomTreeNode, RawDomElementNode, BuildDomTreeResult } from './raw_types';
 import type { ViewportInfo } from './history/view';
@@ -135,7 +136,9 @@ async function _buildDomTree(
     return [elementTree, new Map<number, DOMElementNode>()];
   }
 
-  await injectBuildDomTreeScripts(tabId);
+  if (!(await injectBuildDomTreeScripts(tabId))) {
+    throw new PageNotInjectableError(`Cannot read the DOM of ${url}: Chrome refused to run scripts in this tab`);
+  }
 
   const mainFrameResult = await chrome.scripting.executeScript({
     target: { tabId },
@@ -286,7 +289,7 @@ async function constructFrameTree(
     const iframeNode = _locateMatchingIframeNode(parentIframesFailedLoading, subFrame);
     if (iframeNode == null) {
       const subFrameRootElement = subFramePage.map[subFramePage.rootId];
-      console.warn('Cannot locate the iframe node for:', subFrame, 'with root element:', subFrameRootElement);
+      logger.warning('Cannot locate the iframe node for:', subFrame, 'with root element:', subFrameRootElement);
     } else {
       // Stiching together subframe DOM results with the main frame result
       // while keeping the subset of iframe node trees, that succeded to load their contents.
@@ -590,6 +593,9 @@ export async function getScrollInfo(tabId: number): Promise<[number, number, num
   return [result.scrollY, result.visualViewportHeight, result.scrollHeight];
 }
 
+/** Chrome numbers a tab's top-level frame 0; every other id belongs to a nested frame. */
+const MAIN_FRAME_ID = 0;
+
 // Function to check if script is already injected
 async function scriptInjectedFrames(tabId: number): Promise<Map<number, boolean>> {
   try {
@@ -599,48 +605,66 @@ async function scriptInjectedFrames(tabId: number): Promise<Map<number, boolean>
     });
     return new Map(results.map(result => [result.frameId, result.result || false]));
   } catch (err) {
-    console.error('Failed to check script injection status:', err);
+    // Chrome refuses to run scripts in its own error pages, and a frame can navigate away
+    // mid-probe. Both are routine on a browser the user is also driving, so this is a note rather
+    // than a fault - injecting the main frame below is the real test of whether the tab is usable.
+    logger.debug('Could not probe frames for the DOM script:', err);
     return new Map();
   }
 }
 
-// Function to inject the buildDomTree script
-export async function injectBuildDomTreeScripts(tabId: number) {
+/** Inject buildDomTree.js into the given frames, or the main frame when none are named. */
+async function injectIntoFrames(tabId: number, frameIds?: number[]): Promise<boolean> {
   try {
-    // Check if already injected
-    const injectedFrames = await scriptInjectedFrames(tabId);
-
-    // If we couldn't check any frames or all are already injected, try to inject in main frame only
-    if (injectedFrames.size === 0) {
-      // Couldn't check frames, so just try to inject in the main frame
-      try {
-        await chrome.scripting.executeScript({
-          target: { tabId },
-          files: ['buildDomTree.js'],
-        });
-      } catch (injectionErr) {
-        // Silently ignore - script might already be injected or frame might be inaccessible
-      }
-      return;
-    }
-
-    // Check if all frames already have the script
-    if (Array.from(injectedFrames.values()).every(injected => injected)) {
-      return;
-    }
-
-    // Inject only in frames that don't have the script
-    const frameIdsToInject = Array.from(injectedFrames.keys()).filter(id => !injectedFrames.get(id));
-    if (frameIdsToInject.length > 0) {
-      await chrome.scripting.executeScript({
-        target: {
-          tabId,
-          frameIds: frameIdsToInject,
-        },
-        files: ['buildDomTree.js'],
-      });
-    }
+    await chrome.scripting.executeScript({
+      target: frameIds ? { tabId, frameIds } : { tabId },
+      files: ['buildDomTree.js'],
+    });
+    return true;
   } catch (err) {
-    console.error('Failed to inject scripts:', err);
+    logger.debug('Failed to inject buildDomTree.js into', frameIds ?? 'the main frame', 'of tab', tabId, err);
+    return false;
   }
+}
+
+/**
+ * Make sure every frame of a tab is running buildDomTree.js.
+ *
+ * @returns whether the tab's main frame ended up with the script. A false here means Chrome turned
+ * the tab down - its own error pages are the common case, along with restricted URLs and tabs that
+ * close mid-flight - and no DOM can be read from it at all. Callers must not treat that as success:
+ * the parse that follows would fail on its own, far enough downstream that the reason is lost.
+ */
+export async function injectBuildDomTreeScripts(tabId: number): Promise<boolean> {
+  // Check if already injected
+  const injectedFrames = await scriptInjectedFrames(tabId);
+
+  // Nothing is known about any frame, so the main frame is both the fallback and the verdict.
+  if (injectedFrames.size === 0) {
+    return injectIntoFrames(tabId);
+  }
+
+  // Check if all frames already have the script
+  if (Array.from(injectedFrames.values()).every(injected => injected)) {
+    return true;
+  }
+
+  // Inject only in frames that don't have the script
+  const frameIdsToInject = Array.from(injectedFrames.keys()).filter(id => !injectedFrames.get(id));
+  if (frameIdsToInject.length === 0) {
+    return true;
+  }
+
+  // The main frame goes in a call of its own because only its failure is fatal: the tree is built
+  // from it, while sub-frames merely fill in the parts it could not reach. Batched into one call,
+  // a single unreachable ad iframe would be indistinguishable from an unreadable page.
+  if (frameIdsToInject.includes(MAIN_FRAME_ID) && !(await injectIntoFrames(tabId))) {
+    return false;
+  }
+
+  const subFrameIds = frameIdsToInject.filter(id => id !== MAIN_FRAME_ID);
+  if (subFrameIds.length > 0) {
+    await injectIntoFrames(tabId, subFrameIds);
+  }
+  return true;
 }
