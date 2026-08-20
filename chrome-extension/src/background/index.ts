@@ -21,7 +21,7 @@ import { Executor } from './agent/executor';
 import { undoLastStepSafely } from './agent/undo';
 import { createLogger } from './log';
 import { ExecutionState } from './agent/event/types';
-import { createChatModel } from './agent/helper';
+import { createChatModel, contextWindowFor, OUTPUT_TOKEN_CAP } from './agent/helper';
 import { DEFAULT_AGENT_OPTIONS } from './agent/types';
 import { SpeechToTextService } from './services/speechToText';
 import { injectBuildDomTreeScripts } from './browser/dom/service';
@@ -557,16 +557,41 @@ async function setupExecutor(
     fastLLM = createChatModel(fastProviderConfig, fastModel);
   }
 
+  // Bring the input budget down to the smallest window any configured model actually has.
+  //
+  // Only Ollama declares one here, and it is the case that matters: it does not reject an
+  // over-length prompt, it truncates it from the front and answers anyway. The front holds the
+  // system prompt and the pinned task, so the agent loses its instructions mid-run with nothing to
+  // say why - and the trimmer never fires, because by its own number it is comfortably under.
+  const configuredWindows = [navigatorModel, plannerModel, fastModel]
+    .filter((model): model is NonNullable<typeof model> => Boolean(model))
+    .map(model => contextWindowFor(model.provider))
+    .filter((window): window is number => window !== undefined);
+  const effectiveMaxInputTokens = configuredWindows.length
+    ? Math.min(generalSettings.maxInputTokens, Math.min(...configuredWindows) - OUTPUT_TOKEN_CAP)
+    : generalSettings.maxInputTokens;
+  if (effectiveMaxInputTokens < generalSettings.maxInputTokens) {
+    logger.info(
+      `Input budget capped at ${effectiveMaxInputTokens} by a configured model's context window ` +
+        `(setting is ${generalSettings.maxInputTokens})`,
+    );
+  }
+
   const executor = new Executor(task, taskId, browserContext, navigatorLLM, {
     plannerLLM: plannerLLM ?? navigatorLLM,
     fastLLM: fastLLM ?? undefined,
+    providers: {
+      navigator: navigatorModel.provider,
+      planner: (plannerModel ?? navigatorModel).provider,
+      fast: fastModel?.provider,
+    },
     // Snapshotted at task start, like every other setting: a price edited mid-run applies to the
     // next task, not retroactively to a brake that may already have fired.
     modelPricing: await modelPricingStore.getAllPrices(),
     agentOptions: {
       maxSteps: generalSettings.maxSteps,
       maxFailures: generalSettings.maxFailures,
-      maxInputTokens: generalSettings.maxInputTokens,
+      maxInputTokens: effectiveMaxInputTokens,
       retryDelay: generalSettings.retryDelay,
       maxActionsPerStep: generalSettings.maxActionsPerStep,
       useVision: generalSettings.useVision,

@@ -34,6 +34,20 @@ export interface SubtaskRunnerOptions {
    * this any rows they collect would be built up in a context that is thrown away with the tab.
    */
   dataset?: TaskDataset;
+  /** Which provider serves `navigatorLLM`, so a subtask agent keys the same behaviour the parent does. */
+  provider?: string;
+  /**
+   * The parent task's stop signal, read at launch rather than captured.
+   *
+   * Subtasks build their own AgentContext and therefore their own AbortController, and nothing
+   * connected the two - so `Executor.cancel()` reached the parent and nothing else. Pressing Stop
+   * left up to MAX_PARALLEL_SUBTASKS x MAX_SUBTASK_STEPS model calls and every tab operation in
+   * them still to run, and the panel saw no TASK_CANCEL until they had all finished.
+   *
+   * A getter because these options are built once per Executor while the parent's controller is
+   * replaced for each task - a captured signal would belong to a task that has already ended.
+   */
+  getParentSignal?: () => AbortSignal;
 }
 
 /**
@@ -84,7 +98,19 @@ async function runOne(subtask: Subtask, options: SubtaskRunnerOptions): Promise<
       chatLLM: options.navigatorLLM,
       context,
       prompt: navigatorPrompt,
+      provider: options.provider,
     });
+
+    // A parent stop has to reach this context: its own controller is the one every model call in
+    // this subtask is bound to. Both directions are covered - already-aborted before we start, and
+    // aborted while we run.
+    const abortWithParent = () => {
+      context.stopped = true;
+      context.controller.abort();
+    };
+    const parentSignal = options.getParentSignal?.();
+    if (parentSignal?.aborted) abortWithParent();
+    parentSignal?.addEventListener('abort', abortWithParent, { once: true });
 
     messageManager.initTaskMessages(navigatorPrompt.getSystemMessage(), subtask.task);
 

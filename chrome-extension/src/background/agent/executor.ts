@@ -41,6 +41,16 @@ export interface ExecutorExtraArgs {
   generalSettings?: GeneralSettingsConfig;
   /** The user's own USD-per-MTok price entries, snapshotted at task start for the budget brake. */
   modelPricing?: ModelPricingConfig;
+  /**
+   * Which provider serves each model above.
+   *
+   * The agents need this and nothing was passing it, so `BaseAgent.provider` was the empty string
+   * for every agent in production - silently disabling the "this provider already leads with tool
+   * calling" check, so every 400 on Anthropic, Groq, DeepSeek, Cerebras and xAI was answered with a
+   * second identical request; disabling the Llama structured-output guard; and collapsing the
+   * per-model memo key to `":<model>"`, so two endpoints serving the same model id shared one entry.
+   */
+  providers?: { navigator?: string; planner?: string; fast?: string };
 }
 
 export class Executor {
@@ -131,6 +141,10 @@ export class Executor {
       usage: context.tokenUsage,
       // and they collect on the parent's behalf, so their rows belong in the parent's table
       dataset: context.dataset,
+      provider: extraArgs?.providers?.navigator,
+      // and they stop when the parent stops, rather than running out their step budget in tabs
+      // nobody is watching
+      getParentSignal: () => context.controller.signal,
     });
     const navigatorActionRegistry = new NavigatorActionRegistry(actionBuilder.buildDefaultActions());
 
@@ -139,6 +153,7 @@ export class Executor {
       chatLLM: navigatorLLM,
       context: context,
       prompt: this.navigatorPrompt,
+      provider: extraArgs?.providers?.navigator,
     });
 
     this.fastNavigator = extraArgs?.fastLLM
@@ -146,6 +161,7 @@ export class Executor {
           chatLLM: extraArgs.fastLLM,
           context: context,
           prompt: this.navigatorPrompt,
+          provider: extraArgs.providers?.fast,
         })
       : null;
 
@@ -153,6 +169,7 @@ export class Executor {
       chatLLM: plannerLLM,
       context: context,
       prompt: this.plannerPrompt,
+      provider: extraArgs?.providers?.planner,
     });
 
     this.context = context;

@@ -491,16 +491,18 @@ export default class MessageManager {
         }
       });
       lastMsg.message.content = text;
-      logger.debug(
-        `Dropped images from the newest message - ${this.history.totalTokens}/${this.inputBudget}`,
-      );
+      logger.debug(`Dropped images from the newest message - ${this.history.totalTokens}/${this.inputBudget}`);
     }
     if (this.history.totalTokens <= this.inputBudget) return;
 
     // 3. truncate the newest message, in place so its class and tool_call_id survive
     if (typeof lastMsg.message.content !== 'string') return;
     const diff = this.history.totalTokens - this.inputBudget;
-    const proportionToRemove = diff / lastMsg.metadata.tokens;
+    // A newest message counted at 0 tokens makes this Infinity, which is > 0.99 - so the run died
+    // with "context too large" because the last message was too short to measure. Reachable two
+    // ways: a message under the characters-per-token floor, and stage 2 subtracting the image
+    // allowance from a screenshot-only state message down to nothing.
+    const proportionToRemove = lastMsg.metadata.tokens > 0 ? diff / lastMsg.metadata.tokens : 1;
     if (proportionToRemove > 0.99) {
       throw new MaxTokensExceededError(t('exec_errors_contextTooLarge'));
     }

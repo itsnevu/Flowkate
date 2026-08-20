@@ -351,7 +351,8 @@ describe('MessageHistory.removeOldestExchange', () => {
 
   // Driven directly rather than through cutMessages, because cutMessages stops on the 0 this
   // returns - so routing through it can only ever observe "the loop ended", never "the newest
-  // exchange was protected".
+  // exchange was protected". The number is a count of messages removed; the token arithmetic is
+  // asserted separately through totalTokens.
   it('refuses to evict the newest exchange, even when it is the only one left', () => {
     const newestCall = aiCall();
     const newestResponse = new ToolMessage({ content: 'tool call response', tool_call_id: '9' });
@@ -387,7 +388,7 @@ describe('MessageHistory.removeOldestExchange', () => {
       managed(newest, 12),
     );
 
-    expect(history.removeOldestExchange()).toBe(36);
+    expect(history.removeOldestExchange()).toBe(2); // the call and the response it answers
     expect(history.messages).toHaveLength(2);
     expect(history.messages[1].message).toBe(newest);
     expect(history.totalTokens).toBe(52);
@@ -434,5 +435,39 @@ describe('MessageManager input budget', () => {
     const { manager } = build({ maxInputTokens: 10_000 });
     manager.reserveTokensForPayload('');
     expect(budgetOf(manager)).toBe(10_000);
+  });
+});
+
+describe('MessageManager.cutMessages past a free exchange', () => {
+  it('keeps trimming when an eviction reclaims nothing measurable', () => {
+    const { manager, settings } = build();
+    manager.initTaskMessages(new SystemMessage({ content: SYSTEM_PROMPT }), TASK);
+
+    // Two characters: under the estimator's characters-per-token, so this scores exactly 0. It sits
+    // where eviction starts, and reclaiming it used to be indistinguishable from "there is nothing
+    // left to evict" - so the loop broke here and never reached the six expensive exchanges behind
+    // it. A plain message, deliberately: an AIMessage carries its tool_calls JSON into the count and
+    // is never actually free.
+    manager.addMessageWithTokens(new HumanMessage({ content: 'hi' }));
+
+    for (let i = 0; i < 6; i++) {
+      manager.addMessageWithTokens(
+        new AIMessage({
+          content: 'x'.repeat(600),
+          tool_calls: [{ name: 'AgentOutput', args: {}, id: `${i}`, type: 'tool_call' as const }],
+        }),
+      );
+      manager.addMessageWithTokens(new ToolMessage({ content: 'y'.repeat(600), tool_call_id: `${i}` }));
+    }
+
+    // Above the init floor, so stage 1 alone can and must get there.
+    settings.maxInputTokens = pinnedInitTokens(manager) + 500;
+
+    const before = totalTokens(manager);
+    expect(before).toBeGreaterThan(settings.maxInputTokens);
+
+    manager.cutMessages();
+
+    expect(totalTokens(manager)).toBeLessThanOrEqual(settings.maxInputTokens);
   });
 });

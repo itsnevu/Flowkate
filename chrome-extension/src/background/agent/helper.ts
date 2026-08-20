@@ -14,6 +14,31 @@ import type { BaseChatModel } from '@langchain/core/language_models/chat_models'
  * one context window, so the input budget has to hold this back.
  */
 export const OUTPUT_TOKEN_CAP = 1024 * 4;
+
+/**
+ * Context window requested from Ollama, and therefore the real ceiling for a model served by it.
+ *
+ * Not raised to match the agent's own budget on purpose: `num_ctx` makes Ollama allocate a KV cache
+ * that size and rope-scale a model trained on less, which degrades the model to buy room it does not
+ * have. So the budget comes down to meet this instead - see `contextWindowFor`.
+ */
+export const OLLAMA_CONTEXT_TOKENS = 64000;
+
+/**
+ * The hard context ceiling a provider imposes, where we set one ourselves.
+ *
+ * Only Ollama has one here, because only Ollama is told its window by this code. For everyone else
+ * the window belongs to the model and the user's `maxInputTokens` is the only stated limit - we do
+ * not ship a per-model table, and a stale table would refuse budgets that are in fact fine.
+ *
+ * This matters because a budget above the real window is not a soft overrun: Ollama does not answer
+ * with an error, it truncates the prompt from the front and answers anyway. The front is where the
+ * system prompt and the pinned task live, so the agent loses its instructions and its output format
+ * mid-run with nothing at all to say why.
+ */
+export function contextWindowFor(provider: string): number | undefined {
+  return provider === ProviderTypeEnum.Ollama ? OLLAMA_CONTEXT_TOKENS : undefined;
+}
 const maxTokens = OUTPUT_TOKEN_CAP;
 
 /**
@@ -434,7 +459,7 @@ export function createChatModel(providerConfig: ProviderConfig, modelConfig: Mod
         // It was set to 128000 in the original code, but it will cause ollama reload the models frequently if you have multiple models working together
         // not sure why, but setting it to 64000 seems to work fine
         // TODO: configure the context window size in model config
-        numCtx: 64000,
+        numCtx: OLLAMA_CONTEXT_TOKENS,
       };
       return new ChatOllama(args);
     }

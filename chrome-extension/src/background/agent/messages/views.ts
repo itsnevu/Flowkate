@@ -82,6 +82,15 @@ export class MessageHistory {
    *
    * @returns the number of tokens reclaimed, or 0 when nothing was safe to evict
    */
+  /**
+   * Drop the oldest evictable exchange, and report how many messages went.
+   *
+   * The count, not the tokens reclaimed: zero tokens is ambiguous in a way that stopped the trimmer
+   * early. A message shorter than the estimator's characters-per-token is counted at 0, so evicting
+   * one looked identical to "there is nothing left to evict" - and `cutMessages` broke out of its
+   * loop with thousands of evictable tokens still in the history, then threw "context too large" on
+   * a history it could have trimmed.
+   */
   removeOldestExchange(): number {
     const start = this.messages.findIndex(m => m.metadata.message_type !== 'init');
     if (start < 0) return 0;
@@ -91,8 +100,7 @@ export class MessageHistory {
     }
     if (end >= this.messages.length) return 0;
     const removed = this.messages.splice(start, end - start);
-    const tokens = removed.reduce((sum, m) => sum + m.metadata.tokens, 0);
-    this.totalTokens -= tokens;
-    return tokens;
+    this.totalTokens -= removed.reduce((sum, m) => sum + m.metadata.tokens, 0);
+    return removed.length;
   }
 }
