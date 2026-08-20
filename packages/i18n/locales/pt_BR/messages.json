@@ -1706,7 +1706,7 @@
     "message": "Memória"
   },
   "options_memory_localOnly": {
-    "message": "Tudo aqui fica salvo apenas neste dispositivo. Nunca é enviado a um servidor nem sincronizado entre dispositivos."
+    "message": "Tudo aqui fica salvo apenas neste dispositivo. Nunca é enviado à Flowkite nem sincronizado entre dispositivos. Com a memória ativada, as memórias que correspondem ao site atual são incluídas no prompt enviado ao seu próprio provedor de LLM."
   },
   "options_memory_enable": {
     "message": "Lembrar preferências entre sessões"
@@ -1718,7 +1718,7 @@
     "message": "Memórias salvas"
   },
   "options_memory_empty": {
-    "message": "Nada memorizado ainda. O agente só salva uma preferência quando você pede."
+    "message": "Nada memorizado ainda. O agente salva uma preferência quando entende que você declarou uma, e tudo o que ele salvar aparece aqui."
   },
   "options_memory_forget": {
     "message": "Esquecer isto"

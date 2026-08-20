@@ -1706,7 +1706,7 @@
     "message": "Memory"
   },
   "options_memory_localOnly": {
-    "message": "Everything here is stored on this device only. It is never sent to a server or synced across devices."
+    "message": "Everything here is stored on this device only. It is never uploaded to Flowkite and never synced across devices. When memory is on, the memories matching the current site are included in the prompt sent to your own LLM provider."
   },
   "options_memory_enable": {
     "message": "Remember preferences across sessions"
@@ -1718,7 +1718,7 @@
     "message": "Stored memories"
   },
   "options_memory_empty": {
-    "message": "Nothing remembered yet. The agent saves a preference only when you tell it to."
+    "message": "Nothing remembered yet. The agent saves a preference when it judges you told it one directly, and anything it saves shows up here."
   },
   "options_memory_forget": {
     "message": "Forget this"

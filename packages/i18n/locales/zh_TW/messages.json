@@ -1706,7 +1706,7 @@
     "message": "記憶"
   },
   "options_memory_localOnly": {
-    "message": "這裡的內容只會儲存在這台裝置上，絕不會傳送到伺服器或跨裝置同步。"
+    "message": "這裡的內容只會儲存在這台裝置上，絕不會上傳到 Flowkite，也不會跨裝置同步。啟用記憶後，與目前網站相符的記憶會包含在送往你自己的 LLM 供應商的提示中。"
   },
   "options_memory_enable": {
     "message": "跨工作階段記住偏好"
@@ -1718,7 +1718,7 @@
     "message": "已儲存的記憶"
   },
   "options_memory_empty": {
-    "message": "尚未記住任何內容。只有在你要求時，代理才會儲存偏好。"
+    "message": "尚未記住任何內容。當代理判斷你直接說明了某項偏好時就會儲存，儲存的內容都會顯示在這裡。"
   },
   "options_memory_forget": {
     "message": "忘記這一項"
