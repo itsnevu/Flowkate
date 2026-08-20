@@ -1,7 +1,7 @@
 import { webhookStore, isValidWebhookUrl, activityLogStore } from '@extension/storage';
 import { createLogger } from '../log';
-import { parseFollowUp } from './webhookContract';
-import type { WebhookFollowUp } from './webhookContract';
+import { parseFollowUp, datasetForWebhook } from './webhookContract';
+import type { WebhookFollowUp, WebhookDataset } from './webhookContract';
 
 const logger = createLogger('webhook');
 
@@ -17,6 +17,13 @@ export interface TaskWebhookPayload {
   result: string;
   startedAt: number;
   finishedAt: number;
+  /**
+   * The table an extraction task collected, when there is one AND the user turned on `includeData`.
+   *
+   * Always passed in by the caller; whether it reaches the wire is decided here, with the rest of
+   * the config, so there is one place that knows what this webhook is allowed to say.
+   */
+  dataset?: WebhookDataset;
 }
 
 const WEBHOOK_TIMEOUT_MS = 10_000;
@@ -53,10 +60,14 @@ export async function dispatchTaskWebhook(payload: TaskWebhookPayload): Promise<
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), WEBHOOK_TIMEOUT_MS);
   try {
+    // Rows only travel when the user asked for them, and only as many as the budget allows.
+    const dataset = config.includeData ? datasetForWebhook(payload.dataset) : null;
     const response = await fetch(config.url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      // `undefined` is dropped by JSON.stringify, so a run that collected nothing sends the same
+      // body it always did.
+      body: JSON.stringify({ ...payload, dataset: dataset ?? undefined }),
       signal: controller.signal,
     });
     logger.info(`webhook delivered (${response.status}) for ${payload.source} task`);

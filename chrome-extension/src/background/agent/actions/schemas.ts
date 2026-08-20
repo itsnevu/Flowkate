@@ -103,6 +103,33 @@ export const extractContentActionSchema: ActionSchema = {
   }),
 };
 
+/**
+ * The other half of extraction: repeated records, kept out of the conversation.
+ *
+ * `extract_content` is for an answer the model needs to reason with. This is for a table the user
+ * wants to keep — the rows accumulate in the task's dataset and reach the panel once, at the end,
+ * so a nine-page scrape costs nine extractions rather than nine ever-growing message histories.
+ */
+export const extractStructuredActionSchema: ActionSchema = {
+  name: 'extract_structured',
+  description:
+    'Collect repeated records from the current page into named columns, e.g. every product with its price and link, every row of a listing, every search result. Rows accumulate across pages and across calls, and duplicates are dropped, so call this once per page and then paginate. The rows are shown to the user as a downloadable table - do NOT repeat them in your final answer, just say how many you collected. Use extract_content instead when you need the answer yourself to decide what to do next.',
+  schema: z.object({
+    intent: z.string().default('').describe('purpose of this action'),
+    goal: z.string().describe('which records to collect from this page, e.g. "every product in the search results"'),
+    fields: z
+      .array(
+        z.object({
+          name: z.string().describe('column name, short and stable across pages, e.g. "price"'),
+          description: z.string().default('').describe('what belongs in this column, if the name alone is unclear'),
+        }),
+      )
+      .min(1)
+      .max(12)
+      .describe('the columns to fill for every record; keep the same columns on every page of one task'),
+  }),
+};
+
 // Cache Actions
 export const cacheContentActionSchema: ActionSchema = {
   name: 'cache_content',

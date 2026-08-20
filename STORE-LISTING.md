@@ -79,13 +79,14 @@ WHAT IT CAN DO
 
 • Multi-step research across several tabs, with the agent's tabs collected into one labelled tab
   group so they never get confused with yours.
-• Extract content into a real table and copy it as CSV.
+• Extract content into a real table and save it as a CSV or JSON file.
 • Reusable task templates with fill-in-the-blank slots.
 • "Ask Flowkite" on the right-click menu, for the page or your text selection, and Alt+Shift+F
   to open the panel from the keyboard.
 • Scheduled daily tasks that run unattended and notify you when they finish. Sensitive actions
   are automatically declined during those runs, because nobody is there to answer.
-• An optional outbound webhook to one URL you choose, off by default.
+• An optional outbound webhook to one URL you choose, off by default — and a separate opt-in if
+  you want the collected table sent with it.
 
 BRING YOUR OWN MODEL
 

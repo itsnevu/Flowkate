@@ -5,7 +5,7 @@ import { AgentEvent, ExecutionState } from '../../types/event';
 import { useTaskStateHandler } from '../useTaskStateHandler';
 import type * as ReactModule from 'react';
 import type { Message, TrailStep } from '@extension/storage';
-import type { EventPayload } from '../../types/event';
+import type { DatasetPayload, EventPayload } from '../../types/event';
 
 /**
  * `useTaskStateHandler` is a `useCallback` wrapper around a pure event-to-state translation, and
@@ -41,6 +41,7 @@ const TASK_ID = 'task-1';
 function setup() {
   const appendMessage = vi.fn();
   const trail: TrailStep[] = [];
+  let dataset: DatasetPayload | null = null;
   const spies = {
     setLiveStatus: vi.fn(),
     pushTrail: vi.fn((step: TrailStep) => {
@@ -49,8 +50,15 @@ function setup() {
     resetTrail: vi.fn(() => {
       trail.length = 0;
     }),
+    captureDataset: vi.fn((collected: DatasetPayload | null) => {
+      dataset = collected;
+    }),
     finalizeTask: vi.fn((message: Message) => {
-      appendMessage(trail.length > 0 ? { ...message, steps: [...trail] } : message);
+      appendMessage({
+        ...message,
+        ...(trail.length > 0 ? { steps: [...trail] } : {}),
+        ...(dataset ? { dataset } : {}),
+      });
     }),
     setCanUndo: vi.fn(),
     setTokenUsage: vi.fn(),
@@ -98,6 +106,7 @@ const EMITTED: Array<[Actors, ExecutionState]> = [
   [Actors.SYSTEM, ExecutionState.TASK_PAUSE],
   [Actors.SYSTEM, ExecutionState.TASK_RESUME],
   [Actors.SYSTEM, ExecutionState.TASK_USAGE],
+  [Actors.SYSTEM, ExecutionState.TASK_DATASET],
   [Actors.SYSTEM, ExecutionState.PLAN_REVIEW],
   [Actors.SYSTEM, ExecutionState.PLAN_APPROVED],
   [Actors.SYSTEM, ExecutionState.PLAN_REJECTED],
@@ -702,6 +711,71 @@ describe('TASK_USAGE', () => {
     const { handle, setTokenUsage } = setup();
     handle(event(Actors.SYSTEM, ExecutionState.TASK_USAGE, '15'));
     expect(setTokenUsage).toHaveBeenCalledWith(null);
+  });
+});
+
+describe('TASK_DATASET', () => {
+  const collected = { fields: ['name', 'price'], rows: [['Kite', '10']], truncated: false };
+
+  it('holds the rows without appending a message of its own', () => {
+    const { handle, captureDataset, appendMessage } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_DATASET, '1 row', collected));
+
+    expect(captureDataset).toHaveBeenCalledWith(collected);
+    expect(appendMessage).not.toHaveBeenCalled();
+  });
+
+  it('returns before the actor switch, so no other state is touched', () => {
+    const { handle, captureDataset, ...rest } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_DATASET, '1 row', collected));
+    expect(captureDataset).toHaveBeenCalledTimes(1);
+    for (const [name, spy] of Object.entries(rest)) {
+      if (typeof spy === 'function' && 'mock' in spy) {
+        expect(`${name}: ${(spy as ReturnType<typeof vi.fn>).mock.calls.length}`).toBe(`${name}: 0`);
+      }
+    }
+  });
+
+  /** The whole point of the event: rows the model never spoke reach the user with the result. */
+  it('rides out on the message the task leaves behind', () => {
+    const { handle, appendMessage } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_START));
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_DATASET, '1 row', collected));
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_OK, 'Collected 1 product.'));
+
+    expect(appendMessage).toHaveBeenCalledTimes(1);
+    expect(appendMessage.mock.calls[0][0].dataset).toEqual(collected);
+  });
+
+  it("reaches a failed task's message too - rows collected before the failure are still rows", () => {
+    const { handle, appendMessage } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_START));
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_DATASET, '1 row', collected));
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_FAIL, 'ran out of steps'));
+
+    expect(appendMessage.mock.calls[0][0].dataset).toEqual(collected);
+  });
+
+  it("is cleared by the next task, so a follow-up cannot hand over the last one's table", () => {
+    const { handle, appendMessage } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_START));
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_DATASET, '1 row', collected));
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_OK, 'done'));
+
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_START));
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_OK, 'nothing to collect this time'));
+
+    expect(appendMessage).toHaveBeenCalledTimes(2);
+    expect(appendMessage.mock.calls[1][0].dataset).toBeUndefined();
+  });
+
+  it('leaves the message alone when the event carries no payload', () => {
+    const { handle, appendMessage } = setup();
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_START));
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_DATASET, 'nothing'));
+    handle(event(Actors.SYSTEM, ExecutionState.TASK_OK, 'done'));
+
+    expect(appendMessage.mock.calls[0][0].dataset).toBeUndefined();
   });
 });
 

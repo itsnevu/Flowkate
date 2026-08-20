@@ -118,6 +118,15 @@ Common action sequences:
   • NEVER use scroll_to_percent action, as this will cause loss of information
   • Stop after maximum 10 page scrolls
 
+- Collecting a LIST the user wants to keep (every product, every listing, every search result):
+  • Use extract_structured instead of the cache loop above. It stores the rows outside this
+    conversation, so a long list costs you nothing in context and the user gets it as a file.
+  • Call it ONCE per page, then paginate with next_page and call it again on the new page.
+  • Use the SAME column names on every page of one task, or the table comes out ragged.
+  • Duplicates are dropped for you, so re-reading a page you already collected is harmless.
+  • The rows are already in front of the user. In the done action, say how many you collected -
+    do NOT list them out.
+
 11. Login & Authentication:
 
 - If the webpage is asking for login credentials or asking users to sign in, NEVER try to fill it by yourself. Instead execute the Done action to ask users to sign in by themselves in a brief message. 

@@ -437,6 +437,12 @@
   "options_webhook_allowFollowUp_desc": {
     "message": "A resposta pode conter {\"followUp\": \"próxima tarefa\"} e o Flowkite a executa, seu pipeline decide o próximo passo. Executa sem supervisão (ações sensíveis são recusadas), máx. 3 por cadeia."
   },
+  "options_webhook_includeData": {
+    "message": "Incluir as tabelas coletadas"
+  },
+  "options_webhook_includeData_desc": {
+    "message": "Tarefas que coletam linhas também as enviam, em \"dataset\": { fields, rows, truncated }. Desligado, o webhook leva apenas o texto do resultado, não os dados que o agente leu das páginas."
+  },
   "options_webhook_test": {
     "message": "Enviar teste"
   },
@@ -1258,6 +1264,49 @@
       }
     }
   },
+  "act_extractStructured_start": {
+    "message": "Coletando linhas: $GOAL$",
+    "placeholders": {
+      "goal": {
+        "content": "$1",
+        "example": "todos os produtos nos resultados da busca"
+      }
+    }
+  },
+  "act_extractStructured_ok": {
+    "message": "Coletadas $ADDED$ novas linhas ($TOTAL$ no total)",
+    "placeholders": {
+      "added": {
+        "content": "$1",
+        "example": "20"
+      },
+      "total": {
+        "content": "$2",
+        "example": "60"
+      }
+    }
+  },
+  "act_extractStructured_none": {
+    "message": "Nenhum registro correspondente nesta página: $GOAL$",
+    "placeholders": {
+      "goal": {
+        "content": "$1",
+        "example": "todos os produtos nos resultados da busca"
+      }
+    }
+  },
+  "act_extractStructured_duplicates": {
+    "message": "$COUNT$ linhas já haviam sido coletadas e foram ignoradas.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "act_errors_extractStructuredFailed": {
+    "message": "Não foi possível coletar registros desta página"
+  },
   "act_errors_extractFailed": {
     "message": "A extração falhou - leia o estado da página diretamente, salve o que encontrar e role para ver mais se necessário."
   },
@@ -1482,6 +1531,15 @@
   },
   "exec_undo_ok": {
     "message": "Última etapa desfeita. A página foi restaurada e o agente vai replanejar."
+  },
+  "exec_dataset_collected": {
+    "message": "Coletadas $COUNT$ linhas",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "60"
+      }
+    }
   },
   "bg_cmd_planReview_notPending": {
     "message": "Nenhum plano aguardando revisão"
@@ -1768,6 +1826,44 @@
   },
   "chat_table_copied": {
     "message": "Copiado"
+  },
+  "chat_dataset_summary": {
+    "message": "$ROWS$ linhas · $COLUMNS$ colunas",
+    "placeholders": {
+      "rows": {
+        "content": "$1",
+        "example": "60"
+      },
+      "columns": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
+  },
+  "chat_dataset_truncated": {
+    "message": "Limite atingido"
+  },
+  "chat_dataset_showing": {
+    "message": "Mostrando $SHOWN$ de $TOTAL$ linhas — baixe para obter todas.",
+    "placeholders": {
+      "shown": {
+        "content": "$1",
+        "example": "100"
+      },
+      "total": {
+        "content": "$2",
+        "example": "460"
+      }
+    }
+  },
+  "chat_dataset_downloadCsv": {
+    "message": "Baixar CSV"
+  },
+  "chat_dataset_downloadJson": {
+    "message": "Baixar JSON"
+  },
+  "chat_dataset_downloadFailed": {
+    "message": "Não foi possível salvar o arquivo"
   },
   "chat_usage_details_a11y": {
     "message": "Mostrar uso de tokens por modelo"

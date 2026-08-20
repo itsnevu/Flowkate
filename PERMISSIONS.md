@@ -186,6 +186,23 @@ lays and clears the alarms; the `chrome.alarms.onAlarm` listener and the unatten
 
 ---
 
+## `downloads`
+
+**Justification for the listing:**
+
+> A data-extraction task produces a table — every product with its price, every row of a listing —
+> and a table the user can only look at is a table they have to retype. This saves that table to
+> their machine as a CSV or JSON file when they click Download. The file is built in the side panel
+> from data already on screen and handed to Chrome as a local blob; the extension never downloads
+> anything from the network, never starts a download on its own, and never reads the user's existing
+> downloads.
+
+**Where it is used:** `saveTextFile` in
+[`side-panel/download.ts`](pages/side-panel/src/download.ts), reached only from the Download keys
+under a result table.
+
+---
+
 ## Remote code
 
 **Answer: no remote code is executed.** All JavaScript is bundled into the extension package at build
@@ -203,7 +220,9 @@ Declare in the dashboard's data-use section:
   provider in order to perform the task the user requested. This is disclosed in
   [PRIVACY.md](PRIVACY.md). Additionally, if the user enables the outbound webhook
   (Options → General → Outbound webhook, off by default), each finished task's outcome text is
-  POSTed to the single URL the user entered — HTTPS anywhere, plain HTTP only to localhost.
+  POSTed to the single URL the user entered — HTTPS anywhere, plain HTTP only to localhost. A
+  second toggle inside that pane ("Include collected tables", also off by default) adds the rows a
+  data-extraction task collected to the same POST; without it, no page data rides on the webhook.
 - **Location, health, financial, personal communications, web history, user activity** — not
   collected. See the analytics note below before re-certifying this line on a future upload.
 

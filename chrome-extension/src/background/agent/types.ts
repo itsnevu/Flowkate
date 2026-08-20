@@ -10,6 +10,7 @@ import {
 } from './event/types';
 import { AgentStepHistory } from './history';
 import { TokenUsageTracker } from './usage';
+import { TaskDataset } from './dataset';
 import type BrowserContext from '../browser/context';
 import type { BrowserState } from '../browser/views';
 import type Page from '../browser/page';
@@ -95,6 +96,13 @@ export class AgentContext {
   history: AgentStepHistory;
   /** What this task has spent, as reported by the providers themselves. */
   tokenUsage: TokenUsageTracker;
+  /**
+   * Rows `extract_structured` has collected, held outside the message history.
+   *
+   * On the context rather than in the action so a task's rows survive the step loop, and so the
+   * executor can hand the finished set to the panel without reaching into the action registry.
+   */
+  dataset: TaskDataset;
   finalAnswer: string | null;
   /** Resolver for the pending sensitive-action gate, set only while the user is being asked. */
   private actionConfirmationResolver: ((approved: boolean) => void) | null = null;
@@ -125,6 +133,7 @@ export class AgentContext {
     this.stateMessageAdded = false;
     this.history = new AgentStepHistory();
     this.tokenUsage = new TokenUsageTracker();
+    this.dataset = new TaskDataset();
     this.finalAnswer = null;
   }
 

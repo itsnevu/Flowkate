@@ -10,6 +10,7 @@ import type {
   ActionConfirmationPayload,
   AgentEvent,
   BudgetPausePayload,
+  DatasetPayload,
   HandoffPayload,
   PlanReviewPayload,
   TokenUsagePayload,
@@ -21,6 +22,8 @@ interface TaskStateHandlerProps {
   setLiveStatus: Dispatch<SetStateAction<LiveStatus | null>>;
   pushTrail: (step: TrailStep) => void;
   resetTrail: () => void;
+  /** holds the collected rows until the terminal event attaches them; null clears a stale set */
+  captureDataset: (dataset: DatasetPayload | null) => void;
   /** latched by the first terminal event, cleared on TASK_START; see the note on outcomes below */
   taskSettledRef: MutableRefObject<boolean>;
   /** read, never written, so the handler can stay stable while replay state changes */
@@ -62,6 +65,7 @@ export const useTaskStateHandler = ({
   setLiveStatus,
   pushTrail,
   resetTrail,
+  captureDataset,
   taskSettledRef,
   isReplayingRef,
   setCanUndo,
@@ -90,6 +94,12 @@ export const useTaskStateHandler = ({
         setTokenUsage((data?.payload as TokenUsagePayload) ?? null);
         return;
       }
+      // Also handled before the actor switch, and for the same reason. It is not an outcome either:
+      // the terminal event follows immediately and carries the rows out on the task's one message.
+      if (state === ExecutionState.TASK_DATASET) {
+        captureDataset((data?.payload as DatasetPayload) ?? null);
+        return;
+      }
 
       /** text for the live status line, or null to leave the current one standing */
       let status: string | null = null;
@@ -105,8 +115,10 @@ export const useTaskStateHandler = ({
               // Reset historical session flag when a new task starts
               setIsHistoricalSession(false);
               setCanUndo(false);
-              // A fresh task gets a fresh trail and a fresh right to produce an outcome message.
+              // A fresh task gets a fresh trail, a fresh table, and a fresh right to produce an
+              // outcome message.
               resetTrail();
+              captureDataset(null);
               taskSettledRef.current = false;
               status = t('chat_status_working');
               break;
@@ -325,6 +337,7 @@ export const useTaskStateHandler = ({
       setLiveStatus,
       pushTrail,
       resetTrail,
+      captureDataset,
       taskSettledRef,
       isReplayingRef,
       setCanUndo,

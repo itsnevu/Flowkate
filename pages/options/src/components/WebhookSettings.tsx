@@ -7,6 +7,16 @@ import type { WebhookConfig } from '@extension/storage';
 const urlFieldClass =
   'w-full rounded-soft bg-canvas-sunk px-3 py-2 text-sm text-ink shadow-neu-inset outline-none placeholder:text-ink-faint';
 
+/** The shape a collected table arrives in, so a test delivery shows what production will send. */
+const SAMPLE_DATASET = {
+  fields: ['name', 'price'],
+  rows: [
+    ['Example item', '10.00'],
+    ['Another item', '12.50'],
+  ],
+  truncated: false,
+};
+
 const testButtonClass =
   'rounded-soft bg-canvas-raised px-3 py-2 text-sm font-medium text-ink shadow-neu-sm transition-all duration-150 ease-press hover:shadow-neu active:shadow-neu-inset-sm disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none';
 
@@ -45,6 +55,9 @@ export const WebhookSettings = () => {
           result: 'If you can read this, the webhook works.',
           startedAt: Date.now(),
           finishedAt: Date.now(),
+          // With data egress on, the test carries a sample table too - the point of a test delivery
+          // is to see the shape you will have to parse, and that shape changes with this toggle.
+          ...(config.includeData ? { dataset: SAMPLE_DATASET } : {}),
         }),
       });
       setTestState(response.ok ? 'ok' : 'fail');
@@ -106,6 +119,15 @@ export const WebhookSettings = () => {
           label={t('options_webhook_allowFollowUp')}
           checked={config.allowFollowUp}
           onChange={checked => update({ allowFollowUp: checked })}
+        />
+      </SettingRow>
+
+      <SettingRow title={t('options_webhook_includeData')} description={t('options_webhook_includeData_desc')}>
+        <Toggle
+          id="webhookIncludeData"
+          label={t('options_webhook_includeData')}
+          checked={config.includeData}
+          onChange={checked => update({ includeData: checked })}
         />
       </SettingRow>
 

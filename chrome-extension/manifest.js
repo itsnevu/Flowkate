@@ -87,6 +87,9 @@ const manifest = withOperaSidebar(
         'contextMenus',
         'alarms',
         'notifications',
+        // saving a collected table to disk; the panel hands Chrome a blob it made itself, so this
+        // never reaches out to the network on the user's behalf
+        'downloads',
       ],
       options_page: 'options/index.html',
       commands: {
@@ -119,27 +122,22 @@ const manifest = withOperaSidebar(
         48: 'icon-48.png',
         128: 'icon-128.png',
       },
-      content_scripts: [
-        {
-          matches: ['http://*/*', 'https://*/*', '<all_urls>'],
-          all_frames: true,
-          js: ['content/index.iife.js'],
-        },
-      ],
-      web_accessible_resources: [
-        {
-          resources: [
-            '*.js',
-            '*.css',
-            '*.svg',
-            'icon-128.png',
-            'icon-32.png',
-            'permission/index.html',
-            'permission/permission.js',
-          ],
-          matches: ['*://*/*'],
-        },
-      ],
+      // No content_scripts, and no web_accessible_resources. Both were registered without a
+      // consumer, and both cost more than they returned:
+      //
+      // The content script matched <all_urls> with all_frames, so it ran in every frame of every
+      // page the user opened - while compiling to `(function(){"use strict"})();`, 30 bytes that do
+      // nothing. Page interaction runs over the Chrome debugger protocol from this worker, never
+      // through injected script code.
+      //
+      // web_accessible_resources listed '*.js' for '*://*/*', which handed every website the whole
+      // background bundle to read and a stable chrome-extension:// URL to fingerprint the user by,
+      // and made permission/index.html - a page that calls getUserMedia and chrome.tabs - framable
+      // by any origin, so a transparent overlay could clickjack a microphone grant. Nothing needed
+      // it: buildDomTree.js is injected with chrome.scripting.executeScript({files}), and
+      // permission/index.html and side-panel/index.html are opened by the extension itself through
+      // chrome.runtime.getURL. Extension contexts reach their own resources without this key; only
+      // web pages need it. Re-add it only for a specific path, with use_dynamic_url: true.
     }),
   ),
 );

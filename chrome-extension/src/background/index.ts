@@ -28,7 +28,8 @@ import { injectBuildDomTreeScripts } from './browser/dom/service';
 import { analytics } from './services/analytics';
 import type { WebhookFollowUp } from './services/webhookContract';
 import type { TaskWebhookPayload } from './services/webhook';
-import type { ScheduledTask, ApprovalMode } from '@extension/storage';
+import type { ScheduledTask, ApprovalMode, MessageDataset } from '@extension/storage';
+import type { DatasetPayload } from './agent/event/types';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 
 const logger = createLogger('background');
@@ -62,6 +63,11 @@ let currentTaskMeta:
   | (Pick<TaskWebhookPayload, 'source' | 'task' | 'title' | 'startedAt'> & {
       /** how many webhook follow-ups preceded this run; caps the chain */
       chain: number;
+      /**
+       * The table the run collected, stamped on when TASK_DATASET arrives - which is always before
+       * the terminal event that fires the webhook, and which is why this can be read there.
+       */
+      dataset?: MessageDataset;
     })
   | null = null;
 
@@ -680,6 +686,8 @@ async function runUnattendedTask(input: {
 
   const startedAt = Date.now();
   let outcome = { ok: false, text: t('bg_sched_noResult') };
+  /** Rows the run collected, so a scheduled scrape is still a table when the user opens it later. */
+  let collected: MessageDataset | undefined;
 
   try {
     // Its own inactive tab, then pinned as the context's current tab, so the run never touches
@@ -709,6 +717,8 @@ async function runUnattendedTask(input: {
         outcome = { ok: false, text: details || t('bg_sched_noResult') };
       } else if (event.state === ExecutionState.TASK_CANCEL) {
         outcome = { ok: false, text: t('bg_sched_cancelled') };
+      } else if (event.state === ExecutionState.TASK_DATASET) {
+        collected = event.data?.payload as DatasetPayload | undefined;
       }
     });
 
@@ -730,6 +740,8 @@ async function runUnattendedTask(input: {
       actor: Actors.SYSTEM,
       content: outcome.text,
       timestamp: Date.now(),
+      // Nobody was watching this run, so the stored message is the only copy of what it collected.
+      ...(collected && collected.rows.length > 0 ? { dataset: collected } : {}),
     });
   } catch (error) {
     logger.error('Failed to save unattended task result:', error);
@@ -756,6 +768,10 @@ async function subscribeToExecutorEvents(executor: Executor) {
       logger.error('Failed to send message to side panel:', error);
     }
 
+    if (event.state === ExecutionState.TASK_DATASET && currentTaskMeta) {
+      currentTaskMeta.dataset = event.data?.payload as DatasetPayload | undefined;
+    }
+
     if (
       event.state === ExecutionState.TASK_OK ||
       event.state === ExecutionState.TASK_FAIL ||
@@ -775,6 +791,8 @@ async function subscribeToExecutorEvents(executor: Executor) {
           outcome,
           result: event.data?.details ?? '',
           finishedAt: Date.now(),
+          // Passed unconditionally; dispatchTaskWebhook decides whether the user allowed it out.
+          dataset: meta.dataset,
         }).then(followUp => {
           if (followUp) void runWebhookFollowUp(followUp, meta.chain + 1);
         });

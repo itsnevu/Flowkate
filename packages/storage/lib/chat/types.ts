@@ -22,6 +22,25 @@ export interface TrailStep {
   timestamp: number; // Unix timestamp in milliseconds
 }
 
+/**
+ * A table an extraction task collected, attached to the message that task left behind.
+ *
+ * Stored with the message rather than derived from it: the rows never appeared in the message text
+ * in the first place - keeping them out of the model's context is the whole point of collecting
+ * them - so reopening the session is the only way the user gets them back.
+ *
+ * Structurally mirrors the side panel's DatasetPayload so a payload can be attached without a
+ * conversion; storage deliberately does not import from the extension workspace.
+ */
+export interface MessageDataset {
+  /** column headers, in the order the extractions introduced them */
+  fields: string[];
+  /** one array of cells per row, always `fields.length` long */
+  rows: string[][];
+  /** true when a cap was hit, so the table is a prefix of what the pages held */
+  truncated: boolean;
+}
+
 export interface Message {
   actor: Actors;
   content: string;
@@ -31,6 +50,11 @@ export interface Message {
    * every message stored by an earlier build stays valid and needs no migration.
    */
   steps?: TrailStep[];
+  /**
+   * The rows the task collected, present only when it used `extract_structured`. Optional for the
+   * same reason as `steps`: every message stored by an earlier build stays valid without migration.
+   */
+  dataset?: MessageDataset;
 }
 
 export interface ChatMessage extends Message {

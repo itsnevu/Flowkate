@@ -36,6 +36,9 @@ export enum ExecutionState {
   TASK_CANCEL = 'task.cancel',
   /** Cumulative token usage for the task so far; payload is a TokenUsagePayload. */
   TASK_USAGE = 'task.usage',
+  /** The rows an extraction task collected, emitted once just before the terminal event so the
+   * panel can attach them to the message the task leaves behind; payload is a DatasetPayload. */
+  TASK_DATASET = 'task.dataset',
 
   // Plan review states (human-in-the-loop gate before any action runs)
   PLAN_REVIEW = 'plan.review',
@@ -82,7 +85,23 @@ export type EventPayload =
   | ActionConfirmationPayload
   | TokenUsagePayload
   | BudgetPausePayload
-  | HandoffPayload;
+  | HandoffPayload
+  | DatasetPayload;
+
+/**
+ * The table `extract_structured` built over the course of a task.
+ *
+ * Carried whole exactly once rather than row by row: the rows were kept out of the message history
+ * on purpose, and streaming them as they arrive would only put them back on a different wire.
+ */
+export interface DatasetPayload {
+  /** column headers, in the order the extractions introduced them */
+  fields: string[];
+  /** one array of cells per row, always `fields.length` long */
+  rows: string[][];
+  /** true when a cap was hit, so the table is a prefix of what the pages held */
+  truncated: boolean;
+}
 
 /**
  * A step the agent asked the user to do by hand in the tab it is driving — logging in, a captcha,

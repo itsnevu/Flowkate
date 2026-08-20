@@ -2,6 +2,8 @@ import { memo, useMemo, useState } from 'react';
 import { t } from '@extension/i18n';
 import { ACTOR_PROFILES } from '../types/message';
 import { splitMarkdownTables, tableToCsv } from '../markdownTable';
+import { datasetFilename, saveTextFile } from '../download';
+import ResultDataset, { DownloadKey } from './ResultDataset';
 import StepTrail from './StepTrail';
 import type { Message } from '@extension/storage';
 import type { TableBlock } from '../markdownTable';
@@ -60,8 +62,14 @@ function MessageBlock({ message, isSameActor }: MessageBlockProps) {
       )}
 
       <div className={`min-w-0 max-w-[85%] px-3.5 py-2.5 text-sm ${bubble}`}>
-        <MessageContent content={message.content} />
+        <MessageContent content={message.content} timestamp={message.timestamp} />
       </div>
+
+      {message.dataset && (
+        <div className="mt-1.5 w-full max-w-[85%]">
+          <ResultDataset dataset={message.dataset} timestamp={message.timestamp} />
+        </div>
+      )}
 
       {steps.length > 0 && (
         <div className="mt-1.5 w-full max-w-[85%]">
@@ -82,7 +90,7 @@ function MessageBlock({ message, isSameActor }: MessageBlockProps) {
  * Every other message renders exactly as before (one pre-wrap div); only a strict
  * header/separator/rows sequence is promoted, so prose with a stray pipe stays prose.
  */
-function MessageContent({ content }: { content: string }) {
+function MessageContent({ content, timestamp }: { content: string; timestamp: number }) {
   const blocks = useMemo(() => splitMarkdownTables(content), [content]);
 
   if (blocks.length === 1 && blocks[0].type === 'text') {
@@ -97,16 +105,22 @@ function MessageContent({ content }: { content: string }) {
             {block.text}
           </div>
         ) : (
-          <ResultTable key={index} table={block} />
+          <ResultTable key={index} table={block} timestamp={timestamp} />
         ),
       )}
     </div>
   );
 }
 
-/** One extracted table: scrolls inside its own well, with a copy-as-CSV key underneath. */
-function ResultTable({ table }: { table: TableBlock }) {
+/** One extracted table: scrolls inside its own well, with copy and save keys underneath. */
+function ResultTable({ table, timestamp }: { table: TableBlock; timestamp: number }) {
   const [copied, setCopied] = useState(false);
+
+  // Same keys a collected dataset carries, for the same reason: a table the user can only look at
+  // is a table they still have to retype.
+  const handleDownloadCsv = () => {
+    void saveTextFile(tableToCsv(table), datasetFilename(timestamp, 'csv'), 'csv').catch(() => undefined);
+  };
 
   const handleCopyCsv = () => {
     navigator.clipboard
@@ -144,12 +158,10 @@ function ResultTable({ table }: { table: TableBlock }) {
           </tbody>
         </table>
       </div>
-      <button
-        type="button"
-        onClick={handleCopyCsv}
-        className="mt-1.5 rounded-pill bg-canvas-raised px-2.5 py-1 text-[11px] font-medium text-ink-soft shadow-neu-sm transition-all duration-150 ease-press hover:text-ink active:shadow-neu-inset-sm">
-        {copied ? t('chat_table_copied') : t('chat_table_copyCsv')}
-      </button>
+      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+        <DownloadKey label={copied ? t('chat_table_copied') : t('chat_table_copyCsv')} onClick={handleCopyCsv} />
+        <DownloadKey label={t('chat_dataset_downloadCsv')} onClick={handleDownloadCsv} />
+      </div>
     </div>
   );
 }

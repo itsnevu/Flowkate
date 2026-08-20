@@ -437,6 +437,12 @@
   "options_webhook_allowFollowUp_desc": {
     "message": "回應可包含 {\"followUp\": \"下一個任務\"}，Flowkite 會執行它，由你的管線決定下一步。以無人值守模式執行（敏感操作自動拒絕），每鏈最多 3 個。"
   },
+  "options_webhook_includeData": {
+    "message": "包含已蒐集的表格"
+  },
+  "options_webhook_includeData_desc": {
+    "message": "蒐集資料列的任務也會一併送出，放在 \"dataset\": { fields, rows, truncated }。關閉時，Webhook 僅帶有結果文字，不含代理程式從頁面讀取的資料。"
+  },
   "options_webhook_test": {
     "message": "傳送測試"
   },
@@ -1258,6 +1264,49 @@
       }
     }
   },
+  "act_extractStructured_start": {
+    "message": "正在蒐集資料列：$GOAL$",
+    "placeholders": {
+      "goal": {
+        "content": "$1",
+        "example": "搜尋結果中的每項商品"
+      }
+    }
+  },
+  "act_extractStructured_ok": {
+    "message": "已蒐集 $ADDED$ 筆新資料列（共 $TOTAL$ 筆）",
+    "placeholders": {
+      "added": {
+        "content": "$1",
+        "example": "20"
+      },
+      "total": {
+        "content": "$2",
+        "example": "60"
+      }
+    }
+  },
+  "act_extractStructured_none": {
+    "message": "此頁面沒有符合的紀錄：$GOAL$",
+    "placeholders": {
+      "goal": {
+        "content": "$1",
+        "example": "搜尋結果中的每項商品"
+      }
+    }
+  },
+  "act_extractStructured_duplicates": {
+    "message": "$COUNT$ 筆資料列先前已蒐集過，已略過。",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "act_errors_extractStructuredFailed": {
+    "message": "無法從此頁面蒐集紀錄"
+  },
   "act_errors_extractFailed": {
     "message": "擷取失敗，請直接讀取頁面狀態並快取所得內容，必要時捲動查看更多。"
   },
@@ -1482,6 +1531,15 @@
   },
   "exec_undo_ok": {
     "message": "已復原上一個步驟。頁面已還原，代理將重新規劃。"
+  },
+  "exec_dataset_collected": {
+    "message": "已蒐集 $COUNT$ 筆資料列",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "60"
+      }
+    }
   },
   "bg_cmd_planReview_notPending": {
     "message": "目前沒有等待審核的計畫"
@@ -1768,6 +1826,44 @@
   },
   "chat_table_copied": {
     "message": "已複製"
+  },
+  "chat_dataset_summary": {
+    "message": "$ROWS$ 列 · $COLUMNS$ 欄",
+    "placeholders": {
+      "rows": {
+        "content": "$1",
+        "example": "60"
+      },
+      "columns": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
+  },
+  "chat_dataset_truncated": {
+    "message": "已達上限"
+  },
+  "chat_dataset_showing": {
+    "message": "顯示 $TOTAL$ 列中的 $SHOWN$ 列 — 下載即可取得全部。",
+    "placeholders": {
+      "shown": {
+        "content": "$1",
+        "example": "100"
+      },
+      "total": {
+        "content": "$2",
+        "example": "460"
+      }
+    }
+  },
+  "chat_dataset_downloadCsv": {
+    "message": "下載 CSV"
+  },
+  "chat_dataset_downloadJson": {
+    "message": "下載 JSON"
+  },
+  "chat_dataset_downloadFailed": {
+    "message": "無法儲存檔案"
   },
   "chat_usage_details_a11y": {
     "message": "顯示各模型的 Token 使用量"

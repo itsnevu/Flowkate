@@ -437,6 +437,12 @@
   "options_webhook_allowFollowUp_desc": {
     "message": "The response may answer {\"followUp\": \"next task\"} and Flowkite runs it, your pipeline decides the next step. Runs unattended (sensitive actions auto-decline), max 3 per chain."
   },
+  "options_webhook_includeData": {
+    "message": "Include collected tables"
+  },
+  "options_webhook_includeData_desc": {
+    "message": "Tasks that collect rows also send them, under \"dataset\": { fields, rows, truncated }. Off means the webhook only carries the outcome text, not the data the agent read off the pages."
+  },
   "options_webhook_test": {
     "message": "Send test"
   },
@@ -1258,6 +1264,49 @@
       }
     }
   },
+  "act_extractStructured_start": {
+    "message": "Collecting rows: $GOAL$",
+    "placeholders": {
+      "goal": {
+        "content": "$1",
+        "example": "every product in the search results"
+      }
+    }
+  },
+  "act_extractStructured_ok": {
+    "message": "Collected $ADDED$ new rows ($TOTAL$ in total)",
+    "placeholders": {
+      "added": {
+        "content": "$1",
+        "example": "20"
+      },
+      "total": {
+        "content": "$2",
+        "example": "60"
+      }
+    }
+  },
+  "act_extractStructured_none": {
+    "message": "No matching records on this page: $GOAL$",
+    "placeholders": {
+      "goal": {
+        "content": "$1",
+        "example": "every product in the search results"
+      }
+    }
+  },
+  "act_extractStructured_duplicates": {
+    "message": "$COUNT$ rows were already collected and were skipped.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "act_errors_extractStructuredFailed": {
+    "message": "Could not collect records from this page"
+  },
   "act_errors_extractFailed": {
     "message": "Extraction failed - read the page state directly, cache what you find, and scroll for more if needed."
   },
@@ -1482,6 +1531,15 @@
   },
   "exec_undo_ok": {
     "message": "Last step undone. The page was restored and the agent will re-plan."
+  },
+  "exec_dataset_collected": {
+    "message": "Collected $COUNT$ rows",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "60"
+      }
+    }
   },
   "bg_cmd_planReview_notPending": {
     "message": "No plan is waiting for review"
@@ -1768,6 +1826,44 @@
   },
   "chat_table_copied": {
     "message": "Copied"
+  },
+  "chat_dataset_summary": {
+    "message": "$ROWS$ rows · $COLUMNS$ columns",
+    "placeholders": {
+      "rows": {
+        "content": "$1",
+        "example": "60"
+      },
+      "columns": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
+  },
+  "chat_dataset_truncated": {
+    "message": "Capped"
+  },
+  "chat_dataset_showing": {
+    "message": "Showing $SHOWN$ of $TOTAL$ rows — download to get all of them.",
+    "placeholders": {
+      "shown": {
+        "content": "$1",
+        "example": "100"
+      },
+      "total": {
+        "content": "$2",
+        "example": "460"
+      }
+    }
+  },
+  "chat_dataset_downloadCsv": {
+    "message": "Download CSV"
+  },
+  "chat_dataset_downloadJson": {
+    "message": "Download JSON"
+  },
+  "chat_dataset_downloadFailed": {
+    "message": "Could not save the file"
   },
   "chat_usage_details_a11y": {
     "message": "Show token usage per model"

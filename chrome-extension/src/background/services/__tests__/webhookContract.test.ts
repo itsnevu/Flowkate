@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { parseFollowUp, FOLLOW_UP_MAX_CHARS, FOLLOW_UP_MAX_CHAIN } from '../webhookContract';
+import {
+  parseFollowUp,
+  datasetForWebhook,
+  FOLLOW_UP_MAX_CHARS,
+  FOLLOW_UP_MAX_CHAIN,
+  WEBHOOK_MAX_DATASET_CHARS,
+} from '../webhookContract';
 
 /**
  * A webhook response that can queue tasks is a command channel, so what it may and may not say is
@@ -47,5 +53,60 @@ describe('parseFollowUp', () => {
 
   it('keeps the chain cap small enough that a hostile receiver terminates quickly', () => {
     expect(FOLLOW_UP_MAX_CHAIN).toBeLessThanOrEqual(5);
+  });
+});
+
+/**
+ * The other direction of the contract: what a finished task is allowed to put on the wire. The
+ * collector bounds a table for a file on disk; this bounds it for an HTTP body, which is a much
+ * smaller thing, and it trims rather than refusing so a big scrape still arrives.
+ */
+describe('datasetForWebhook', () => {
+  const table = (rows: string[][], truncated = false) => ({ fields: ['name', 'price'], rows, truncated });
+
+  it('passes a small table through untouched', () => {
+    const dataset = table([
+      ['Kite', '10'],
+      ['Line', '4'],
+    ]);
+
+    expect(datasetForWebhook(dataset)).toEqual(dataset);
+  });
+
+  it('sends nothing when there is nothing to send', () => {
+    expect(datasetForWebhook(undefined)).toBeNull();
+    expect(datasetForWebhook(table([]))).toBeNull();
+    expect(datasetForWebhook({ fields: [], rows: [['orphan']], truncated: false })).toBeNull();
+  });
+
+  it("keeps the collector's own truncation flag, which is about rows it never stored", () => {
+    expect(datasetForWebhook(table([['Kite', '10']], true))?.truncated).toBe(true);
+  });
+
+  it('trims to the budget and says the receiver is holding a prefix', () => {
+    const wide = 'x'.repeat(500);
+    const rows = Array.from({ length: 5000 }, () => [wide, wide]);
+
+    const sent = datasetForWebhook(table(rows));
+
+    expect(sent).not.toBeNull();
+    expect(sent!.rows.length).toBeLessThan(rows.length);
+    expect(sent!.truncated).toBe(true);
+    expect(JSON.stringify(sent!.rows).length).toBeLessThanOrEqual(WEBHOOK_MAX_DATASET_CHARS);
+  });
+
+  it('sends the first row even when it alone blows the budget', () => {
+    const enormous = [['x'.repeat(WEBHOOK_MAX_DATASET_CHARS + 10), 'y']];
+
+    const sent = datasetForWebhook(table(enormous));
+
+    expect(sent!.rows).toHaveLength(1);
+    expect(sent!.truncated).toBe(false);
+  });
+
+  it('hands back the same rows, not copies of them - the body is built and thrown away', () => {
+    const rows = [['Kite', '10']];
+
+    expect(datasetForWebhook(table(rows))!.rows[0]).toBe(rows[0]);
   });
 });

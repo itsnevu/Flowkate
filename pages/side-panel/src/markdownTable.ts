@@ -8,6 +8,8 @@
  * separator row of dashes, then data rows — and everything else stays untouched text.
  */
 
+import { rowsToCsv } from './download';
+
 export interface TableBlock {
   type: 'table';
   header: string[];
@@ -103,9 +105,7 @@ export function splitMarkdownTables(text: string): MessageBlock[] {
   return blocks;
 }
 
-/** RFC-4180-style escaping: quote any cell holding a comma, quote or newline; double the quotes. */
-const csvCell = (cell: string): string => (/[",\n]/.test(cell) ? `"${cell.replace(/"/g, '""')}"` : cell);
-
+/** One parsed table as CSV. The escaping lives with the other serialisers, next to the save. */
 export function tableToCsv(table: TableBlock): string {
-  return [table.header, ...table.rows].map(row => row.map(csvCell).join(',')).join('\n');
+  return rowsToCsv(table.header, table.rows);
 }

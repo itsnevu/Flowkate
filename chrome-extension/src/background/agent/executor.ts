@@ -122,6 +122,8 @@ export class Executor {
       getBrowserConfig: () => browserContext.getConfig(),
       // subtasks spend on the parent's behalf, so their tokens belong in the parent's total
       usage: context.tokenUsage,
+      // and they collect on the parent's behalf, so their rows belong in the parent's table
+      dataset: context.dataset,
     });
     const navigatorActionRegistry = new NavigatorActionRegistry(actionBuilder.buildDefaultActions());
 
@@ -191,6 +193,9 @@ export class Executor {
     // back to `finalAnswer` whenever the planner returns an empty one - so leaving the previous
     // task's answer here makes the next task report a result it never produced.
     this.context.finalAnswer = null;
+    // ...and its own table. The rows of the previous task were already delivered with its message;
+    // carrying them forward would make the follow-up hand the user the same table a second time.
+    this.context.dataset.clear();
 
     // need to reset previous action results that are not included in memory
     this.context.actionResults = this.context.actionResults.filter(result => result.includeInMemory);
@@ -281,6 +286,8 @@ export class Executor {
         }
       }
 
+      this.emitDataset();
+
       // Determine task completion status
       const isCompleted = latestPlanOutput?.result?.done === true;
 
@@ -313,6 +320,8 @@ export class Executor {
         // Note: We don't track pause as it's not a final state
       }
     } catch (error) {
+      // Rows collected before the failure are still rows the user asked for.
+      this.emitDataset();
       if (error instanceof RequestCancelledError) {
         this.context.emitEvent(Actors.SYSTEM, ExecutionState.TASK_CANCEL, t('exec_task_cancel'));
         tabGroupStatus = TabGroupStatus.Cancelled;
@@ -582,6 +591,24 @@ export class Executor {
    * run. Only models the user priced count toward the estimate (an unpriced model costs "unknown",
    * not zero), and with no budget set or no prices entered this is inert.
    */
+  /**
+   * Hand the collected rows to the panel, if there are any.
+   *
+   * Called from every path that ends a run rather than from the terminal emits themselves: the
+   * panel attaches this to the single message a task leaves behind, and a message is finalised by
+   * the terminal event, so arriving after one would be arriving too late.
+   */
+  private emitDataset(): void {
+    if (this.context.dataset.isEmpty()) return;
+    const snapshot = this.context.dataset.snapshot();
+    this.context.emitEvent(
+      Actors.SYSTEM,
+      ExecutionState.TASK_DATASET,
+      t('exec_dataset_collected', [String(snapshot.rows.length)]),
+      snapshot,
+    );
+  }
+
   private checkBudget(): void {
     if (this.budgetPauseIssued) return;
     const budgetUsd = this.generalSettings?.maxCostUsd ?? 0;

@@ -24,6 +24,15 @@ export interface WebhookConfig {
    * unattended rules (sensitive actions auto-decline) and the chain is hard-capped.
    */
   allowFollowUp: boolean;
+  /**
+   * Include the table an extraction task collected in the POST body, under `dataset`.
+   *
+   * Separate from `enabled` and off by default because it is a different size of egress. Without
+   * it the receiver learns that a task finished and what it reported; with it, the rows the agent
+   * read off the pages leave the machine too. That is exactly what someone piping a nightly scrape
+   * into n8n wants, and exactly what someone who only wanted a "task done" ping does not.
+   */
+  includeData: boolean;
 }
 
 export const DEFAULT_WEBHOOK_CONFIG: WebhookConfig = {
@@ -32,6 +41,7 @@ export const DEFAULT_WEBHOOK_CONFIG: WebhookConfig = {
   sendManual: false,
   sendScheduled: true,
   allowFollowUp: false,
+  includeData: false,
 };
 
 /**

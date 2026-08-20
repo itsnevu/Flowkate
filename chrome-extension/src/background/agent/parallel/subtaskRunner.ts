@@ -8,6 +8,7 @@ import { NavigatorAgent, NavigatorActionRegistry } from '../agents/navigator';
 import { NavigatorPrompt } from '../prompts/navigator';
 import { MAX_PARALLEL_SUBTASKS, MAX_SUBTASK_STEPS, type Subtask, type SubtaskResult } from './subtaskTypes';
 import type { TokenUsageTracker } from '../usage';
+import type { TaskDataset } from '../dataset';
 import type { BrowserContextConfig } from '../../browser/views';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 
@@ -28,6 +29,11 @@ export interface SubtaskRunnerOptions {
    * spend - potentially several parallel navigators - would be invisible in the headline number.
    */
   usage?: TokenUsageTracker;
+  /**
+   * The parent task's dataset. Subtasks read pages the parent never visits, so without sharing
+   * this any rows they collect would be built up in a context that is thrown away with the tab.
+   */
+  dataset?: TaskDataset;
 }
 
 /**
@@ -66,6 +72,7 @@ async function runOne(subtask: Subtask, options: SubtaskRunnerOptions): Promise<
       approvalMode: 'auto',
     });
     if (options.usage) context.tokenUsage = options.usage;
+    if (options.dataset) context.dataset = options.dataset;
 
     const actionBuilder = new ActionBuilder(context, options.navigatorLLM);
     const navigator = new NavigatorAgent(new NavigatorActionRegistry(actionBuilder.buildReadOnlyActions()), {

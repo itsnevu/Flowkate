@@ -24,6 +24,7 @@ import { useTaskStateHandler } from './hooks/useTaskStateHandler';
 import type {
   ActionConfirmationPayload,
   BudgetPausePayload,
+  DatasetPayload,
   HandoffPayload,
   PlanReviewPayload,
   TokenUsagePayload,
@@ -67,6 +68,11 @@ const SidePanel = () => {
    * connection opened. The state copy exists only so React re-renders the live strip.
    */
   const trailRef = useRef<TrailStep[]>([]);
+  /**
+   * The rows the running task has collected, held for the same reason as the trail: the terminal
+   * event is what attaches them to the message, and by then the event that carried them is gone.
+   */
+  const datasetRef = useRef<DatasetPayload | null>(null);
   /** true once a task has produced its one message, so a second terminal event adds nothing */
   const taskSettledRef = useRef<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -111,6 +117,10 @@ const SidePanel = () => {
     setTrail([]);
   }, []);
 
+  const captureDataset = useCallback((dataset: DatasetPayload | null) => {
+    datasetRef.current = dataset;
+  }, []);
+
   /**
    * The single message a task is allowed to leave behind, carrying the steps that produced it.
    *
@@ -120,7 +130,14 @@ const SidePanel = () => {
   const finalizeTask = useCallback(
     (message: Message) => {
       const steps = trailRef.current.slice(-200);
-      appendMessage(steps.length > 0 ? { ...message, steps } : message);
+      const dataset = datasetRef.current;
+      appendMessage({
+        ...message,
+        ...(steps.length > 0 ? { steps } : {}),
+        // Uncapped, unlike the trail: these rows are the result the user asked for, not a record of
+        // how it was reached, and the collector already bounds them.
+        ...(dataset && dataset.rows.length > 0 ? { dataset } : {}),
+      });
       setLiveStatus(null);
     },
     [appendMessage],
@@ -142,6 +159,7 @@ const SidePanel = () => {
     setLiveStatus,
     pushTrail,
     resetTrail,
+    captureDataset,
     taskSettledRef,
     isReplayingRef,
     setCanUndo,
