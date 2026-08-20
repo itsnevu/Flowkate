@@ -105,6 +105,10 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
 
     // The zod object is too complex to be used directly, so we need to convert it to json schema first for the model to use
     this.jsonSchema = convertZodToJsonSchema(this.modelOutputSchema, 'NavigatorAgentOutput', true);
+    // The schema goes out with every navigator call - as `response_format`, or as the tool
+    // definition after the tool-calling fallback - and it is nowhere in the message history, so the
+    // trimmer cannot see it. It is ~13,000 characters with the default action set.
+    this.context.messageManager.reserveTokensForPayload(JSON.stringify(this.jsonSchema));
   }
 
   protected override get eventActor(): Actors {

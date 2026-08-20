@@ -26,6 +26,17 @@ export class MessageManagerSettings {
   estimatedCharactersPerToken = 3;
   imageTokens = 800;
   /**
+   * Tokens the request carries that the history does not contain, held back from the budget.
+   *
+   * `maxInputTokens` is a ceiling on the whole request, but the trimmer can only see messages. The
+   * executor reserves the completion, and the navigator adds its tool schema once it knows how big
+   * it is. Without that, trimming reported itself comfortably under budget while the wire request
+   * was thousands of tokens over - and no further trimming could fix it, because the overage was
+   * never in the number being trimmed. Zero by default, so a caller gets exactly the ceiling it
+   * asked for until something declares otherwise.
+   */
+  reservedTokens = 0;
+  /**
    * Secret values to replace with `<secret>name</secret>` placeholders before anything reaches a
    * model. Nothing populates this yet: there is no credentials store and no resolver that turns a
    * placeholder back into the real value at input_text time, so setting it would make the agent type
@@ -43,6 +54,7 @@ export class MessageManagerSettings {
       maxInputTokens?: number;
       estimatedCharactersPerToken?: number;
       imageTokens?: number;
+      reservedTokens?: number;
       sensitiveData?: Record<string, string>;
     } = {},
   ) {
@@ -53,11 +65,33 @@ export class MessageManagerSettings {
     if (options.estimatedCharactersPerToken !== undefined)
       this.estimatedCharactersPerToken = options.estimatedCharactersPerToken;
     if (options.imageTokens !== undefined) this.imageTokens = options.imageTokens;
+    if (options.reservedTokens !== undefined && Number.isFinite(options.reservedTokens) && options.reservedTokens >= 0)
+      this.reservedTokens = options.reservedTokens;
     if (options.sensitiveData !== undefined) this.sensitiveData = options.sensitiveData;
   }
 }
 
 export default class MessageManager {
+  /**
+   * What the message history is actually allowed to occupy: the ceiling, less everything else the
+   * request carries. Floored at 1 so a reserve larger than the ceiling cannot invert the comparison.
+   */
+  private get inputBudget(): number {
+    return Math.max(1, this.settings.maxInputTokens - this.settings.reservedTokens);
+  }
+
+  /**
+   * Declare a payload that rides on every request but never appears in the history - the tool
+   * schema. Takes the text rather than a token count so the caller does not have to know how this
+   * manager estimates; additive to the completion reserve rather than replacing it.
+   */
+  reserveTokensForPayload(payload: string): void {
+    const count = Math.ceil(payload.length / this.settings.estimatedCharactersPerToken);
+    if (!Number.isFinite(count) || count <= 0) return;
+    this.settings.reservedTokens += count;
+    logger.debug(`Reserved ${count} tokens outside the history; budget is now ${this.inputBudget}`);
+  }
+
   private history: MessageHistory;
   private toolId: number;
   private settings: MessageManagerSettings;
@@ -435,13 +469,13 @@ export default class MessageManager {
    */
   public cutMessages(): void {
     if (this.history.messages.length === 0) return;
-    if (this.history.totalTokens <= this.settings.maxInputTokens) return;
+    if (this.history.totalTokens <= this.inputBudget) return;
 
     // 1. forget the oldest exchanges - the model's own `memory` field already summarises them
-    while (this.history.totalTokens > this.settings.maxInputTokens) {
+    while (this.history.totalTokens > this.inputBudget) {
       if (this.history.removeOldestExchange() === 0) break;
     }
-    if (this.history.totalTokens <= this.settings.maxInputTokens) return;
+    if (this.history.totalTokens <= this.inputBudget) return;
 
     const lastMsg = this.history.messages[this.history.messages.length - 1];
 
@@ -458,14 +492,14 @@ export default class MessageManager {
       });
       lastMsg.message.content = text;
       logger.debug(
-        `Dropped images from the newest message - ${this.history.totalTokens}/${this.settings.maxInputTokens}`,
+        `Dropped images from the newest message - ${this.history.totalTokens}/${this.inputBudget}`,
       );
     }
-    if (this.history.totalTokens <= this.settings.maxInputTokens) return;
+    if (this.history.totalTokens <= this.inputBudget) return;
 
     // 3. truncate the newest message, in place so its class and tool_call_id survive
     if (typeof lastMsg.message.content !== 'string') return;
-    const diff = this.history.totalTokens - this.settings.maxInputTokens;
+    const diff = this.history.totalTokens - this.inputBudget;
     const proportionToRemove = diff / lastMsg.metadata.tokens;
     if (proportionToRemove > 0.99) {
       throw new MaxTokensExceededError(t('exec_errors_contextTooLarge'));
@@ -478,7 +512,7 @@ export default class MessageManager {
     lastMsg.metadata.tokens = newTokens;
     lastMsg.message.content = newContent;
     logger.debug(
-      `Truncated the newest message by ${(proportionToRemove * 100).toFixed(1)}% - ${this.history.totalTokens}/${this.settings.maxInputTokens}`,
+      `Truncated the newest message by ${(proportionToRemove * 100).toFixed(1)}% - ${this.history.totalTokens}/${this.inputBudget}`,
     );
   }
 

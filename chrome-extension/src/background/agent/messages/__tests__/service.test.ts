@@ -393,3 +393,46 @@ describe('MessageHistory.removeOldestExchange', () => {
     expect(history.totalTokens).toBe(52);
   });
 });
+
+describe('MessageManager input budget', () => {
+  /** The effective ceiling cutMessages judges against, which is deliberately not the raw setting. */
+  const budgetOf = (manager: MessageManager): number => (manager as any).inputBudget;
+
+  it('holds back what the caller reserved', () => {
+    const { manager } = build({ maxInputTokens: 100_000, reservedTokens: 4_096 });
+    expect(budgetOf(manager)).toBe(95_904);
+  });
+
+  it('gives the caller the whole ceiling when nothing is reserved', () => {
+    const { manager } = build({ maxInputTokens: 100_000 });
+    expect(budgetOf(manager)).toBe(100_000);
+  });
+
+  it('holds back a declared payload on top of that', () => {
+    // The navigator's tool schema rides on every request and is nowhere in the history, so the
+    // trimmer cannot see it. ~13,000 characters with the default action set.
+    const { manager } = build({ maxInputTokens: 100_000, reservedTokens: 4_096 });
+    manager.reserveTokensForPayload('x'.repeat(13_002));
+    expect(budgetOf(manager)).toBe(95_904 - 4_334);
+  });
+
+  it('accumulates rather than replacing, so two callers can both declare', () => {
+    const { manager } = build({ maxInputTokens: 10_000 });
+    manager.reserveTokensForPayload('x'.repeat(300));
+    manager.reserveTokensForPayload('x'.repeat(300));
+    expect(budgetOf(manager)).toBe(10_000 - 200);
+  });
+
+  it('never inverts the comparison when the reserve exceeds the ceiling', () => {
+    // A floor, not a negative budget: cutMessages compares against this, and a negative ceiling
+    // would make every message look evictable and then throw on a history it had already emptied.
+    const { manager } = build({ maxInputTokens: 1_000, reservedTokens: 9_000 });
+    expect(budgetOf(manager)).toBe(1);
+  });
+
+  it('ignores a payload that would reserve nothing', () => {
+    const { manager } = build({ maxInputTokens: 10_000 });
+    manager.reserveTokensForPayload('');
+    expect(budgetOf(manager)).toBe(10_000);
+  });
+});

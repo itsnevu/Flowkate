@@ -11,6 +11,7 @@ import { PlannerAgent, type PlannerOutput } from './agents/planner';
 import { NavigatorPrompt } from './prompts/navigator';
 import { PlannerPrompt } from './prompts/planner';
 import MessageManager, { MessageManagerSettings } from './messages/service';
+import { OUTPUT_TOKEN_CAP } from './helper';
 import { ActionBuilder } from './actions/builder';
 import { EventManager } from './event/manager';
 import { Actors, type EventCallback, EventType, ExecutionState } from './event/types';
@@ -100,7 +101,13 @@ export class Executor {
     agentOptions.approvalMode = this.approvalMode;
 
     const messageManager = new MessageManager(
-      new MessageManagerSettings({ maxInputTokens: agentOptions.maxInputTokens }),
+      new MessageManagerSettings({
+        maxInputTokens: agentOptions.maxInputTokens,
+        // The window has to cover what the model writes back too, and the trimmer only sees
+        // messages - so with maxInputTokens set to the model's full window, every request was over
+        // by the size of the completion before a single message was counted.
+        reservedTokens: OUTPUT_TOKEN_CAP,
+      }),
     );
 
     const plannerLLM = extraArgs?.plannerLLM ?? navigatorLLM;
