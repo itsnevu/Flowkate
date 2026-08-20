@@ -101,14 +101,39 @@ export function createStorage<D = string>(key: string, fallback: D, config?: Sto
     listeners.forEach(listener => listener());
   };
 
-  const set = async (valueOrUpdate: ValueOrUpdate<D>) => {
-    if (!initedCache) {
-      cache = await get();
-    }
-    cache = await updateCache(valueOrUpdate, cache);
+  /**
+   * Writes are serialized per store, so a read-modify-write cannot interleave with another.
+   *
+   * `set` reads `cache`, awaits, then writes. Two calls issued in the same tick both read the same
+   * `cache` before either writes, so the second silently discards the first: two `addMessage` calls
+   * in one tick persisted one message, and two `setProvider` calls persisted one provider - losing
+   * an API key with no error. Callers fire these un-awaited from event handlers, so same-tick pairs
+   * are the normal case rather than an edge one.
+   */
+  let writeQueue: Promise<unknown> = Promise.resolve();
 
-    await chrome?.storage[storageEnum].set({ [key]: serialize(cache) });
-    _emitChange();
+  const set = async (valueOrUpdate: ValueOrUpdate<D>) => {
+    const write = writeQueue.then(async () => {
+      if (!initedCache) {
+        cache = await get();
+        initedCache = true;
+      }
+      const next = await updateCache(valueOrUpdate, cache);
+
+      // Persist first, then advance the cache. Assigning `cache` before the write meant a rejected
+      // write (serialization failure, quota, I/O) left the cache - and every `getSnapshot()`
+      // consumer reading it - holding data that never reached disk, which the next update would
+      // then build on and write back.
+      await chrome?.storage[storageEnum].set({ [key]: serialize(next) });
+      cache = next;
+      _emitChange();
+    });
+
+    // A rejected write must not wedge the queue for every later write, so the chain follows the
+    // settled promise while the caller still sees the rejection.
+    writeQueue = write.catch(() => undefined);
+
+    return write;
   };
 
   const subscribe = (listener: () => void) => {
@@ -124,6 +149,10 @@ export function createStorage<D = string>(key: string, fallback: D, config?: Sto
   };
 
   get().then(data => {
+    // A `set` racing this initial read already populated the cache and persisted its value.
+    // Overwriting it here would resurrect the pre-write state in memory.
+    if (initedCache) return;
+
     cache = data;
     initedCache = true;
     _emitChange();
@@ -134,7 +163,10 @@ export function createStorage<D = string>(key: string, fallback: D, config?: Sto
     // Check if the key we are listening for is in the changes object
     if (changes[key] === undefined) return;
 
-    const valueOrUpdate: ValueOrUpdate<D> = deserialize(changes[key].newValue);
+    // `?? fallback` mirrors `get()`. Without it a `chrome.storage.remove(key)` or `.clear()` -
+    // a settings reset, an external cleanup - set the cache to `undefined`, and every `useStorage`
+    // consumer then dereferenced it mid-render.
+    const valueOrUpdate: ValueOrUpdate<D> = deserialize(changes[key].newValue) ?? fallback;
 
     if (cache === valueOrUpdate) return;
 
