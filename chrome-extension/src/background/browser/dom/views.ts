@@ -17,7 +17,31 @@ export const DEFAULT_INCLUDE_ATTRIBUTES = [
   'aria-label',
   'aria-expanded',
   'href',
+  // Form state. Without these the model cannot tell a live control from a dead one: it clicks a
+  // greyed-out Continue over and over, cannot say which fields are mandatory, and after a rejected
+  // submit has no way to read which field the page is complaining about.
+  'disabled',
+  'aria-disabled',
+  'required',
+  'aria-required',
+  'aria-invalid',
+  'readonly',
+  'selected',
+  'multiple',
+  'maxlength',
+  'min',
+  'max',
 ];
+
+/**
+ * Attributes whose presence is the whole message.
+ *
+ * `<button disabled>` carries `disabled=""`, and the filter below drops any attribute whose value
+ * is empty - so `disabled` never reached the model even once it was listed, and neither did
+ * `checked`, which has been on the include list all along. These are kept when empty and rendered
+ * as a bare key, because `disabled=` reads like a value went missing rather than like a fact.
+ */
+const PRESENCE_ATTRIBUTES = new Set(['disabled', 'required', 'readonly', 'checked', 'selected', 'multiple']);
 
 export abstract class DOMBaseNode {
   isVisible: boolean;
@@ -233,8 +257,11 @@ export class DOMElementNode extends DOMBaseNode {
             const attributesToInclude: Record<string, string> = {};
 
             for (const [key, value] of Object.entries(node.attributes)) {
-              if (includeAttributes.includes(key) && String(value).trim() !== '') {
-                attributesToInclude[key] = String(value).trim();
+              if (!includeAttributes.includes(key)) continue;
+              const trimmed = String(value).trim();
+              // A presence attribute survives an empty value; everything else is noise without one.
+              if (trimmed !== '' || PRESENCE_ATTRIBUTES.has(key)) {
+                attributesToInclude[key] = trimmed;
               }
             }
 
@@ -289,7 +316,9 @@ export class DOMElementNode extends DOMBaseNode {
             if (Object.keys(attributesToInclude).length > 0) {
               // Format as key1='value1' key2='value2'
               attributesHtmlStr = Object.entries(attributesToInclude)
-                .map(([key, value]) => `${key}=${capTextLength(value, 15)}`)
+                .map(([key, value]) =>
+                  value === '' && PRESENCE_ATTRIBUTES.has(key) ? key : `${key}=${capTextLength(value, 15)}`,
+                )
                 .join(' ');
             }
           }
