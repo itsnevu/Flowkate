@@ -41,6 +41,17 @@ async function updateCache<D>(valueOrUpdate: ValueOrUpdate<D>, cache: D | null):
 let globalSessionAccessLevelFlag: StorageConfig['sessionAccessForContentScripts'] = false;
 
 /**
+ * The in-flight write chain for each storage key, shared by every store that addresses that key.
+ *
+ * Keyed by the storage key rather than held per `createStorage` closure, because the closure is not
+ * the unit that matters: `chat/history.ts` builds a fresh store on every `addMessage`, so a
+ * per-instance chain gave two same-tick appends two independent queues and lost one of them - the
+ * exact bug serialization was added to fix. Keys are bounded by the number of distinct storage keys
+ * the extension uses, and each entry is a single settled promise.
+ */
+const writeQueues = new Map<string, Promise<unknown>>();
+
+/**
  * Checks if the storage permission is granted in the manifest.json.
  */
 function checkStoragePermission(storageEnum: StorageEnum): void {
@@ -110,10 +121,8 @@ export function createStorage<D = string>(key: string, fallback: D, config?: Sto
    * an API key with no error. Callers fire these un-awaited from event handlers, so same-tick pairs
    * are the normal case rather than an edge one.
    */
-  let writeQueue: Promise<unknown> = Promise.resolve();
-
   const set = async (valueOrUpdate: ValueOrUpdate<D>) => {
-    const write = writeQueue.then(async () => {
+    const write = (writeQueues.get(key) ?? Promise.resolve()).then(async () => {
       if (!initedCache) {
         cache = await get();
         initedCache = true;
@@ -131,7 +140,10 @@ export function createStorage<D = string>(key: string, fallback: D, config?: Sto
 
     // A rejected write must not wedge the queue for every later write, so the chain follows the
     // settled promise while the caller still sees the rejection.
-    writeQueue = write.catch(() => undefined);
+    writeQueues.set(
+      key,
+      write.catch(() => undefined),
+    );
 
     return write;
   };
