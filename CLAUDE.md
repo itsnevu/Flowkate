@@ -126,9 +126,9 @@ Agent logic is under `chrome-extension/src/background/agent/`.
 
 - Framework: Vitest
 - Location/naming: `__tests__` directories with `*.test.ts`, in
-  `chrome-extension/src/**` (264 tests), `pages/side-panel/src/**` (169 tests),
+  `chrome-extension/src/**` (324 tests), `pages/side-panel/src/**` (169 tests),
   `pages/options/src/**` (88 tests) and `packages/storage/**` (99 tests)
-- Run everything: `pnpm test` — 620 tests across four workspaces
+- Run everything: `pnpm test` — 680 tests across four workspaces
 - The page workspaces each carry their own `vitest.config.mts` rather than reusing
   `vite.config.mts`, which goes through `withPageConfig` and pulls in build-only
   plugins. Environment is `node`: there is no jsdom or testing-library in the
