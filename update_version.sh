@@ -3,13 +3,16 @@
 # FORMAT IS <0.0.0>
 
 if [[ "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  find . -name 'package.json' -not -path '*/node_modules/*' -exec bash -c '
-    # Parse the version from package.json
-    current_version=$(grep -o "\"version\": \"[^\"]*" "$0" | cut -d"\"" -f4)
-
-    # Update the version
-    perl -i -pe"s/$current_version/'$1'/" "$0"
-  '  {} \;
+  # Rewrite the package's own "version" field and nothing else.
+  #
+  # Anchoring to that key matters: the previous version of this script substituted the old
+  # version string itself, unescaped, so its dots were regex wildcards. Bumping 0.3.0 -> 0.3.1
+  # matched inside "@types/chrome": "^0.0.330" and rewrote it to "^0.0.3.1", which left
+  # package.json disagreeing with pnpm-lock.yaml and broke every --frozen-lockfile install.
+  # The match is applied once per file, so a dependency that happens to be pinned at the same
+  # version as the package is left alone.
+  find . -name 'package.json' -not -path '*/node_modules/*' -not -path './landing/*' -exec \
+    perl -0777 -i -pe 's/("version"\s*:\s*")[^"]*(")/${1}'"$1"'${2}/' {} \;
 
   echo "Updated versions to $1";
 else
