@@ -115,6 +115,10 @@ export const useBackgroundConnection = ({
         }
         setInputEnabled(true);
         setShowStopButton(false);
+        // The result and error messages that normally clear this both arrive over the port, so a
+        // port that dropped mid-transcription leaves the mic button disabled behind a spinner with
+        // nothing left to answer it.
+        setIsProcessingSpeech(false);
         onConnectionLost();
       });
 

@@ -5,6 +5,21 @@ import type { ApprovalMode, Message } from '@extension/storage';
 import type { ActionConfirmationPayload, PlanReviewPayload } from '../types/event';
 import type { LiveStatus } from '../types/status';
 
+/**
+ * Post to the background worker, or throw so the caller's catch can tell the user.
+ *
+ * The handlers below each wrap their post in a try/catch that appends a system message when the
+ * answer does not get through. Optional-chaining the post defeats exactly that: a dropped port
+ * makes it a no-op, the catch never runs, and the card disappears as though the answer had been
+ * delivered - so the user believes they approved a step that never resumed.
+ */
+const postToBackground = (port: chrome.runtime.Port | null, message: unknown): void => {
+  if (!port) {
+    throw new Error(t('errors_conn_serviceWorker'));
+  }
+  port.postMessage(message);
+};
+
 interface TaskDispatchProps {
   /** posted to directly, so a re-render can never swap the port out from under a handler */
   portRef: MutableRefObject<chrome.runtime.Port | null>;
@@ -329,7 +344,7 @@ export const useTaskDispatch = ({
   const handlePlanDecision = (approved: boolean) => {
     setPendingPlan(null);
     try {
-      portRef.current?.postMessage({
+      postToBackground(portRef.current, {
         type: approved ? 'approve_plan' : 'reject_plan',
       });
       if (approved) {
@@ -351,7 +366,7 @@ export const useTaskDispatch = ({
   const handleUndo = () => {
     setCanUndo(false);
     try {
-      portRef.current?.postMessage({ type: 'undo_last_step' });
+      postToBackground(portRef.current, { type: 'undo_last_step' });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       console.error('undo_last_step error', errorMessage);
@@ -366,7 +381,7 @@ export const useTaskDispatch = ({
   const handleActionDecision = (approved: boolean) => {
     setPendingAction(null);
     try {
-      portRef.current?.postMessage({ type: approved ? 'confirm_action' : 'decline_action' });
+      postToBackground(portRef.current, { type: approved ? 'confirm_action' : 'decline_action' });
       setInputEnabled(false);
       setShowStopButton(true);
     } catch (err) {

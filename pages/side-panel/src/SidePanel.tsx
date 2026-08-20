@@ -241,7 +241,20 @@ const SidePanel = () => {
     (done: boolean) => {
       setPendingHandoff(null);
       if (done) {
-        Promise.resolve(sendMessage({ type: 'handoff_done' })).catch(err => console.error('handoff_done error', err));
+        // A real try/catch. `sendMessage` throws synchronously when the port is gone, and the
+        // argument is evaluated before `Promise.resolve` ever runs - so wrapping it in a promise
+        // caught nothing and let the throw escape the event handler, leaving the card dismissed
+        // and the navigator still parked.
+        try {
+          sendMessage({ type: 'handoff_done' });
+        } catch (err) {
+          appendMessage({
+            actor: Actors.SYSTEM,
+            content: err instanceof Error ? err.message : t('errors_conn_serviceWorker'),
+            timestamp: Date.now(),
+          });
+          setInputEnabled(true);
+        }
       } else {
         void handleStopTask();
       }
@@ -253,7 +266,16 @@ const SidePanel = () => {
     (keepGoing: boolean) => {
       setPendingBudget(null);
       if (keepGoing) {
-        Promise.resolve(sendMessage({ type: 'resume_task' })).catch(err => console.error('resume_task error', err));
+        try {
+          sendMessage({ type: 'resume_task' });
+        } catch (err) {
+          appendMessage({
+            actor: Actors.SYSTEM,
+            content: err instanceof Error ? err.message : t('errors_conn_serviceWorker'),
+            timestamp: Date.now(),
+          });
+          setInputEnabled(true);
+        }
       } else {
         void handleStopTask();
       }
@@ -298,6 +320,9 @@ const SidePanel = () => {
     setPendingBudget(null);
     setPendingHandoff(null);
     setCanUndo(false);
+    // New chat is the panel's universal escape hatch, so it clears this too - otherwise a
+    // transcription that never came back leaves the mic disabled for the whole session.
+    setIsProcessingSpeech(false);
     // the background tracker's lifetime is the Executor's, which stopConnection ends
     setTokenUsage(null);
     setLiveStatus(null);

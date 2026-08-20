@@ -153,7 +153,13 @@ export const useSpeechInput = ({
             // Send audio to backend for speech-to-text conversion
             try {
               setIsProcessingSpeech(true);
-              portRef.current?.postMessage({
+              // Not optional-chained. `setupConnection()` above can fail and leave the port null,
+              // and `?.` would turn that into a silent no-op inside a try whose catch is the only
+              // thing that ever clears the flag again.
+              if (!portRef.current) {
+                throw new Error('No connection to the background worker');
+              }
+              portRef.current.postMessage({
                 type: 'speech_to_text',
                 audio: base64Audio,
               });
@@ -179,7 +185,9 @@ export const useSpeechInput = ({
           mediaRecorderRef.current.stop();
         }
         setIsRecording(false);
-        setIsProcessingSpeech(true);
+        // Deliberately not setting the processing flag here. `onstop` sets it once it actually has
+        // audio to send; setting it from the timer marked a recording that captured nothing as
+        // "transcribing", and nothing would ever arrive to clear it.
         recordingTimerRef.current = null;
       }, maxDuration);
 
