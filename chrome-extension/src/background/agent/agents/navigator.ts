@@ -503,16 +503,46 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
         // A dynamic page can re-render between reading the element list and acting on it, which
         // invalidates the index the model chose. One retry after a short settle covers that race;
         // more than one would just be a loop against a page that genuinely changed.
+        //
+        // It covers a re-render only. Indices are numbered per parse, so once the page has navigated
+        // index N belongs to a different document, and retrying there aims the action at whatever
+        // now happens to be numbered N - which the model never chose and, for a sensitive action,
+        // the user never approved. Clearing the step state (which is what this used to do) also
+        // switched off the page check `ActionBuilder.resolveElement` relies on, so the retry
+        // resolved its index against a fresh parse of whatever page was in front of it.
         if (result.error && indexArg !== null) {
           logger.info(`Action ${actionName} failed on a stale element, re-reading the page and retrying once`);
           await new Promise(resolve => setTimeout(resolve, 500));
-          // The first attempt resolved this index against the state the model saw, and that state is
-          // now demonstrably wrong about this element. Drop it so the retry re-reads the page -
-          // otherwise it would resolve the same index to the same missing element and fail identically.
-          this.context.stepState = null;
-          const retried = await actionInstance.call(actionArgs);
-          if (retried !== undefined && !retried.error) {
-            result = retried;
+
+          const retryPage = await browserContext.getCurrentPage();
+          const onSamePage = retryPage.tabId === browserState.tabId && retryPage.url() === browserState.url;
+          const refreshed = onSamePage ? await browserContext.getState(this.context.options.useVision) : null;
+
+          if (!refreshed || refreshed.tabId !== browserState.tabId || refreshed.url !== browserState.url) {
+            logger.info(`The page changed under ${actionName}; leaving the retry to the next step`);
+          } else {
+            // Same document, so renumbering is meaningful - but only once the index is confirmed to
+            // still name the same element. A re-render can move index N onto a different control
+            // just as a navigation can, and this is the index the approval was given for.
+            const approved = browserState.selectorMap.get(indexArg);
+            const candidate = refreshed.selectorMap.get(indexArg);
+            const sameElement =
+              approved !== undefined &&
+              candidate !== undefined &&
+              (await HistoryTreeProcessor.compareHistoryElementAndDomElement(
+                HistoryTreeProcessor.convertDomElementToHistoryElement(approved),
+                candidate,
+              ));
+
+            if (!sameElement) {
+              logger.info(`Index ${indexArg} no longer names the same element; not retrying`);
+            } else {
+              this.context.stepState = refreshed;
+              const retried = await actionInstance.call(actionArgs);
+              if (retried !== undefined && !retried.error) {
+                result = retried;
+              }
+            }
           }
         }
 
