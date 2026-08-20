@@ -280,11 +280,16 @@ export default class BrowserContext {
     }
   }
 
-  public async switchTab(tabId: number): Promise<Page> {
-    logger.info('switchTab', tabId);
+  public async switchTab(tabId: number, options: { activate?: boolean } = {}): Promise<Page> {
+    const { activate = true } = options;
+    logger.info('switchTab', tabId, activate ? '' : '(without focusing it)');
 
-    await chrome.tabs.update(tabId, { active: true });
-    await this.waitForTabEvents(tabId, { waitForUpdate: false });
+    // An unattended run pins a tab it deliberately created inactive. Activating it here undid that
+    // one line later and yanked the user's focus to a blank tab whenever a schedule fired.
+    if (activate) {
+      await chrome.tabs.update(tabId, { active: true });
+    }
+    await this.waitForTabEvents(tabId, { waitForUpdate: false, waitForActivation: activate });
 
     const page = await this._getOrCreatePage(await chrome.tabs.get(tabId));
     await this.attachPage(page);

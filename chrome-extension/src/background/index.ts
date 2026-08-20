@@ -675,6 +675,12 @@ async function runWebhookFollowUp(followUp: WebhookFollowUp, chain: number): Pro
  * auto-declined (see AgentOptions.unattended), and the outcome left where every other task's
  * outcome lives — a chat-history session — plus a notification that links back to it.
  */
+/**
+ * Alarm that exists only to wake the worker while an unattended run is in flight. Never carries a
+ * schedule id, so the schedule dispatcher ignores it by construction.
+ */
+const UNATTENDED_KEEPALIVE_ALARM = 'flowkite-unattended-keepalive';
+
 async function runUnattendedTask(input: {
   prompt: string;
   title: string;
@@ -688,13 +694,26 @@ async function runUnattendedTask(input: {
   let outcome = { ok: false, text: t('bg_sched_noResult') };
   /** Rows the run collected, so a scheduled scrape is still a table when the user opens it later. */
   let collected: MessageDataset | undefined;
+  let runTabId: number | null = null;
+
+  // Hold the service worker up for the length of the run.
+  //
+  // A panel task is kept alive by the side panel's heartbeat; an unattended run has no panel. The
+  // agent makes extension API calls constantly *between* steps, but a single model call makes none,
+  // and it can outlast the ~30s idle window on its own. Losing the worker there is silent and total:
+  // the tab is orphaned, the tab-group chip stays on its running glyph forever, and no webhook, no
+  // notification and no history session are ever written, because all three come after the await.
+  // An alarm event is what resets the idle timer, so the handler can be a no-op - the wake is the
+  // whole point.
+  await chrome.alarms.create(UNATTENDED_KEEPALIVE_ALARM, { periodInMinutes: 0.5 });
 
   try {
     // Its own inactive tab, then pinned as the context's current tab, so the run never touches
     // whatever the user happens to have focused.
     const tab = await chrome.tabs.create({ url: 'about:blank', active: false });
     if (!tab.id) throw new Error('Could not open a tab for the unattended task');
-    await browserContext.switchTab(tab.id);
+    runTabId = tab.id;
+    await browserContext.switchTab(tab.id, { activate: false });
 
     const taskId = `unattended-${startedAt}`;
     currentTaskMeta = {
@@ -726,6 +745,23 @@ async function runUnattendedTask(input: {
   } catch (error) {
     outcome = { ok: false, text: error instanceof Error ? error.message : String(error) };
     logger.error('Unattended task failed:', error);
+  } finally {
+    await chrome.alarms.clear(UNATTENDED_KEEPALIVE_ALARM).catch(() => {});
+    // Nobody is watching this tab, and nothing else closes it: the executor's cleanup detaches the
+    // debugger but never removes tabs, and the task group is deliberately left in place for a task
+    // the user can see. One tab per scheduled run, every run, was accumulating forever.
+    if (runTabId !== null) {
+      try {
+        await browserContext.cleanup();
+      } catch (cleanupError) {
+        logger.error('Failed to clean up the unattended browser context:', cleanupError);
+      }
+      try {
+        await chrome.tabs.remove(runTabId);
+      } catch (removeError) {
+        logger.error(`Failed to close the unattended tab ${runTabId}:`, removeError);
+      }
+    }
   }
 
   // The result lands in chat history so the side panel can show the full session later.
