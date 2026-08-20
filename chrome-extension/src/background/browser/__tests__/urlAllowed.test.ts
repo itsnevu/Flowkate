@@ -93,6 +93,21 @@ describe('isUrlAllowed - allow and deny lists', () => {
     expect(isUrlAllowed('https://both.com/x', ['both.com'], ['both.com'])).toBe(false);
   });
 
+  it('is not fooled by more than one trailing dot', () => {
+    // Stripping a single trailing dot left `evil.com..` naming the denied host but matching nothing.
+    expect(isUrlAllowed('https://evil.com../x', [], ['evil.com'])).toBe(false);
+    expect(isUrlAllowed('https://chromewebstore.google.com../detail/x', [], [])).toBe(false);
+    // ...and the same asymmetry refused a host the user had explicitly allowed.
+    expect(isUrlAllowed('https://good.com../x', ['good.com'], [])).toBe(true);
+  });
+
+  it('lets a deny entry outrank an allow entry that is more specific', () => {
+    // Two different strings, so the options UI holds both. The allow check used to run first and
+    // return true before the domain deny list was consulted at all.
+    expect(isUrlAllowed('https://sub.evil.com', ['sub.evil.com'], ['evil.com'])).toBe(false);
+    expect(isUrlAllowed('https://sub.evil.com/path', ['sub.evil.com'], ['evil.com'])).toBe(false);
+  });
+
   it('keeps refusing dangerous schemes when an allow list is configured', () => {
     expect(isUrlAllowed('javascript:alert(1)', ['example.com'], [])).toBe(false);
     expect(isUrlAllowed('file:///etc/passwd', ['example.com'], [])).toBe(false);

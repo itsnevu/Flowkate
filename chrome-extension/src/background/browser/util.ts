@@ -40,7 +40,7 @@ export function isUrlAllowed(url: string, allowList: string[], denyList: string[
     // 4. Extract domain for domain-based checks. A trailing dot is a valid, fully-qualified form
     // that Chrome resolves normally, so it is removed here rather than being left as a way to
     // spell a denied host that no deny entry matches.
-    const domain = parsedUrl.hostname.toLowerCase().replace(/\.$/, '');
+    const domain = parsedUrl.hostname.toLowerCase().replace(/\.+$/, '');
 
     // Scripts are not allowed to be injected into the Chrome Web Store
     if (domain === 'chromewebstore.google.com') {
@@ -55,28 +55,36 @@ export function isUrlAllowed(url: string, allowList: string[], denyList: string[
     // 1. Remove protocol prefix for further comparisons
     const urlWithoutProtocol = lowerCaseUrl.replace(/^https?:\/\//, '');
 
-    // 2. First check full URL against deny list
+    // Every deny check runs before any allow check.
+    //
+    // These used to interleave - full-URL deny, full-URL allow, domain deny, domain allow - so an
+    // allow entry could return true before the domain deny list was ever consulted. Allowing
+    // `sub.evil.com` while denying `evil.com` is two different strings, so the options UI keeps
+    // both, and the subdomain was reachable despite the deny rule that covers it. A deny entry is
+    // the stronger statement of intent and now always wins.
+
+    // 2. Check full URL against deny list
     for (const deniedEntry of denyList) {
       if (urlWithoutProtocol === deniedEntry) {
         return false;
       }
     }
 
-    // 3. Check full URL against allow list
-    for (const allowedEntry of allowList) {
-      if (urlWithoutProtocol === allowedEntry) {
-        return true;
-      }
-    }
-
-    // 5. Check domain against deny list
+    // 3. Check domain against deny list
     for (const deniedEntry of denyList) {
       if (domain === deniedEntry || domain.endsWith(`.${deniedEntry}`)) {
         return false;
       }
     }
 
-    // 6. Check domain against allow list
+    // 4. Check full URL against allow list
+    for (const allowedEntry of allowList) {
+      if (urlWithoutProtocol === allowedEntry) {
+        return true;
+      }
+    }
+
+    // 5. Check domain against allow list
     for (const allowedEntry of allowList) {
       if (domain === allowedEntry || domain.endsWith(`.${allowedEntry}`)) {
         return true;
