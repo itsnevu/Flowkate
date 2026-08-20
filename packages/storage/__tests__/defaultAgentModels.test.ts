@@ -27,7 +27,7 @@ describe('pickDefaultAgentModels', () => {
   });
 
   it.each([
-    [ProviderTypeEnum.Anthropic, 'claude-sonnet-4-5', 'claude-haiku-4-5'],
+    [ProviderTypeEnum.Anthropic, 'claude-opus-5', 'claude-haiku-4-5'],
     [ProviderTypeEnum.Grok, 'grok-4', 'grok-4-fast-non-reasoning'],
     [ProviderTypeEnum.OpenRouter, 'google/gemini-2.5-pro', 'google/gemini-2.5-flash'],
   ])('picks flagship and cheap tier for %s', (provider, flagship, cheap) => {

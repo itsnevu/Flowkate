@@ -9,7 +9,31 @@ import { ChatOllama } from '@langchain/ollama';
 import { ChatDeepSeek } from '@langchain/deepseek';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 
-const maxTokens = 1024 * 4;
+/**
+ * Output cap handed to every provider client. Exported because a request is input + output against
+ * one context window, so the input budget has to hold this back.
+ */
+export const OUTPUT_TOKEN_CAP = 1024 * 4;
+const maxTokens = OUTPUT_TOKEN_CAP;
+
+/**
+ * Claude models that reject `temperature`, `top_p` and `top_k` with a 400.
+ *
+ * Matched by family rather than by an allowlist of ids, because the model field is free text: a
+ * name this does not recognise is assumed to take sampling parameters, which is the behaviour every
+ * older Claude model wants and the one that was correct before these families existed.
+ */
+export function isSamplingRemovedClaudeModel(modelName: string): boolean {
+  const name = modelName.toLowerCase();
+  return (
+    name.includes('opus-5') ||
+    name.includes('opus-4-8') ||
+    name.includes('opus-4-7') ||
+    name.includes('sonnet-5') ||
+    name.includes('fable-5') ||
+    name.includes('mythos-5')
+  );
+}
 
 /**
  * Retries are owned by the agent's own `callWithRetry`, not by LangChain.
@@ -304,14 +328,30 @@ export function createChatModel(providerConfig: ProviderConfig, modelConfig: Mod
       return createOpenAIChatModel(providerConfig, modelConfig, undefined);
     }
     case ProviderTypeEnum.Anthropic: {
-      // For Opus models, only support temperature, not topP
-      // For 4.5 models, only support either temperature or topP, not both, so we only use temperature to align with Opus
+      // Older Claude models take temperature; current ones reject it outright.
+      //
+      // Sampling parameters were removed from Opus 5, Opus 4.8, Opus 4.7, Sonnet 5 and Fable 5 -
+      // `temperature`, `top_p` and `top_k` all return 400 there, while Opus 4.6 / Sonnet 4.6 and
+      // earlier still accept them. Model names are free text in the options UI, so the only way to
+      // reach a current model is to type one, and every request then failed on the first step.
+      //
+      // Suppressing them takes `invocationKwargs` rather than `temperature: null`, because the
+      // client fills `top_p` and `top_k` from its own defaults for any model outside a hardcoded
+      // 4.1/4.5 list - verified: `claude-opus-5` otherwise goes out carrying
+      // `{temperature: 0.1, top_p: -1, top_k: -1}`. `invocationKwargs` is spread last into the
+      // request body, and JSON.stringify drops the undefined keys.
+      const takesSamplingParams = !isSamplingRemovedClaudeModel(modelConfig.modelName);
       const args = {
         ...RETRY_OWNED_BY_AGENT,
         model: modelConfig.modelName,
         apiKey: providerConfig.apiKey,
         maxTokens,
-        temperature,
+        ...(takesSamplingParams
+          ? { temperature }
+          : {
+              temperature: null,
+              invocationKwargs: { temperature: undefined, top_p: undefined, top_k: undefined },
+            }),
         clientOptions: {},
       };
       return new ChatAnthropic(args);
