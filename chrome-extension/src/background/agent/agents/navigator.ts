@@ -516,7 +516,9 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
 
           const retryPage = await browserContext.getCurrentPage();
           const onSamePage = retryPage.tabId === browserState.tabId && retryPage.url() === browserState.url;
-          const refreshed = onSamePage ? await browserContext.getState(this.context.options.useVision) : null;
+          // `false`: only the selector map, tab and url are read below, and a screenshot on every
+          // failed indexed action is pure cost. It also keeps this probe off the vision path.
+          const refreshed = onSamePage ? await browserContext.getState(false) : null;
 
           if (!refreshed || refreshed.tabId !== browserState.tabId || refreshed.url !== browserState.url) {
             logger.info(`The page changed under ${actionName}; leaving the retry to the next step`);
@@ -538,9 +540,16 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
               logger.info(`Index ${indexArg} no longer names the same element; not retrying`);
             } else {
               this.context.stepState = refreshed;
-              const retried = await actionInstance.call(actionArgs);
-              if (retried !== undefined && !retried.error) {
-                result = retried;
+              try {
+                const retried = await actionInstance.call(actionArgs);
+                if (retried !== undefined && !retried.error) {
+                  result = retried;
+                }
+              } finally {
+                // Scoped to the retry. Leaving the refreshed parse in place would renumber every
+                // later action in this same batch, while the confirmation cards and the history
+                // record still describe the step's original parse.
+                this.context.stepState = browserState;
               }
             }
           }

@@ -149,6 +149,32 @@ export class AgentContext {
     return state.selectorMap.get(index) ?? null;
   }
 
+  /**
+   * Return this context to the state a fresh task expects.
+   *
+   * The Executor is reused across follow-ups, so anything a run latches has to be cleared here or
+   * the next task inherits it - and every one of these is load-bearing:
+   *
+   * - `consecutiveFailures` left at the ceiling makes `shouldStop()` fire before step 0, so the
+   *   follow-up runs no steps and ends on a TASK_PAUSE the panel does not treat as terminal.
+   * - `controller` is aborted 300ms after a cancel and was never replaced, so an Executor that was
+   *   stopped once aborted every model call it would ever make again.
+   * - `stopped` / `paused` survive the run that set them, cancelling or parking the next task.
+   * - `stateMessageAdded` left true makes the follow-up's first plan read the previous task's page.
+   *
+   * Fields the constructor sets and a run never mutates are deliberately left alone, as is
+   * `history`, which spans the whole conversation by design.
+   */
+  resetForTask(): void {
+    this.controller = new AbortController();
+    this.stopped = false;
+    this.paused = false;
+    this.consecutiveFailures = 0;
+    this.stateMessageAdded = false;
+    this.stepState = null;
+    this.nSteps = 0;
+  }
+
   async emitEvent(actor: Actors, state: ExecutionState, eventDetails: string, payload?: EventPayload) {
     const event = new AgentEvent(actor, state, {
       taskId: this.taskId,

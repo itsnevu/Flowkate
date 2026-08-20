@@ -222,9 +222,14 @@ export class Executor {
    */
   async execute(): Promise<void> {
     logger.info(`🚀 Executing task: ${this.tasks[this.tasks.length - 1]}`);
-    // reset the step counter
     const context = this.context;
-    context.nSteps = 0;
+    // Clear everything the previous run latched. This used to reset only the step counter, so a
+    // second task on the same Executor inherited its predecessor's failure count, cancellation and
+    // abort signal.
+    context.resetForTask();
+    // Per-Executor rather than per-context, but per-task all the same: the brake is latched so it
+    // asks once, and leaving it latched meant a follow-up spent with no ceiling at all.
+    this.budgetPauseIssued = false;
     const allowedMaxSteps = this.context.options.maxSteps;
 
     let tabGroupStatus = TabGroupStatus.Paused;
@@ -728,6 +733,9 @@ export class Executor {
     const replayLogger = createLogger('Executor:replayHistory');
 
     logger.info('replay task', this.tasks[0]);
+    // A replay collects its own rows: the recorded extract_structured steps run for real against
+    // today's pages. Carrying the previous run's table in would hand the user a mix of the two.
+    this.context.dataset.clear();
 
     try {
       const historyFromStorage = await chatHistoryStore.loadAgentStepHistory(sessionId);
@@ -769,12 +777,15 @@ export class Executor {
         }
       }
 
+      this.emitDataset();
       if (this.context.stopped) {
         this.context.emitEvent(Actors.SYSTEM, ExecutionState.TASK_CANCEL, t('exec_replay_cancel'));
       } else {
         this.context.emitEvent(Actors.SYSTEM, ExecutionState.TASK_OK, t('exec_replay_ok'));
       }
     } catch (error) {
+      // Same as the live path: rows collected before the failure are still rows the user asked for.
+      this.emitDataset();
       const errorMessage = error instanceof Error ? error.message : String(error);
       replayLogger.error(`Replay failed: ${errorMessage}`);
       this.context.emitEvent(Actors.SYSTEM, ExecutionState.TASK_FAIL, t('exec_replay_fail', [errorMessage]));

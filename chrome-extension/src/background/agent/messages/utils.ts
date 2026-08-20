@@ -166,7 +166,11 @@ function convertMessagesForNonFunctionCallingModels(inputMessages: BaseMessage[]
     } else if (message instanceof ToolMessage) {
       outputMessages.push(new HumanMessage({ content: message.content }));
     } else if (message instanceof AIMessage) {
-      if (message.tool_calls) {
+      // `?.length`, not truthiness. @langchain/core initialises `tool_calls` to `[]` when none are
+      // given, and `[]` is truthy - so a plan message, which carries no tool calls, took this branch
+      // and was replaced by the string "[]". On a non-function-calling model such as
+      // deepseek-reasoner that silently deleted every plan the planner produced.
+      if (message.tool_calls?.length) {
         const toolCalls = JSON.stringify(message.tool_calls);
         outputMessages.push(new AIMessage({ content: toolCalls }));
       } else {
