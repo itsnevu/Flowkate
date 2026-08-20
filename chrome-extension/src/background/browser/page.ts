@@ -24,6 +24,14 @@ import type { Frame } from 'puppeteer-core/lib/esm/puppeteer/api/Frame.js';
 
 const logger = createLogger('Page');
 
+/**
+ * How long a click is waited on before the agent stops blocking on it.
+ *
+ * This bounds waiting only. The click is not cancellable once dispatched, so exceeding this is not
+ * treated as "the click failed" - see `clickElementNode`.
+ */
+const CLICK_DEADLINE_MS = 2000;
+
 export function build_initial_state(tabId?: number, url?: string, title?: string): PageState {
   return {
     elementTree: new DOMElementNode({
@@ -1438,32 +1446,63 @@ export default class Page {
       // Scroll element into view if needed
       await this._scrollIntoViewIfNeeded(element);
 
+      // A deadline decides how long to wait for the click, never whether to click again.
+      //
+      // Puppeteer's click is a sequence of CDP round-trips - scroll into view, hit-test for a
+      // clickable point, dispatch the mouse event - so on a loaded machine it can outlast a short
+      // deadline while still being perfectly in flight. `Promise.race` cannot cancel the loser: that
+      // click goes on to dispatch a real trusted event. Clicking again at that point is not a
+      // retry, it is a second click, which is how one approved "Place order" became two orders. So
+      // the JS fallback now runs only when the native click is known to have rejected.
+      let clickRejected = false;
+      const nativeClick = element.click();
+      nativeClick.catch(() => {
+        clickRejected = true;
+      });
+
+      let deadline: ReturnType<typeof setTimeout> | undefined;
       try {
-        // First attempt: Use Puppeteer's click method with timeout
         await Promise.race([
-          element.click(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Click timeout')), 2000)),
+          nativeClick,
+          new Promise((_, reject) => {
+            deadline = setTimeout(() => reject(new Error('Click timeout')), CLICK_DEADLINE_MS);
+          }),
         ]);
-        await this._checkAndHandleNavigation();
       } catch (error) {
         // if URLNotAllowedError, throw it
         if (error instanceof URLNotAllowedError) {
           throw error;
         }
-        // Second attempt: Use evaluate to perform a direct click
-        logger.info('Failed to click element, trying again', error);
-        try {
-          await element.evaluate(el => (el as HTMLElement).click());
-        } catch (secondError) {
-          // if URLNotAllowedError, throw it
-          if (secondError instanceof URLNotAllowedError) {
-            throw secondError;
+
+        if (!clickRejected) {
+          // The deadline passed with the click still running. It will land on its own, and a second
+          // click would double whatever it triggers, so waiting it out is the only safe option.
+          logger.warning('Click is taking longer than its deadline; letting it finish rather than clicking again');
+          await nativeClick;
+        } else {
+          // Second attempt: Use evaluate to perform a direct click
+          logger.info('Failed to click element, trying again', error);
+          try {
+            await element.evaluate(el => (el as HTMLElement).click());
+          } catch (secondError) {
+            // if URLNotAllowedError, throw it
+            if (secondError instanceof URLNotAllowedError) {
+              throw secondError;
+            }
+            throw new Error(
+              `Failed to click element: ${secondError instanceof Error ? secondError.message : String(secondError)}`,
+            );
           }
-          throw new Error(
-            `Failed to click element: ${secondError instanceof Error ? secondError.message : String(secondError)}`,
-          );
         }
+      } finally {
+        // The timer used to be left running, so every click kept the service worker's event loop
+        // busy for the full deadline after the click had already settled.
+        if (deadline !== undefined) clearTimeout(deadline);
       }
+
+      // Kept out of the click's try/catch on purpose: a navigation check that throws is not a
+      // reason to click the element a second time.
+      await this._checkAndHandleNavigation();
     } catch (error) {
       throw new Error(
         `Failed to click element: ${elementNode}. Error: ${error instanceof Error ? error.message : String(error)}`,
