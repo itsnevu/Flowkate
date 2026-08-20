@@ -42,7 +42,13 @@ abstract class BasePrompt {
 
     let formattedElementsText = '';
     if (rawElementsText !== '') {
-      const scrollInfo = `[Scroll info of current page] window.scrollY: ${browserState.scrollY}, document.body.scrollHeight: ${browserState.scrollHeight}, window.visualViewport.height: ${browserState.visualViewportHeight}, visual viewport height as percentage of scrollable distance: ${Math.round((browserState.visualViewportHeight / (browserState.scrollHeight - browserState.visualViewportHeight)) * 100)}%\n`;
+      // Measured on whatever actually scrolls this page, which on an app-shell layout is an inner
+      // pane rather than the window - hence the neutral field names. The remaining distance is
+      // stated outright instead of as a ratio: the ratio's denominator is zero on a page that does
+      // not scroll at all, and the model was being handed the string "Infinity%".
+      const scrollable = Math.max(0, browserState.scrollHeight - browserState.visualViewportHeight);
+      const remaining = Math.max(0, scrollable - browserState.scrollY);
+      const scrollInfo = `[Scroll info of current page] scrolled: ${browserState.scrollY}px of ${scrollable}px, remaining below: ${remaining}px, viewport height: ${browserState.visualViewportHeight}px${scrollable === 0 ? ' (this page does not scroll)' : ''}\n`;
       logger.info(scrollInfo);
       const elementsText = wrapUntrustedContent(rawElementsText);
       formattedElementsText = `${scrollInfo}[Start of page]\n${elementsText}\n[End of page]\n`;

@@ -571,19 +571,81 @@ export async function removeHighlights(tabId: number): Promise<void> {
 //   return [result.pixels_above, result.pixels_below];
 // }
 
-export async function getScrollInfo(tabId: number): Promise<[number, number, number]> {
+/** What {@link scrollPage} should do before it reports back. */
+export type PageScrollOp =
+  | { kind: 'info' }
+  | { kind: 'toPercent'; yPercent: number }
+  | { kind: 'byPages'; pages: number };
+
+/**
+ * Read, and optionally move, whatever actually scrolls this page.
+ *
+ * Reading and scrolling live in one injected function on purpose. They used to be separate and they
+ * disagreed: the measurement read `document.body.scrollHeight` while the scroll drove `window`. On
+ * an app-shell layout - `html,body{height:100%;overflow:hidden}` with an inner `overflow:auto`
+ * pane, which is Gmail, Drive, Slack, Linear, Jira, Airtable and most admin dashboards - the body
+ * is exactly viewport-high and `window.scrollY` is permanently 0. So the "is the page already at
+ * the bottom?" test was true on the first screen of every one of those sites, `next_page` reported
+ * OK without moving, and the agent concluded a list of two thousand rows had ended after twenty.
+ * A silent wrong answer, which is worse than a loud failure. One resolver, used by both, is what
+ * makes that class of bug unrepresentable.
+ */
+export async function scrollPage(tabId: number, op: PageScrollOp): Promise<[number, number, number]> {
   const results = await chrome.scripting.executeScript({
     target: { tabId: tabId },
-    func: () => {
-      const scrollY = window.scrollY;
-      const visualViewportHeight = window.visualViewport?.height || window.innerHeight;
-      const scrollHeight = document.body.scrollHeight;
+    func: (operation: PageScrollOp) => {
+      /** A box has to overflow by more than a rounding error before it counts as scrollable. */
+      const OVERFLOW_SLACK = 8;
+
+      const resolveScroller = (): Element => {
+        const root = document.scrollingElement || document.documentElement;
+        if (root && root.scrollHeight > root.clientHeight + OVERFLOW_SLACK) return root;
+
+        // The document does not scroll, so something inside it does. Of the candidates, take the
+        // largest one covering the middle of the viewport: that is the content pane rather than a
+        // sidebar, a sticky header, or an off-screen drawer that also happens to overflow.
+        const midX = window.innerWidth / 2;
+        const midY = window.innerHeight / 2;
+        let best: Element | null = null;
+        let bestArea = 0;
+        for (const el of Array.from(document.querySelectorAll('*'))) {
+          if (el.scrollHeight <= el.clientHeight + OVERFLOW_SLACK) continue;
+          const overflowY = getComputedStyle(el).overflowY;
+          if (overflowY !== 'auto' && overflowY !== 'scroll') continue;
+          const rect = el.getBoundingClientRect();
+          if (rect.width < 1 || rect.height < 1) continue;
+          if (rect.left > midX || rect.right < midX || rect.top > midY || rect.bottom < midY) continue;
+          const area = rect.width * rect.height;
+          if (area > bestArea) {
+            bestArea = area;
+            best = el;
+          }
+        }
+        return best ?? root;
+      };
+
+      const scroller = resolveScroller();
+      if (operation.kind === 'toPercent') {
+        const distance = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+        scroller.scrollTo({
+          top: distance * (operation.yPercent / 100),
+          left: scroller.scrollLeft,
+          behavior: 'smooth',
+        });
+      } else if (operation.kind === 'byPages') {
+        scroller.scrollBy({ top: operation.pages * scroller.clientHeight, left: 0, behavior: 'smooth' });
+      }
+
+      // Reported off the scroller itself rather than `window`, so the three numbers describe one
+      // box. On a page whose document does scroll, `scrollingElement.scrollTop` IS `window.scrollY`
+      // and its `clientHeight` IS the viewport, so nothing changes for ordinary pages.
       return {
-        scrollY: scrollY,
-        visualViewportHeight: visualViewportHeight,
-        scrollHeight: scrollHeight,
+        scrollY: scroller.scrollTop,
+        visualViewportHeight: scroller.clientHeight,
+        scrollHeight: scroller.scrollHeight,
       };
     },
+    args: [op],
   });
 
   const result = results[0]?.result;
@@ -591,6 +653,10 @@ export async function getScrollInfo(tabId: number): Promise<[number, number, num
     throw new Error('Failed to get scroll information');
   }
   return [result.scrollY, result.visualViewportHeight, result.scrollHeight];
+}
+
+export async function getScrollInfo(tabId: number): Promise<[number, number, number]> {
+  return scrollPage(tabId, { kind: 'info' });
 }
 
 /** Chrome numbers a tab's top-level frame 0; every other id belongs to a nested frame. */
