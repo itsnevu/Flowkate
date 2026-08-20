@@ -14,35 +14,43 @@ export function isUrlAllowed(url: string, allowList: string[], denyList: string[
 
   const lowerCaseUrl = trimmedUrl.toLowerCase();
 
-  // ALWAYS block dangerous/forbidden URLs, even if firewall is disabled
-  const DANGEROUS_PREFIXES = [
-    'https://chromewebstore.google.com', // scripts are not allowed to be injected into chrome web store
-    'chrome-extension://',
-    'chrome://',
-    'javascript:',
-    'data:',
-    'file:',
-    'vbscript:',
-    'ws:',
-    'wss:',
-  ];
-
-  if (DANGEROUS_PREFIXES.some(prefix => lowerCaseUrl.startsWith(prefix))) {
-    return false;
-  }
-
-  // If firewall is disabled, allow all other URLs
-  if (allowList.length === 0 && denyList.length === 0) {
-    return true;
-  }
-
-  // Special case: Allow 'about:blank' explicitly
-  if (trimmedUrl === 'about:blank') {
+  // Special case: Allow 'about:blank' explicitly - it is the tab an unattended run starts from,
+  // and it carries no content of its own.
+  if (lowerCaseUrl === 'about:blank') {
     return true;
   }
 
   try {
     const parsedUrl = new URL(trimmedUrl);
+
+    // The scheme is decided by the parser and an allow list, never by matching the raw string.
+    //
+    // This check used to be `startsWith` over a list of dangerous prefixes, which a scheme could
+    // simply step around: `String.trim()` strips whitespace around the URL but not inside the
+    // scheme, and the URL parser then removes it - so "java\tscript:alert(1)" passed the prefix
+    // test and was still a javascript: URL by the time it reached chrome.tabs.update. Whole
+    // families were never listed either (blob:, filesystem:, view-source:, about:, devtools:,
+    // chrome-untrusted:). A blocklist over a value the browser is going to canonicalise anyway
+    // cannot be made complete, and http(s) is the only thing the agent has any business
+    // navigating to.
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+      return false;
+    }
+
+    // 4. Extract domain for domain-based checks. A trailing dot is a valid, fully-qualified form
+    // that Chrome resolves normally, so it is removed here rather than being left as a way to
+    // spell a denied host that no deny entry matches.
+    const domain = parsedUrl.hostname.toLowerCase().replace(/\.$/, '');
+
+    // Scripts are not allowed to be injected into the Chrome Web Store
+    if (domain === 'chromewebstore.google.com') {
+      return false;
+    }
+
+    // If firewall is disabled, allow all other URLs
+    if (allowList.length === 0 && denyList.length === 0) {
+      return true;
+    }
 
     // 1. Remove protocol prefix for further comparisons
     const urlWithoutProtocol = lowerCaseUrl.replace(/^https?:\/\//, '');
@@ -59,15 +67,6 @@ export function isUrlAllowed(url: string, allowList: string[], denyList: string[
       if (urlWithoutProtocol === allowedEntry) {
         return true;
       }
-    }
-
-    // 4. Extract domain for domain-based checks
-    let domain = parsedUrl.hostname.toLowerCase();
-
-    // Remove port number if present
-    const portIndex = domain.indexOf(':');
-    if (portIndex > -1) {
-      domain = domain.substring(0, portIndex);
     }
 
     // 5. Check domain against deny list
