@@ -19,7 +19,7 @@ That covers:
 - **Settings**, including firewall allow and deny lists
 - **Remembered preferences** (see below)
 
-None of this is synced across your devices, and none of it leaves your machine except as described in "What is sent to your LLM provider".
+None of this is synced across your devices. It leaves your machine only as described in "What is sent to your LLM provider", "Voice input" and "Outbound webhook" below. The last two are off until you turn them on.
 
 ## Remembered preferences (Memory)
 
@@ -43,6 +43,31 @@ This data goes directly from your browser to your provider. It does not pass thr
 
 Page content is treated as untrusted input and is wrapped in explicit delimiters before being given to the model, so that text on a page is not able to act as an instruction to the agent.
 
+## Voice input
+
+The microphone button in the side panel records audio and sends it away to be transcribed. Nothing is captured unless you press it.
+
+- Recording starts only on that button and stops when you press it again, or after two minutes.
+- The audio is sent to the **Gemini provider you configured**, using your own API key, and Google's privacy policy governs it from there. Speech-to-text requires a Gemini provider specifically, so audio can go to Google even when your agents run on a different provider entirely.
+- Only the transcribed text comes back, and it is placed in the message box for you to edit or delete before anything is sent.
+- The recording is not written to disk and is not kept after transcription.
+- Configure or disable it under **Options → Models**. Chrome asks for microphone permission the first time, and you can revoke it in Chrome's site settings.
+
+## Outbound webhook
+
+Off by default. If you turn it on under **Options → General**, each finished task is POSTed to the single URL you entered — and to no other address.
+
+What the request body contains:
+
+- The **task prompt** as it was written, by you or by the schedule that ran it
+- The task's **final message**, which can quote what the agent read on a page
+- Whether the run finished, failed or was cancelled, its start and finish times, and the schedule's name for scheduled runs
+- The **table an extraction task collected**, but only if you additionally turn on "Include collected tables" — a separate switch, because it sends the rows the agent read off the pages rather than just a summary of them
+
+The URL must be HTTPS, unless it points at your own machine (`localhost`), because task results can carry page content. You choose whether manual runs, scheduled runs, or both, trigger it. If you also enable follow-ups, a reply from that URL can queue another task — the only party that can do so is the address you typed in, and those runs decline sensitive actions automatically.
+
+Every delivery is listed under **Options → Privacy**, so what left the machine is checkable rather than something you take on trust.
+
 ## Browser access and permissions
 
 Flowkite requests broad browser access because a web automation agent cannot work without it. Specifically:
@@ -53,6 +78,11 @@ Flowkite requests broad browser access because a web automation agent cannot wor
 - **`webNavigation`** — to know when a page has finished loading, so the agent acts on a settled page rather than a half-rendered one.
 - **`storage`** and **`unlimitedStorage`** — for everything described under "Where your data lives". Conversation history with long tasks can exceed the default extension storage quota.
 - **`sidePanel`** — to show the chat interface.
+- **`tabGroups`** — to gather the tabs one task opened into a single labelled group, so it is obvious which tabs the agent is responsible for.
+- **`contextMenus`** — to add the right-click entry that starts a task from selected text.
+- **`alarms`** and **`notifications`** — to run the schedules you create under **Options → Schedules** while the panel is closed, and to tell you when one finishes. Unattended runs decline sensitive actions automatically.
+- **`downloads`** — to save a table the agent collected when you press Download CSV or Download JSON. The file is built from data already on screen and handed to Chrome; nothing is fetched from the network, and existing downloads are not read.
+- **Microphone** — requested only when you first use voice input, and never held open between recordings. See "Voice input" above.
 - **Host permissions (`<all_urls>`)** — Flowkite cannot know in advance which sites you will ask it to work on, so it requests access to all of them. You can narrow this yourself with the firewall allow and deny lists under **Options → Firewall**.
 
 Flowkite does not read your browsing history, and it does not act on pages outside the task you gave it.
@@ -101,4 +131,4 @@ This policy may be updated as the extension changes. Material changes will be no
 
 Questions or concerns? Reach us on [X](https://x.com/Flowkiteai), or through the support tab on the Chrome Web Store listing.
 
-Last Updated: August 11, 2026
+Last Updated: August 21, 2026
