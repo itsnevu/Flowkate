@@ -92,11 +92,24 @@ export default class BrowserContext {
   }
 
   public async cleanup(): Promise<void> {
-    const currentPage = await this.getCurrentPage();
-    currentPage?.removeHighlight();
-    // detach all pages
+    // Deliberately not `getCurrentPage()`. With no current tab that helper queries the active tab
+    // and attaches to it - or creates one when there is none - so teardown could raise the
+    // debugging banner on a tab this context never touched. It could also throw before the detach
+    // loop ran, leaving every page attached and the map populated for the next task to inherit.
+    const currentPage = this._currentTabId !== null ? this._attachedPages.get(this._currentTabId) : undefined;
+    try {
+      await currentPage?.removeHighlight();
+    } catch (error) {
+      logger.warning('Failed to remove highlights during cleanup:', error);
+    }
+
+    // detach all pages; one page failing to detach must not strand the rest
     for (const page of this._attachedPages.values()) {
-      await page.detachPuppeteer();
+      try {
+        await page.detachPuppeteer();
+      } catch (error) {
+        logger.warning('Failed to detach page during cleanup:', error);
+      }
     }
     this._attachedPages.clear();
     this._currentTabId = null;
@@ -194,6 +207,12 @@ export default class BrowserContext {
     const { waitForUpdate = true, waitForActivation = true, timeoutMs = 5000 } = options;
 
     const promises: Promise<void>[] = [];
+    // Hoisted so the `finally` can remove them on every path. They used to be removed only from
+    // inside their own resolve branches, so a timeout left the listener registered for the life of
+    // the worker - and a stale listener then runs on every tab update in the entire browser.
+    let onUpdatedHandler: ((id: number, info: chrome.tabs.TabChangeInfo) => void) | undefined;
+    let onActivatedHandler: ((info: chrome.tabs.TabActiveInfo) => void) | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
     if (waitForUpdate) {
       const updatePromise = new Promise<void>(resolve => {
@@ -201,7 +220,7 @@ export default class BrowserContext {
         let hasTitle = false;
         let isComplete = false;
 
-        const onUpdatedHandler = (updatedTabId: number, changeInfo: chrome.tabs.TabChangeInfo) => {
+        onUpdatedHandler = (updatedTabId: number, changeInfo: chrome.tabs.TabChangeInfo) => {
           if (updatedTabId !== tabId) return;
 
           if (changeInfo.url) hasUrl = true;
@@ -209,54 +228,56 @@ export default class BrowserContext {
           if (changeInfo.status === 'complete') isComplete = true;
 
           // Resolve when we have all the information we need
-          if (hasUrl && hasTitle && isComplete) {
-            chrome.tabs.onUpdated.removeListener(onUpdatedHandler);
-            resolve();
-          }
+          if (hasUrl && hasTitle && isComplete) resolve();
         };
         chrome.tabs.onUpdated.addListener(onUpdatedHandler);
 
-        // Check current state
-        chrome.tabs.get(tabId).then(tab => {
-          if (tab.url) hasUrl = true;
-          if (tab.title) hasTitle = true;
-          if (tab.status === 'complete') isComplete = true;
+        // Check current state. The catch matters: a tab that closed mid-wait rejects here, and an
+        // unhandled rejection would leave this promise pending until the timeout instead.
+        chrome.tabs
+          .get(tabId)
+          .then(tab => {
+            if (tab.url) hasUrl = true;
+            if (tab.title) hasTitle = true;
+            if (tab.status === 'complete') isComplete = true;
 
-          if (hasUrl && hasTitle && isComplete) {
-            chrome.tabs.onUpdated.removeListener(onUpdatedHandler);
-            resolve();
-          }
-        });
+            if (hasUrl && hasTitle && isComplete) resolve();
+          })
+          .catch(() => {});
       });
       promises.push(updatePromise);
     }
 
     if (waitForActivation) {
       const activatedPromise = new Promise<void>(resolve => {
-        const onActivatedHandler = (activeInfo: chrome.tabs.TabActiveInfo) => {
-          if (activeInfo.tabId === tabId) {
-            chrome.tabs.onActivated.removeListener(onActivatedHandler);
-            resolve();
-          }
+        onActivatedHandler = (activeInfo: chrome.tabs.TabActiveInfo) => {
+          if (activeInfo.tabId === tabId) resolve();
         };
         chrome.tabs.onActivated.addListener(onActivatedHandler);
 
         // Check current state
-        chrome.tabs.get(tabId).then(tab => {
-          if (tab.active) {
-            chrome.tabs.onActivated.removeListener(onActivatedHandler);
-            resolve();
-          }
-        });
+        chrome.tabs
+          .get(tabId)
+          .then(tab => {
+            if (tab.active) resolve();
+          })
+          .catch(() => {});
       });
       promises.push(activatedPromise);
     }
 
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error(`Tab operation timed out after ${timeoutMs} ms`)), timeoutMs),
-    );
+    try {
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`Tab operation timed out after ${timeoutMs} ms`)), timeoutMs);
+      });
 
-    await Promise.race([Promise.all(promises), timeoutPromise]);
+      await Promise.race([Promise.all(promises), timeoutPromise]);
+    } finally {
+      if (onUpdatedHandler) chrome.tabs.onUpdated.removeListener(onUpdatedHandler);
+      if (onActivatedHandler) chrome.tabs.onActivated.removeListener(onActivatedHandler);
+      // The timer used to outlive every successful call, keeping the worker busy for its full span.
+      clearTimeout(timer);
+    }
   }
 
   public async switchTab(tabId: number): Promise<Page> {
@@ -302,7 +323,9 @@ export default class BrowserContext {
     this._currentTabId = tabId;
   }
 
-  public async openTab(url: string): Promise<Page> {
+  public async openTab(url: string, options: { active?: boolean } = {}): Promise<Page> {
+    const { active = true } = options;
+
     if (!isUrlAllowed(url, this._config.allowedUrls, this._config.deniedUrls)) {
       throw new URLNotAllowedError(`Open tab failed. URL: ${url} is not allowed`);
     }
@@ -310,21 +333,35 @@ export default class BrowserContext {
     recordLocalVisit(url);
 
     // Create the new tab
-    const tab = await chrome.tabs.create({ url, active: true });
+    const tab = await chrome.tabs.create({ url, active });
     if (!tab.id) {
       throw new Error('No tab ID available');
     }
-    // Wait for tab events
-    await this.waitForTabEvents(tab.id);
+    const tabId = tab.id;
 
-    // Get updated tab information
-    const updatedTab = await chrome.tabs.get(tab.id);
-    // Create and attach the page after tab is fully loaded and activated
-    const page = await this._getOrCreatePage(updatedTab);
-    await this.attachPage(page);
-    this._currentTabId = tab.id;
+    try {
+      // Activation is awaited only for a tab we actually asked to be active. Only one tab can be
+      // active at a time, so several concurrent opens would otherwise each wait on an event that
+      // can only ever fire for the last one created - and the rest would time out holding a tab
+      // that had in fact opened perfectly well.
+      await this.waitForTabEvents(tabId, { waitForActivation: active });
 
-    return page;
+      // Get updated tab information
+      const updatedTab = await chrome.tabs.get(tabId);
+      // Create and attach the page after tab is fully loaded and activated
+      const page = await this._getOrCreatePage(updatedTab);
+      await this.attachPage(page);
+      this._currentTabId = tabId;
+
+      return page;
+    } catch (error) {
+      // The tab exists even though the wait or the attach did not finish, and the caller holds no
+      // other handle on it. Carry the id on the error so it can be closed rather than leaked.
+      if (error instanceof Error) {
+        (error as Error & { tabId?: number }).tabId = tabId;
+      }
+      throw error;
+    }
   }
 
   public async closeTab(tabId: number): Promise<void> {

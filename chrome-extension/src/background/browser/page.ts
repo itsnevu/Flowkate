@@ -12,6 +12,7 @@ import {
   getClickableElements as _getClickableElements,
   removeHighlights as _removeHighlights,
   getScrollInfo as _getScrollInfo,
+  scrollPage as _scrollPage,
 } from './dom/service';
 import { DOMElementNode, type DOMState } from './dom/views';
 import { type BrowserContextConfig, DEFAULT_BROWSER_CONTEXT_CONFIG, type PageState, URLNotAllowedError } from './views';
@@ -31,6 +32,94 @@ const logger = createLogger('Page');
  * treated as "the click failed" - see `clickElementNode`.
  */
 const CLICK_DEADLINE_MS = 2000;
+
+/**
+ * The absolute ceiling on waiting for a click to settle.
+ *
+ * Past the deadline the click is left to land rather than being repeated, but it still has to be
+ * bounded: a renderer blocked on a modal dialog or a synchronous loop never returns and never
+ * rejects, and the agent checks for cancellation only between actions - so an unbounded wait means
+ * Stop does nothing and the task cannot end. Generous enough that a merely slow click finishes.
+ */
+const CLICK_SETTLE_CEILING_MS = 30_000;
+
+const IGNORED_URL_PATTERNS = new Set([
+  // Analytics and tracking. The two hosts are named in full because host labels are matched
+  // whole: `google-analytics` is not `analytics`, and splitting labels on hyphens to make it one
+  // would also ignore `metrics-dashboard.example.com`, which a page genuinely renders from.
+  'google-analytics.com',
+  'googletagmanager.com',
+  'analytics',
+  'tracking',
+  'telemetry',
+  'beacon',
+  'metrics',
+  // Ad-related
+  'doubleclick',
+  'adsystem',
+  'adserver',
+  'advertising',
+  // Social media widgets
+  'facebook.com/plugins',
+  'platform.twitter',
+  'linkedin.com/embed',
+  // Live chat and support
+  'livechat',
+  'zendesk',
+  'intercom',
+  'crisp.chat',
+  'hotjar',
+  // Push notifications
+  'push-notifications',
+  'onesignal',
+  'pushwoosh',
+  // Background sync/heartbeat
+  'heartbeat',
+  'ping',
+  'alive',
+  // WebRTC and streaming
+  'webrtc',
+  'rtmp://',
+  'wss://',
+  // Common CDNs
+  'cloudfront.net',
+  'fastly.net',
+]);
+
+/**
+ * Whether a URL is one of the background chatter the wait should not care about.
+ *
+ * Matched against the host's labels and the path's segments rather than the raw string. A bare
+ * `url.includes(pattern)` made `ping` match `shopping.com`, `/api/shipping/` and `/mapping/`,
+ * so requests those pages genuinely depend on were dropped from the wait.
+ */
+export const isIgnoredUrl = (raw: string): boolean => {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    return false;
+  }
+  const host = parsed.hostname.toLowerCase();
+  const hostLabels = host.split('.');
+  const segments = parsed.pathname.toLowerCase().split('/').filter(Boolean);
+  return Array.from(IGNORED_URL_PATTERNS).some(pattern => {
+    // A pattern carrying a dot or a scheme names a host, e.g. `cloudfront.net`, `wss://`.
+    if (pattern.includes('://')) return raw.startsWith(pattern);
+    if (pattern.includes('.')) return host === pattern || host.endsWith(`.${pattern}`);
+    // Otherwise it is a word, and it has to be a whole host label or a whole path segment.
+    //
+    // Host labels are compared whole while path segments are split on `-` and `_`, which is a
+    // deliberate asymmetry: a hostname is someone's identity and `metrics-dashboard.example.com` is
+    // not a metrics endpoint, whereas `/api/user-analytics-v2` plainly is one. Where the two rules
+    // disagree the tie goes to waiting — a request wrongly waited for costs at most the
+    // stale-request expiry, while one wrongly ignored gets the page parsed mid-flight.
+    return (
+      hostLabels.includes(pattern) ||
+      segments.some(segment => segment === pattern || segment.split(/[-_.]/).includes(pattern))
+    );
+  });
+};
 
 export function build_initial_state(tabId?: number, url?: string, title?: string): PageState {
   return {
@@ -125,7 +214,38 @@ export default class Page {
     // Add anti-detection scripts
     await this._addAntiDetectionScripts();
 
+    this._handleJavaScriptDialogs();
+
     return true;
+  }
+
+  /**
+   * Answer JavaScript dialogs, so one can never freeze the tab.
+   *
+   * With CDP attached and `Page.enable` on, Chrome suppresses the native dialog UI and blocks the
+   * renderer until someone sends `Page.handleJavaScriptDialog`. Puppeteer only re-emits the event;
+   * nothing here used to listen. So a `confirm()` behind "unsubscribe me" or "delete these files"
+   * stopped the renderer dead, every later evaluate/screenshot/input on that tab hung, and the
+   * click sat on an unbounded `await`. Stop could not free it either - it sets a flag and aborts an
+   * AbortController that a CDP call does not observe - so the task was genuinely unkillable short
+   * of closing the tab.
+   *
+   * `confirm` and `prompt` are DISMISSED, not accepted. A dialog is the last gate a site puts in
+   * front of something irreversible, and an agent that clicks OK on every one of them is an agent
+   * that deletes the account. Dismissing loses nothing that cannot be retried; accepting can lose
+   * something that cannot. `alert` carries no choice, and `beforeunload` is answered so a navigation
+   * the agent decided on is not vetoed by a form it filled in itself.
+   */
+  private _handleJavaScriptDialogs(): void {
+    this._puppeteerPage?.on('dialog', dialog => {
+      const type = dialog.type();
+      const accept = type === 'alert' || type === 'beforeunload';
+      logger.info(`${accept ? 'accepting' : 'dismissing'} ${type} dialog: ${dialog.message()}`);
+      const answered = accept ? dialog.accept() : dialog.dismiss();
+      // A dialog already gone (the page navigated, the tab closed) rejects here. Nothing is left to
+      // free at that point, and an unhandled rejection in a listener would be the only consequence.
+      answered.catch(error => logger.warning('could not answer dialog:', error));
+    });
   }
 
   private async _addAntiDetectionScripts(): Promise<void> {
@@ -741,16 +861,8 @@ export default class Page {
       throw new Error('Puppeteer is not connected');
     }
     if (!elementNode) {
-      await this._puppeteerPage.evaluate(yPercent => {
-        const scrollHeight = document.documentElement.scrollHeight;
-        const viewportHeight = window.visualViewport?.height || window.innerHeight;
-        const scrollTop = (scrollHeight - viewportHeight) * (yPercent / 100);
-        window.scrollTo({
-          top: scrollTop,
-          left: window.scrollX,
-          behavior: 'smooth',
-        });
-      }, yPercent);
+      // Through the shared resolver, so this moves whatever getScrollInfo just measured.
+      await _scrollPage(this._tabId, { kind: 'toPercent', yPercent });
     } else {
       const element = await this.locateElement(elementNode);
       if (!element) {
@@ -815,8 +927,7 @@ export default class Page {
     }
 
     if (!elementNode) {
-      // Scroll the whole page up by viewport height
-      await this._puppeteerPage.evaluate('window.scrollBy(0, -(window.visualViewport?.height || window.innerHeight));');
+      await _scrollPage(this._tabId, { kind: 'byPages', pages: -1 });
     } else {
       // Scroll the specific element up by its client height
       const element = await this.locateElement(elementNode);
@@ -842,8 +953,7 @@ export default class Page {
     }
 
     if (!elementNode) {
-      // Scroll the whole page down by viewport height
-      await this._puppeteerPage.evaluate('window.scrollBy(0, (window.visualViewport?.height || window.innerHeight));');
+      await _scrollPage(this._tabId, { kind: 'byPages', pages: 1 });
     } else {
       // Scroll the specific element down by its client height
       const element = await this.locateElement(elementNode);
@@ -1461,6 +1571,7 @@ export default class Page {
       });
 
       let deadline: ReturnType<typeof setTimeout> | undefined;
+      let ceiling: ReturnType<typeof setTimeout> | undefined;
       try {
         await Promise.race([
           nativeClick,
@@ -1478,7 +1589,23 @@ export default class Page {
           // The deadline passed with the click still running. It will land on its own, and a second
           // click would double whatever it triggers, so waiting it out is the only safe option.
           logger.warning('Click is taking longer than its deadline; letting it finish rather than clicking again');
-          await nativeClick;
+          try {
+            await Promise.race([
+              nativeClick,
+              new Promise((_, reject) => {
+                ceiling = setTimeout(
+                  () => reject(new Error(`Click did not settle within ${CLICK_SETTLE_CEILING_MS} ms`)),
+                  CLICK_SETTLE_CEILING_MS,
+                );
+              }),
+            ]);
+          } catch (lateError) {
+            if (lateError instanceof URLNotAllowedError) throw lateError;
+            // It rejected after all, so the click provably never dispatched and the JS fallback is
+            // safe. (A ceiling timeout lands here too and is reported as the failure it is.)
+            logger.info('Click failed after its deadline, trying again', lateError);
+            await element.evaluate(el => (el as HTMLElement).click());
+          }
         } else {
           // Second attempt: Use evaluate to perform a direct click
           logger.info('Failed to click element, trying again', error);
@@ -1498,6 +1625,7 @@ export default class Page {
         // The timer used to be left running, so every click kept the service worker's event loop
         // busy for the full deadline after the click had already settled.
         if (deadline !== undefined) clearTimeout(deadline);
+        if (ceiling !== undefined) clearTimeout(ceiling);
       }
 
       // Kept out of the click's try/catch on purpose: a navigation check that throws is not a
@@ -1556,7 +1684,22 @@ export default class Page {
       throw new Error('Puppeteer page is not connected');
     }
 
-    const RELEVANT_RESOURCE_TYPES = new Set(['document', 'stylesheet', 'image', 'font', 'script', 'iframe']);
+    // `xhr` and `fetch` are the two that matter most on a modern site and were the two missing.
+    // Without them a click that fires a search, a filter or a "load more" was never waited on at
+    // all: the loop saw nothing pending, served its 0.5s quiet period, and parsed the DOM while the
+    // response was still in flight. The old view is still mounted at that moment, so the parse
+    // succeeds and the model is handed the previous screen's elements, renumbered - stale in the
+    // way that looks most plausible.
+    const RELEVANT_RESOURCE_TYPES = new Set([
+      'document',
+      'stylesheet',
+      'image',
+      'font',
+      'script',
+      'iframe',
+      'xhr',
+      'fetch',
+    ]);
 
     const RELEVANT_CONTENT_TYPES = new Set([
       'text/html',
@@ -1567,46 +1710,16 @@ export default class Page {
       'application/json',
     ]);
 
-    const IGNORED_URL_PATTERNS = new Set([
-      // Analytics and tracking
-      'analytics',
-      'tracking',
-      'telemetry',
-      'beacon',
-      'metrics',
-      // Ad-related
-      'doubleclick',
-      'adsystem',
-      'adserver',
-      'advertising',
-      // Social media widgets
-      'facebook.com/plugins',
-      'platform.twitter',
-      'linkedin.com/embed',
-      // Live chat and support
-      'livechat',
-      'zendesk',
-      'intercom',
-      'crisp.chat',
-      'hotjar',
-      // Push notifications
-      'push-notifications',
-      'onesignal',
-      'pushwoosh',
-      // Background sync/heartbeat
-      'heartbeat',
-      'ping',
-      'alive',
-      // WebRTC and streaming
-      'webrtc',
-      'rtmp://',
-      'wss://',
-      // Common CDNs
-      'cloudfront.net',
-      'fastly.net',
-    ]);
-
-    const pendingRequests = new Set();
+    /**
+     * Pending requests, each stamped with when it started.
+     *
+     * The stamp is what makes waiting on `xhr`/`fetch` safe. A long-poll, an SSE-over-fetch or an
+     * analytics socket that slipped the filter never completes, and without an expiry one of those
+     * would hold every single wait open to the full `maximumWaitPageLoadTime` ceiling. A request
+     * still outstanding after this long is not what the page is rendering from.
+     */
+    const STALE_REQUEST_MS = 2_000;
+    const pendingRequests = new Map<HTTPRequest, number>();
     let lastActivity = Date.now();
 
     const onRequest = (request: HTTPRequest) => {
@@ -1623,7 +1736,7 @@ export default class Page {
 
       // Filter out by URL patterns
       const url = request.url().toLowerCase();
-      if (Array.from(IGNORED_URL_PATTERNS).some(pattern => url.includes(pattern))) {
+      if (isIgnoredUrl(url)) {
         return;
       }
 
@@ -1643,7 +1756,7 @@ export default class Page {
         return;
       }
 
-      pendingRequests.add(request);
+      pendingRequests.set(request, Date.now());
       lastActivity = Date.now();
     };
 
@@ -1698,6 +1811,10 @@ export default class Page {
         const now = Date.now();
         const timeSinceLastActivity = (now - lastActivity) / 1000; // Convert to seconds
 
+        for (const [request, startedAt] of pendingRequests) {
+          if (now - startedAt > STALE_REQUEST_MS) pendingRequests.delete(request);
+        }
+
         if (pendingRequests.size === 0 && timeSinceLastActivity >= this._config.waitForNetworkIdlePageLoadTime) {
           break;
         }
@@ -1706,7 +1823,7 @@ export default class Page {
         if (elapsedTime > this._config.maximumWaitPageLoadTime) {
           console.debug(
             `Network timeout after ${this._config.maximumWaitPageLoadTime}s with ${pendingRequests.size} pending requests:`,
-            Array.from(pendingRequests).map(r => (r as HTTPRequest).url()),
+            Array.from(pendingRequests.keys()).map(r => r.url()),
           );
           break;
         }

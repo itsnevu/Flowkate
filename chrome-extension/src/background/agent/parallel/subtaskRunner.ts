@@ -48,7 +48,12 @@ async function runOne(subtask: Subtask, options: SubtaskRunnerOptions): Promise<
   let tabId: number | null = null;
 
   try {
-    const page = await browserContext.openTab(subtask.url);
+    // Background tabs, explicitly. `openTab` defaults to activating the tab and then waiting for
+    // that activation - but only one tab can be active at a time, so three concurrent subtasks all
+    // waited on an event that could only fire for the last one created. Two of every three timed
+    // out after 5s and reported a failure for a tab that had opened perfectly well, which is also
+    // why `readOnlyActions` describes these as running in background tabs.
+    const page = await browserContext.openTab(subtask.url, { active: false });
     tabId = page.tabId;
 
     const messageManager = new MessageManager(
@@ -108,6 +113,13 @@ async function runOne(subtask: Subtask, options: SubtaskRunnerOptions): Promise<
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     logger.error(`Subtask failed: ${subtask.task}: ${message}`);
+    // `tabId` is assigned after `openTab` resolves, so a failure inside `openTab` would leave it
+    // null and the `finally` below would never close the tab it had already created. `openTab`
+    // carries the id on the error for exactly this.
+    const orphaned = (error as { tabId?: number } | null)?.tabId;
+    if (tabId === null && typeof orphaned === 'number') {
+      tabId = orphaned;
+    }
     return { ...subtask, findings: message, succeeded: false };
   } finally {
     // always detach and close, or a failed subtask leaves an orphaned tab with a debugger attached

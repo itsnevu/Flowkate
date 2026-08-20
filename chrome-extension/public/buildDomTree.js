@@ -1178,6 +1178,19 @@ window.buildDomTree = (
   function handleHighlighting(nodeData, node, parentIframe, isParentHighlighted) {
     if (!nodeData.isInteractive) return false; // Not interactive, definitely don't highlight
 
+    // An element inside a shadow root is not addressable from the background worker, so it must not
+    // be offered as one.
+    //
+    // `getXPathTree` stops at the shadow boundary, and `locateElement` unwraps iframe ancestors but
+    // has no notion of a shadow host - so the selector built from that truncated path is matched
+    // against the light DOM and resolves to whatever happens to fit it there. Indexing these
+    // elements meant painting a numbered box on a shadow control, showing the user its label on the
+    // confirmation card, and then clicking a different element: verified in Chrome, a `[1]` drawn on
+    // "Delete my account permanently" clicked "Subscribe to newsletter". Withholding the element is
+    // the lesser failure - the agent reports it cannot reach the control instead of acting on the
+    // wrong one. Remove this once the shadow-host chain is carried and walked like the iframe chain.
+    if (node.getRootNode() instanceof ShadowRoot) return false;
+
     let shouldHighlight = false;
     if (!isParentHighlighted) {
       // Parent wasn't highlighted, this interactive node can be highlighted.
