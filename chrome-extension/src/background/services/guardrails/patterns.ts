@@ -115,7 +115,12 @@ export const STRICT_PATTERNS: SecurityPattern[] = [
     replacement: '[REDACTED_CREDENTIAL]',
   },
   {
-    pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, // Email
+    // Every quantifier is bounded, to RFC 5321's limits. The unbounded `+` this replaced made the
+    // local part backtrack across the whole remaining text at every word boundary when no `@`
+    // followed, which is quadratic: 160 KB of `a.a.a.` took over 12 seconds in the service worker,
+    // and the element listing that reaches here is page-controlled. The old TLD class `[A-Z|a-z]`
+    // also matched a literal `|`.
+    pattern: /\b[A-Za-z0-9._%+-]{1,64}@(?:[A-Za-z0-9-]{1,63}\.)+[A-Za-z]{2,24}\b/g, // Email
     type: ThreatType.SENSITIVE_DATA,
     description: 'Email address detected',
     replacement: '[EMAIL]',

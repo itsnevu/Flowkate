@@ -9,6 +9,26 @@ import type { SanitizationResult, ThreatType } from './types';
 const logger = createLogger('SecuritySanitizer');
 
 /**
+ * Passes the pattern list is re-applied for, until the content stops changing.
+ *
+ * One pass is not enough: the patterns run in array order, so a replacement can reassemble text an
+ * earlier pattern would have caught. `</flowkite]]>_untrusted_content>` slips past the tag patterns
+ * intact, and then the XML pattern deletes the `]]>` and re-forms the closing delimiter - letting a
+ * page close the untrusted block early and address the model as the operator. The cap bounds the
+ * opposite risk, a replacement that re-triggers its own pattern.
+ */
+const MAX_SANITIZE_PASSES = 4;
+
+/**
+ * Length the input is cut to before any pattern runs.
+ *
+ * Several patterns backtrack super-linearly on a long unbroken run of matching characters, and the
+ * element listing handed to this function has no length limit of its own, so one hostile text node
+ * could otherwise stall the single-threaded service worker for tens of seconds per step.
+ */
+const MAX_SANITIZE_INPUT_CHARS = 40_000;
+
+/**
  * Sanitize untrusted content by removing dangerous patterns
  * @param content - Raw untrusted content
  * @param strict - Use strict mode with additional patterns
@@ -31,34 +51,41 @@ export function sanitizeContent(content: string | undefined, strict: boolean = f
   // Get security patterns based on strictness level
   const patterns = getPatterns(strict);
 
-  // Apply each pattern
-  for (const securityPattern of patterns) {
-    try {
-      const originalLength = sanitized.length;
+  if (sanitized.length > MAX_SANITIZE_INPUT_CHARS) {
+    sanitized = `${sanitized.slice(0, MAX_SANITIZE_INPUT_CHARS)}\n[TRUNCATED]`;
+    wasModified = true;
+  }
 
-      // Create fresh regex instance to avoid state pollution
-      const regex = new RegExp(securityPattern.pattern.source, securityPattern.pattern.flags);
+  // Apply every pattern, repeatedly, until a whole pass changes nothing.
+  for (let pass = 0; pass < MAX_SANITIZE_PASSES; pass++) {
+    const beforePass = sanitized;
 
-      // Check if pattern matches
-      if (regex.test(sanitized)) {
-        detectedThreats.add(securityPattern.type);
+    for (const securityPattern of patterns) {
+      try {
+        // Create fresh regex instance to avoid state pollution
+        const regex = new RegExp(securityPattern.pattern.source, securityPattern.pattern.flags);
 
-        // Create another fresh instance for replacement
-        const replacementRegex = new RegExp(securityPattern.pattern.source, securityPattern.pattern.flags);
+        // Check if pattern matches
+        if (regex.test(sanitized)) {
+          detectedThreats.add(securityPattern.type);
 
-        // Apply replacement
-        sanitized = sanitized.replace(replacementRegex, securityPattern.replacement || '');
+          // Create another fresh instance for replacement
+          const replacementRegex = new RegExp(securityPattern.pattern.source, securityPattern.pattern.flags);
 
-        // Track if content was modified
-        if (sanitized.length !== originalLength) {
-          wasModified = true;
-          logger.debug(`Sanitized ${securityPattern.type}: ${securityPattern.description}`);
+          // Apply replacement
+          sanitized = sanitized.replace(replacementRegex, securityPattern.replacement || '');
         }
+      } catch (error) {
+        logger.error(`Error processing pattern ${securityPattern.type}:`, error);
+        // Continue with other patterns rather than failing completely
       }
-    } catch (error) {
-      logger.error(`Error processing pattern ${securityPattern.type}:`, error);
-      // Continue with other patterns rather than failing completely
     }
+
+    // Compared by content rather than by length: a replacement the same size as the text it
+    // replaced still changed it, and the cleanup below is gated on this flag.
+    if (sanitized === beforePass) break;
+    wasModified = true;
+    logger.debug(`Sanitizer pass ${pass + 1} changed the content`);
   }
 
   // Clean up any double spaces or empty lines created by replacements
