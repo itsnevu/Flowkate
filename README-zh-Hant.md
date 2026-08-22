@@ -21,7 +21,7 @@ Flowkite 是一款可免費下載的 AI 網頁代理，會在你的瀏覽器中�
 
 **建議做法（一鍵安裝）：** [前往 Chrome 線上應用程式商店取得 Flowkite →](https://chromewebstore.google.com/detail/flowkite-ai-web-agent-aut/kacmblccfhnfcjfpeageldmmbkocafab)
 
-**或下載本機建置版本：** 前往 [flowkite.xyz](https://flowkite.xyz) 下載 `dist.zip`，並依照網站上的本機安裝指南操作。
+**或下載本機建置版本：** 前往 [flowkite.xyz](https://flowkite.xyz) 下載 `flowkite.zip`，並依照網站上的本機安裝指南操作。
 
 ---
 

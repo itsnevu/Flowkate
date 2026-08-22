@@ -21,7 +21,7 @@ O Flowkite é um agente de IA para a web, gratuito para baixar, que planeja e ag
 
 **Recomendado (um clique):** [Instale o Flowkite na Chrome Web Store →](https://chromewebstore.google.com/detail/flowkite-ai-web-agent-aut/kacmblccfhnfcjfpeageldmmbkocafab)
 
-**Ou baixe a versão local:** Acesse [flowkite.xyz](https://flowkite.xyz) para baixar o `dist.zip` e siga o guia de instalação local no site.
+**Ou baixe a versão local:** Acesse [flowkite.xyz](https://flowkite.xyz) para baixar o `flowkite.zip` e siga o guia de instalação local no site.
 
 ---
 

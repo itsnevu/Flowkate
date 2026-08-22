@@ -21,7 +21,7 @@ Flowkite, tarayıcınızda yerel olarak planlayıp harekete geçen, indirmesi ü
 
 **Önerilen (tek tıkla):** [Flowkite’ı Chrome Web Mağazası’ndan edinin →](https://chromewebstore.google.com/detail/flowkite-ai-web-agent-aut/kacmblccfhnfcjfpeageldmmbkocafab)
 
-**Ya da yerel derlemeyi indirin:** `dist.zip` dosyasını indirmek ve sitedeki yerel kurulum rehberini izlemek için [flowkite.xyz](https://flowkite.xyz) adresini ziyaret edin.
+**Ya da yerel derlemeyi indirin:** `flowkite.zip` dosyasını indirmek ve sitedeki yerel kurulum rehberini izlemek için [flowkite.xyz](https://flowkite.xyz) adresini ziyaret edin.
 
 ---
 

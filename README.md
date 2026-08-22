@@ -21,7 +21,7 @@ Flowkite is a free-to-download AI web agent that plans and acts locally in your 
 
 **Recommended (one click):** [Get Flowkite on the Chrome Web Store →](https://chromewebstore.google.com/detail/flowkite-ai-web-agent-aut/kacmblccfhnfcjfpeageldmmbkocafab)
 
-**Or download the local build:** Visit [flowkite.xyz](https://flowkite.xyz) to download the `dist.zip` and follow the local install guide on the site.
+**Or download the local build:** Visit [flowkite.xyz](https://flowkite.xyz) to download the `flowkite.zip` and follow the local install guide on the site.
 
 ---
 
