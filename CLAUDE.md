@@ -126,9 +126,9 @@ Agent logic is under `chrome-extension/src/background/agent/`.
 
 - Framework: Vitest
 - Location/naming: `__tests__` directories with `*.test.ts`, in
-  `chrome-extension/src/**` (324 tests), `pages/side-panel/src/**` (169 tests),
-  `pages/options/src/**` (88 tests) and `packages/storage/**` (99 tests)
-- Run everything: `pnpm test` — 680 tests across four workspaces
+  `chrome-extension/src/**` (364 tests), `pages/side-panel/src/**` (169 tests),
+  `pages/options/src/**` (94 tests) and `packages/storage/**` (99 tests)
+- Run everything: `pnpm test` — 726 tests across four workspaces
 - The page workspaces each carry their own `vitest.config.mts` rather than reusing
   `vite.config.mts`, which goes through `withPageConfig` and pulls in build-only
   plugins. Environment is `node`: there is no jsdom or testing-library in the
@@ -227,6 +227,22 @@ Use Chrome i18n placeholder format with proper definitions:
 - The generator `packages/i18n/genenrate-i18n.mjs` runs via the `@extension/i18n`
   workspace `ready`/`build` scripts to (re)generate types and runtime helpers.
   Edit source locale JSON in `packages/i18n/locales/**` instead.
+
+### Locales and coverage
+
+- Shipped locales: `en`, `pt_BR`, `zh_TW`. A new key belongs in all three in the
+  same change. `pages/options/src/__tests__/i18nCoverage.test.ts` enforces it: it
+  fails on a key English defines that a locale is missing, on an empty message, on
+  a message key used in the options source that English does not define, and on a
+  tab label written as a bare string instead of `t(...)`.
+- `MessageKey` in `packages/i18n/lib/type.ts` is the intersection of all three
+  locales' keys, so a key added to English alone fails type-check as soon as it is
+  used. Nothing in the type system sees a pane written with no `t()` call at all,
+  which is how the Analytics pane shipped in English only.
+- The translated READMEs (`README-es.md`, `README-tr.md`, `README-zh-Hant.md`,
+  `README-pt-BR.md`) mirror `README.md` section for section; update them with it.
+- `landing/privacy-policy/index.html` is the hosted copy of `PRIVACY.md` and is
+  the URL the store listing points at. Change both in the same commit.
 
 ## Code Quality Standards
 

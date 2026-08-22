@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { analyticsSettingsStore } from '@extension/storage';
+import { t } from '@extension/i18n';
 import { Toggle } from './controls';
 import type { AnalyticsSettingsConfig } from '@extension/storage';
 
@@ -15,6 +16,23 @@ import type { AnalyticsSettingsConfig } from '@extension/storage';
  * Read at module scope because it is a compile-time constant, not state.
  */
 const TELEMETRY_CONFIGURED = Boolean(import.meta.env.VITE_POSTHOG_API_KEY);
+
+/** What a configured build sends, and what it never sends. Both lists are disclosures, so they
+ *  live next to each other rather than being inlined into the markup twice over. */
+const COLLECTED = [
+  'options_analytics_collect_tasks',
+  'options_analytics_collect_domains',
+  'options_analytics_collect_errors',
+  'options_analytics_collect_usage',
+] as const;
+
+const NEVER_COLLECTED = [
+  'options_analytics_never_personal',
+  'options_analytics_never_urls',
+  'options_analytics_never_prompts',
+  'options_analytics_never_recordings',
+  'options_analytics_never_sensitive',
+] as const;
 
 export const AnalyticsSettings = () => {
   const [settings, setSettings] = useState<AnalyticsSettingsConfig | null>(null);
@@ -56,7 +74,7 @@ export const AnalyticsSettings = () => {
     return (
       <section className="space-y-6">
         <div className="text-left">
-          <h2 className="text-lg font-semibold tracking-tight text-ink">Analytics Settings</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-ink">{t('options_analytics_title')}</h2>
           <div className="mt-4 animate-pulse-soft space-y-2">
             <div className="h-4 w-3/4 rounded-pill bg-canvas-sunk shadow-neu-inset-sm" />
             <div className="h-4 w-1/2 rounded-pill bg-canvas-sunk shadow-neu-inset-sm" />
@@ -70,8 +88,8 @@ export const AnalyticsSettings = () => {
     return (
       <section className="space-y-6">
         <div className="text-left">
-          <h2 className="text-lg font-semibold tracking-tight text-ink">Analytics Settings</h2>
-          <p className="mt-4 text-sm text-signal-bad">Failed to load analytics settings.</p>
+          <h2 className="text-lg font-semibold tracking-tight text-ink">{t('options_analytics_title')}</h2>
+          <p className="mt-4 text-sm text-signal-bad">{t('options_analytics_loadFail')}</p>
         </div>
       </section>
     );
@@ -80,15 +98,14 @@ export const AnalyticsSettings = () => {
   return (
     <section className="space-y-6">
       <div className="text-left">
-        <h2 className="text-lg font-semibold tracking-tight text-ink">Analytics Settings</h2>
+        <h2 className="text-lg font-semibold tracking-tight text-ink">{t('options_analytics_title')}</h2>
 
         {!TELEMETRY_CONFIGURED && (
           <div className="mt-4 flex gap-3 rounded-soft bg-canvas-sunk p-4 shadow-neu-inset-sm">
             <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-ok" aria-hidden="true" />
             <p className="text-sm text-ink-soft">
-              <span className="font-medium text-ink">No analytics are collected in this build.</span> It was compiled
-              without a telemetry key, so nothing is sent anywhere and the switch below has nothing to turn on. The list
-              underneath describes what a build configured for analytics would collect.
+              <span className="font-medium text-ink">{t('options_analytics_unconfigured_lead')}</span>{' '}
+              {t('options_analytics_unconfigured_body')}
             </p>
           </div>
         )}
@@ -100,17 +117,15 @@ export const AnalyticsSettings = () => {
               <label
                 htmlFor="analytics-enabled"
                 className={`text-base font-medium text-ink ${TELEMETRY_CONFIGURED ? 'cursor-pointer' : ''}`}>
-                Help improve Flowkite
+                {t('options_analytics_toggle_label')}
               </label>
               <p className="mt-1 text-sm text-ink-soft">
-                {TELEMETRY_CONFIGURED
-                  ? 'Share anonymous usage data to help us improve the extension'
-                  : 'Unavailable: this build has no telemetry key'}
+                {TELEMETRY_CONFIGURED ? t('options_analytics_toggle_desc') : t('options_analytics_toggle_unavailable')}
               </p>
             </div>
             <Toggle
               id="analytics-enabled"
-              label="Toggle analytics"
+              label={t('options_analytics_toggle_a11y')}
               checked={TELEMETRY_CONFIGURED && settings.enabled}
               disabled={!TELEMETRY_CONFIGURED}
               onChange={handleToggleAnalytics}
@@ -122,51 +137,29 @@ export const AnalyticsSettings = () => {
           {/* Information about what we collect */}
           <div className="rounded-soft bg-canvas-sunk p-5 shadow-neu-inset">
             <h3 className="text-base font-medium text-ink">
-              {TELEMETRY_CONFIGURED ? 'What we collect:' : 'What a configured build would collect:'}
+              {TELEMETRY_CONFIGURED
+                ? t('options_analytics_collect_title')
+                : t('options_analytics_collect_titleUnconfigured')}
             </h3>
             <ul className="mt-3 space-y-2 text-left text-sm text-ink-soft">
-              <li className="flex gap-3">
-                <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-info" aria-hidden="true" />
-                <span>Task execution metrics (start, completion, failure counts and duration)</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-info" aria-hidden="true" />
-                <span>Domain names of websites visited (e.g., &quot;amazon.com&quot;, not full URLs)</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-info" aria-hidden="true" />
-                <span>Error categories for failed tasks (no sensitive details)</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-info" aria-hidden="true" />
-                <span>Anonymous usage statistics</span>
-              </li>
+              {COLLECTED.map(key => (
+                <li key={key} className="flex gap-3">
+                  <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-info" aria-hidden="true" />
+                  <span>{t(key)}</span>
+                </li>
+              ))}
             </ul>
 
             <div className="my-5 h-px bg-gradient-to-r from-transparent via-black/10 to-transparent" />
 
-            <h3 className="text-base font-medium text-ink">What we DON&apos;T collect:</h3>
+            <h3 className="text-base font-medium text-ink">{t('options_analytics_never_title')}</h3>
             <ul className="mt-3 space-y-2 text-left text-sm text-ink-soft">
-              <li className="flex gap-3">
-                <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-bad" aria-hidden="true" />
-                <span>Personal information or login credentials</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-bad" aria-hidden="true" />
-                <span>Full URLs or page content</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-bad" aria-hidden="true" />
-                <span>Task instructions or user prompts</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-bad" aria-hidden="true" />
-                <span>Screen recordings or screenshots</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-bad" aria-hidden="true" />
-                <span>Any sensitive or private data</span>
-              </li>
+              {NEVER_COLLECTED.map(key => (
+                <li key={key} className="flex gap-3">
+                  <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-bad" aria-hidden="true" />
+                  <span>{t(key)}</span>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -175,9 +168,7 @@ export const AnalyticsSettings = () => {
           {TELEMETRY_CONFIGURED && !settings.enabled && (
             <div className="flex gap-3 rounded-soft bg-canvas-sunk p-4 shadow-neu-inset-sm">
               <span className="mt-1.5 size-1.5 shrink-0 rounded-pill bg-signal-warn" aria-hidden="true" />
-              <p className="text-sm text-signal-warn">
-                Analytics disabled. You can re-enable it anytime to help improve Flowkite.
-              </p>
+              <p className="text-sm text-signal-warn">{t('options_analytics_optedOut')}</p>
             </div>
           )}
         </div>

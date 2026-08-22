@@ -458,6 +458,9 @@
   "options_tabs_privacy": {
     "message": "Privacy"
   },
+  "options_tabs_analytics": {
+    "message": "Analytics"
+  },
   "options_privacy_header": {
     "message": "Privacy dashboard"
   },
@@ -538,6 +541,69 @@
   },
   "options_privacy_clear": {
     "message": "Clear activity log"
+  },
+  "options_analytics_title": {
+    "message": "Analytics Settings"
+  },
+  "options_analytics_loadFail": {
+    "message": "Failed to load analytics settings."
+  },
+  "options_analytics_unconfigured_lead": {
+    "message": "No analytics are collected in this build."
+  },
+  "options_analytics_unconfigured_body": {
+    "message": "It was compiled without a telemetry key, so nothing is sent anywhere and the switch below has nothing to turn on. The list underneath describes what a build configured for analytics would collect."
+  },
+  "options_analytics_toggle_label": {
+    "message": "Help improve Flowkite"
+  },
+  "options_analytics_toggle_desc": {
+    "message": "Share anonymous usage data to help us improve the extension"
+  },
+  "options_analytics_toggle_unavailable": {
+    "message": "Unavailable: this build has no telemetry key"
+  },
+  "options_analytics_toggle_a11y": {
+    "message": "Toggle analytics"
+  },
+  "options_analytics_collect_title": {
+    "message": "What we collect:"
+  },
+  "options_analytics_collect_titleUnconfigured": {
+    "message": "What a configured build would collect:"
+  },
+  "options_analytics_collect_tasks": {
+    "message": "Task execution metrics (start, completion, failure counts and duration)"
+  },
+  "options_analytics_collect_domains": {
+    "message": "Domain names of websites visited (e.g., \"amazon.com\", not full URLs)"
+  },
+  "options_analytics_collect_errors": {
+    "message": "Error categories for failed tasks (no sensitive details)"
+  },
+  "options_analytics_collect_usage": {
+    "message": "Anonymous usage statistics"
+  },
+  "options_analytics_never_title": {
+    "message": "What we DON'T collect:"
+  },
+  "options_analytics_never_personal": {
+    "message": "Personal information or login credentials"
+  },
+  "options_analytics_never_urls": {
+    "message": "Full URLs or page content"
+  },
+  "options_analytics_never_prompts": {
+    "message": "Task instructions or user prompts"
+  },
+  "options_analytics_never_recordings": {
+    "message": "Screen recordings or screenshots"
+  },
+  "options_analytics_never_sensitive": {
+    "message": "Any sensitive or private data"
+  },
+  "options_analytics_optedOut": {
+    "message": "Analytics disabled. You can re-enable it anytime to help improve Flowkite."
   },
   "options_general_planningInterval": {
     "message": "Replanning Frequency"

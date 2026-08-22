@@ -458,6 +458,9 @@
   "options_tabs_privacy": {
     "message": "隱私"
   },
+  "options_tabs_analytics": {
+    "message": "分析"
+  },
   "options_privacy_header": {
     "message": "隱私儀表板"
   },
@@ -538,6 +541,69 @@
   },
   "options_privacy_clear": {
     "message": "清除活動紀錄"
+  },
+  "options_analytics_title": {
+    "message": "分析設定"
+  },
+  "options_analytics_loadFail": {
+    "message": "無法載入分析設定。"
+  },
+  "options_analytics_unconfigured_lead": {
+    "message": "這個版本不會蒐集任何分析資料。"
+  },
+  "options_analytics_unconfigured_body": {
+    "message": "編譯時並未帶入遙測金鑰，因此不會傳送任何資料出去，下方的開關也沒有東西可以開啟。再下方的清單說明的是，已設定分析的版本會蒐集哪些內容。"
+  },
+  "options_analytics_toggle_label": {
+    "message": "協助改善 Flowkite"
+  },
+  "options_analytics_toggle_desc": {
+    "message": "分享匿名的使用資料，協助我們改善這個擴充功能"
+  },
+  "options_analytics_toggle_unavailable": {
+    "message": "無法使用：這個版本沒有遙測金鑰"
+  },
+  "options_analytics_toggle_a11y": {
+    "message": "切換分析"
+  },
+  "options_analytics_collect_title": {
+    "message": "我們會蒐集："
+  },
+  "options_analytics_collect_titleUnconfigured": {
+    "message": "已設定分析的版本會蒐集："
+  },
+  "options_analytics_collect_tasks": {
+    "message": "任務執行指標（開始、完成、失敗的次數與持續時間）"
+  },
+  "options_analytics_collect_domains": {
+    "message": "造訪過的網站網域名稱（例如「amazon.com」，而非完整網址）"
+  },
+  "options_analytics_collect_errors": {
+    "message": "失敗任務的錯誤類別（不含敏感細節）"
+  },
+  "options_analytics_collect_usage": {
+    "message": "匿名的使用統計資料"
+  },
+  "options_analytics_never_title": {
+    "message": "我們絕不蒐集："
+  },
+  "options_analytics_never_personal": {
+    "message": "個人資訊或登入憑證"
+  },
+  "options_analytics_never_urls": {
+    "message": "完整網址或頁面內容"
+  },
+  "options_analytics_never_prompts": {
+    "message": "任務指示或使用者提示語"
+  },
+  "options_analytics_never_recordings": {
+    "message": "螢幕錄影或螢幕截圖"
+  },
+  "options_analytics_never_sensitive": {
+    "message": "任何敏感或私人資料"
+  },
+  "options_analytics_optedOut": {
+    "message": "分析已停用。你隨時可以重新啟用，協助改善 Flowkite。"
   },
   "options_general_planningInterval": {
     "message": "重新規劃頻率"

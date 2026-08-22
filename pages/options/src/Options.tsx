@@ -20,7 +20,7 @@ const TABS: { id: TabTypes; icon: React.ComponentType<{ className?: string }>; l
   { id: 'schedules', icon: FiClock, label: t('options_tabs_schedules') },
   { id: 'memory', icon: FiDatabase, label: t('options_tabs_memory') },
   { id: 'privacy', icon: FiEye, label: t('options_tabs_privacy') },
-  { id: 'analytics', icon: FiTrendingUp, label: 'Analytics' },
+  { id: 'analytics', icon: FiTrendingUp, label: t('options_tabs_analytics') },
   { id: 'help', icon: FiHelpCircle, label: t('options_tabs_help') },
 ];
 

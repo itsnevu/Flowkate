@@ -458,6 +458,9 @@
   "options_tabs_privacy": {
     "message": "Privacidade"
   },
+  "options_tabs_analytics": {
+    "message": "Analytics"
+  },
   "options_privacy_header": {
     "message": "Painel de privacidade"
   },
@@ -538,6 +541,69 @@
   },
   "options_privacy_clear": {
     "message": "Limpar registro de atividade"
+  },
+  "options_analytics_title": {
+    "message": "Configurações de Analytics"
+  },
+  "options_analytics_loadFail": {
+    "message": "Falha ao carregar as configurações de Analytics."
+  },
+  "options_analytics_unconfigured_lead": {
+    "message": "Nenhum dado de Analytics é coletado nesta versão."
+  },
+  "options_analytics_unconfigured_body": {
+    "message": "Ela foi compilada sem uma chave de telemetria, então nada é enviado para lugar nenhum e o controle abaixo não tem nada para ativar. A lista a seguir descreve o que uma versão configurada para Analytics coletaria."
+  },
+  "options_analytics_toggle_label": {
+    "message": "Ajudar a melhorar o Flowkite"
+  },
+  "options_analytics_toggle_desc": {
+    "message": "Compartilhar dados de uso anônimos para nos ajudar a melhorar a extensão"
+  },
+  "options_analytics_toggle_unavailable": {
+    "message": "Indisponível: esta versão não tem chave de telemetria"
+  },
+  "options_analytics_toggle_a11y": {
+    "message": "Ativar/Desativar Analytics"
+  },
+  "options_analytics_collect_title": {
+    "message": "O que coletamos:"
+  },
+  "options_analytics_collect_titleUnconfigured": {
+    "message": "O que uma versão configurada coletaria:"
+  },
+  "options_analytics_collect_tasks": {
+    "message": "Métricas de execução de tarefas (contagem de inícios, conclusões e falhas, além da duração)"
+  },
+  "options_analytics_collect_domains": {
+    "message": "Nomes de domínio dos sites visitados (ex: \"amazon.com\", não URLs completas)"
+  },
+  "options_analytics_collect_errors": {
+    "message": "Categorias de erro das tarefas que falharam (sem detalhes sensíveis)"
+  },
+  "options_analytics_collect_usage": {
+    "message": "Estatísticas de uso anônimas"
+  },
+  "options_analytics_never_title": {
+    "message": "O que NÃO coletamos:"
+  },
+  "options_analytics_never_personal": {
+    "message": "Informações pessoais ou credenciais de login"
+  },
+  "options_analytics_never_urls": {
+    "message": "URLs completas ou conteúdo das páginas"
+  },
+  "options_analytics_never_prompts": {
+    "message": "Instruções de tarefas ou prompts do usuário"
+  },
+  "options_analytics_never_recordings": {
+    "message": "Gravações de tela ou capturas de tela"
+  },
+  "options_analytics_never_sensitive": {
+    "message": "Qualquer dado sensível ou privado"
+  },
+  "options_analytics_optedOut": {
+    "message": "Analytics desativado. Você pode reativá-lo a qualquer momento para ajudar a melhorar o Flowkite."
   },
   "options_general_planningInterval": {
     "message": "Frequência de Replanejamento"
