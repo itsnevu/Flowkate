@@ -13,7 +13,7 @@ describe('outbound links', () => {
   // any element does not error - it just drops the reader at the top of the page - so pin it here.
   it('points the quick start at the landing site quickstart section', () => {
     const url = new URL(QUICK_START_URL);
-    expect(url.host).toBe('flowkite.vercel.app');
+    expect(url.host).toBe('www.flowkite.xyz');
     expect(url.hash).toBe('#quickstart');
   });
 });

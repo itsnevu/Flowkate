@@ -7,4 +7,4 @@ export const X_URL = 'https://x.com/Flowkiteai';
 // landing/index.html, which is `id="quickstart"` - renaming that section breaks this link
 // silently, because a missing fragment just lands the reader at the top of the page.
 // The host must exist as a domain on the Vercel project before this ships.
-export const QUICK_START_URL = 'https://flowkite.vercel.app/#quickstart';
+export const QUICK_START_URL = 'https://www.flowkite.xyz/#quickstart';

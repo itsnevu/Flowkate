@@ -467,7 +467,7 @@ export function createChatModel(providerConfig: ProviderConfig, modelConfig: Mod
       // Call the helper function, passing OpenRouter headers via the third argument
       return createOpenAIChatModel(providerConfig, modelConfig, {
         headers: {
-          'HTTP-Referer': 'https://flowkite.vercel.app',
+          'HTTP-Referer': 'https://www.flowkite.xyz',
           'X-Title': 'Flowkite',
         },
       });

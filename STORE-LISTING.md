@@ -129,7 +129,7 @@ never evaluated.
 accurate for a build with no `VITE_POSTHOG_API_KEY`, which is what the release is, and would have to
 change for a build that has one.
 
-**Privacy policy URL:** `https://flowkite.vercel.app/privacy-policy/` — a hosted
+**Privacy policy URL:** `https://www.flowkite.xyz/privacy-policy/` — a hosted
 page exists.
 
 ---
