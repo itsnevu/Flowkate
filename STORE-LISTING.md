@@ -1,6 +1,6 @@
 # Chrome Web Store listing copy
 
-Paste-ready text for the Developer Dashboard, for version 0.3.2. Field names below match the
+Paste-ready text for the Developer Dashboard, for version 0.3.3. Field names below match the
 dashboard's own. The per-permission justifications live in [PERMISSIONS.md](PERMISSIONS.md); this
 file is everything else the submission form asks for.
 
