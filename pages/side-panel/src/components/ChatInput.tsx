@@ -322,8 +322,8 @@ export default function ChatInput({
                 type="button"
                 onClick={handleFileSelect}
                 disabled={disabled}
-                aria-label="Attach files"
-                title="Attach text files (txt, md, json, csv, etc.)"
+                aria-label={t('chat_attach_a11y')}
+                title={t('chat_attach_tooltip')}
                 className={`${ICON_BUTTON} ${disabled ? DISABLED_CONTROL : ICON_BUTTON_IDLE}`}>
                 <FaPaperclip className="size-4" aria-hidden="true" />
               </button>

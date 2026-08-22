@@ -75,9 +75,7 @@ const Options = () => {
           <img src="mark.png" alt="" className="size-8 shrink-0" />
           <div className="min-w-0">
             <h1 className="text-xl font-semibold tracking-tight text-ink">Flowkite</h1>
-            <p className="text-sm text-ink-soft">
-              Local multi-agent web automation — tune the agents, their limits and their guardrails.
-            </p>
+            <p className="text-sm text-ink-soft">{t('options_masthead_subtitle')}</p>
           </div>
         </header>
 
@@ -116,7 +114,11 @@ const Options = () => {
 export default withErrorBoundary(
   withSuspense(
     Options,
-    <div className="grid min-h-screen place-items-center bg-canvas text-sm text-ink-soft">Loading...</div>,
+    <div className="grid min-h-screen place-items-center bg-canvas text-sm text-ink-soft">
+      {t('options_state_loading')}
+    </div>,
   ),
-  <div className="grid min-h-screen place-items-center bg-canvas text-sm text-ink-soft">Error Occurred</div>,
+  <div className="grid min-h-screen place-items-center bg-canvas text-sm text-ink-soft">
+    {t('options_state_error')}
+  </div>,
 );

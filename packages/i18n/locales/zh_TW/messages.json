@@ -131,6 +131,12 @@
   "chat_input_editor": {
     "message": "訊息輸入"
   },
+  "chat_attach_a11y": {
+    "message": "附加檔案"
+  },
+  "chat_attach_tooltip": {
+    "message": "附加文字檔（txt、md、json、csv 等）"
+  },
   "chat_history_title": {
     "message": "對話歷史紀錄"
   },
@@ -289,6 +295,15 @@
   },
   "options_tabs_help": {
     "message": "說明"
+  },
+  "options_state_loading": {
+    "message": "載入中..."
+  },
+  "options_state_error": {
+    "message": "發生錯誤"
+  },
+  "options_masthead_subtitle": {
+    "message": "本機多代理網頁自動化——調整代理、其上限與防護機制。"
   },
   "options_general_header": {
     "message": "一般"
@@ -703,6 +718,18 @@
   },
   "options_models_labels_reasoning": {
     "message": "推理"
+  },
+  "options_models_reasoning_minimal": {
+    "message": "最低"
+  },
+  "options_models_reasoning_low": {
+    "message": "低"
+  },
+  "options_models_reasoning_medium": {
+    "message": "中"
+  },
+  "options_models_reasoning_high": {
+    "message": "高"
   },
   "options_models_stt_desc": {
     "message": "設定在使用麥克風功能時，將語音轉換為文字所使用的 Gemini 模型。"

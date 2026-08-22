@@ -131,6 +131,12 @@
   "chat_input_editor": {
     "message": "Message input"
   },
+  "chat_attach_a11y": {
+    "message": "Attach files"
+  },
+  "chat_attach_tooltip": {
+    "message": "Attach text files (txt, md, json, csv, etc.)"
+  },
   "chat_history_title": {
     "message": "Chat History"
   },
@@ -289,6 +295,15 @@
   },
   "options_tabs_help": {
     "message": "Help"
+  },
+  "options_state_loading": {
+    "message": "Loading..."
+  },
+  "options_state_error": {
+    "message": "Error Occurred"
+  },
+  "options_masthead_subtitle": {
+    "message": "Local multi-agent web automation — tune the agents, their limits and their guardrails."
   },
   "options_general_header": {
     "message": "General"
@@ -703,6 +718,18 @@
   },
   "options_models_labels_reasoning": {
     "message": "Reasoning"
+  },
+  "options_models_reasoning_minimal": {
+    "message": "Minimal"
+  },
+  "options_models_reasoning_low": {
+    "message": "Low"
+  },
+  "options_models_reasoning_medium": {
+    "message": "Medium"
+  },
+  "options_models_reasoning_high": {
+    "message": "High"
   },
   "options_models_stt_desc": {
     "message": "Configure the Gemini model used for converting speech to text when using the microphone feature."

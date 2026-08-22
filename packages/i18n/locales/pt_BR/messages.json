@@ -131,6 +131,12 @@
   "chat_input_editor": {
     "message": "Entrada de mensagem"
   },
+  "chat_attach_a11y": {
+    "message": "Anexar arquivos"
+  },
+  "chat_attach_tooltip": {
+    "message": "Anexar arquivos de texto (txt, md, json, csv, etc.)"
+  },
   "chat_history_title": {
     "message": "Histórico de Chat"
   },
@@ -289,6 +295,15 @@
   },
   "options_tabs_help": {
     "message": "Ajuda"
+  },
+  "options_state_loading": {
+    "message": "Carregando..."
+  },
+  "options_state_error": {
+    "message": "Ocorreu um Erro"
+  },
+  "options_masthead_subtitle": {
+    "message": "Automação web multiagente local — ajuste os agentes, seus limites e suas proteções."
   },
   "options_general_header": {
     "message": "Geral"
@@ -703,6 +718,18 @@
   },
   "options_models_labels_reasoning": {
     "message": "Raciocínio"
+  },
+  "options_models_reasoning_minimal": {
+    "message": "Mínimo"
+  },
+  "options_models_reasoning_low": {
+    "message": "Baixo"
+  },
+  "options_models_reasoning_medium": {
+    "message": "Médio"
+  },
+  "options_models_reasoning_high": {
+    "message": "Alto"
   },
   "options_models_stt_desc": {
     "message": "Configure o modelo Gemini usado para converter fala em texto ao usar o recurso de microfone."

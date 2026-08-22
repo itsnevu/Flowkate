@@ -161,10 +161,10 @@ export const AgentModelCard = ({
                 lives in the background (agent/helper.ts), so the UI never needs to spell 'none'.
                 It also made the select render blank whenever the stored value was the real default.
               */}
-              <option value="minimal">Minimal</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
+              <option value="minimal">{t('options_models_reasoning_minimal')}</option>
+              <option value="low">{t('options_models_reasoning_low')}</option>
+              <option value="medium">{t('options_models_reasoning_medium')}</option>
+              <option value="high">{t('options_models_reasoning_high')}</option>
             </select>
             <SelectChevron />
           </div>
