@@ -35,7 +35,8 @@ To do anything useful, Flowkite sends page context to whichever LLM provider **y
 
 - A text description of the page's interactive elements
 - The page URL and title
-- **Screenshots of the page**, when vision is enabled, and also automatically when the page cannot be read from the DOM at all
+- **The URL and title of your other open tabs.** Every step lists the tabs you have open, so the agent can switch to one you are already signed in to rather than opening its own. A tab it never touches still has its address and page title in that list.
+- **Screenshots of the page**, when vision is enabled; automatically when the page cannot be read from the DOM at all; and on the step after one fails, even with vision off — a step usually fails because the text description of the page was not enough, so one screenshot is attached per retry until the failure budget runs out
 - Your task instructions and the conversation so far
 - Your remembered preferences, when memory is enabled
 
@@ -75,7 +76,7 @@ Flowkite requests broad browser access because a web automation agent cannot wor
 - **`debugger`** — Flowkite attaches Chrome's debugger to the tab it is working on. This is how it reads the page structure, takes screenshots, and performs clicks and typing reliably across sites. Chrome shows a visible "Flowkite started debugging this browser" banner the whole time it is attached. The debugger is detached when a task finishes, when a task fails, and when you close the side panel.
 - **`tabs`** and **`activeTab`** — to see the current page and to open, switch and close tabs. Parallel research tasks open additional tabs and close them again when they finish.
 - **`scripting`** — to inject the script that reads a page's interactive elements into the page being worked on.
-- **`webNavigation`** — to know when a page has finished loading, so the agent acts on a settled page rather than a half-rendered one.
+- **`webNavigation`** — to list the frames inside a tab. When a page embeds an iframe that cannot be read from the parent document — which is exactly what a cross-origin checkout, login or payment widget is built to prevent — this is how those frames are enumerated so the elements inside them can be read, and therefore described to the model along with the rest of the page. Only for the tab the current task is on, and only once a frame has already failed to parse. Waiting for a page to finish loading is done over the debugger connection, not this.
 - **`storage`** and **`unlimitedStorage`** — for everything described under "Where your data lives". Conversation history with long tasks can exceed the default extension storage quota.
 - **`sidePanel`** — to show the chat interface.
 - **`tabGroups`** — to gather the tabs one task opened into a single labelled group, so it is obvious which tabs the agent is responsible for.
@@ -125,10 +126,10 @@ Flowkite is not directed at children and is not intended for use by anyone under
 
 ## Changes to this Privacy Policy
 
-This policy may be updated as the extension changes. Material changes will be noted in the release notes on the Chrome Web Store listing, and the date below will be updated.
+This policy may be updated as the extension changes. Material changes will be noted in the repository's release notes, and the date below will be updated.
 
 ## Contact
 
 Questions or concerns? Reach us on [X](https://x.com/Flowkiteai), or through the support tab on the Chrome Web Store listing.
 
-Last Updated: August 22, 2026
+Last Updated: August 23, 2026

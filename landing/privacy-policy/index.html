@@ -92,8 +92,15 @@
           <li>A text description of the page's interactive elements</li>
           <li>The page URL and title</li>
           <li>
-            <strong>Screenshots of the page</strong>, when vision is enabled, and also automatically when the page
-            cannot be read from the DOM at all
+            <strong>The URL and title of your other open tabs.</strong> Every step lists the tabs you have open, so the
+            agent can switch to one you are already signed in to rather than opening its own. A tab it never touches
+            still has its address and page title in that list.
+          </li>
+          <li>
+            <strong>Screenshots of the page</strong>, when vision is enabled; automatically when the page cannot be
+            read from the DOM at all; and on the step after one fails, even with vision off — a step usually fails
+            because the text description of the page was not enough, so one screenshot is attached per retry until the
+            failure budget runs out
           </li>
           <li>Your task instructions and the conversation so far</li>
           <li>Your remembered preferences, when memory is enabled</li>
@@ -183,8 +190,12 @@
             the page being worked on.
           </li>
           <li>
-            <strong><code>webNavigation</code></strong> — to know when a page has finished loading, so the agent acts on
-            a settled page rather than a half-rendered one.
+            <strong><code>webNavigation</code></strong> — to list the frames inside a tab. When a page embeds an iframe
+            that cannot be read from the parent document — which is exactly what a cross-origin checkout, login or
+            payment widget is built to prevent — this is how those frames are enumerated so the elements inside them
+            can be read, and therefore described to the model along with the rest of the page. Only for the tab the
+            current task is on, and only once a frame has already failed to parse. Waiting for a page to finish loading
+            is done over the debugger connection, not this.
           </li>
           <li>
             <strong><code>storage</code> and <code>unlimitedStorage</code></strong> — for everything described under
@@ -271,8 +282,8 @@
 
         <h2>Changes to this Privacy Policy</h2>
         <p>
-          This policy may be updated as the extension changes. Material changes will be noted in the release notes on
-          the Chrome Web Store listing, and the date below will be updated.
+          This policy may be updated as the extension changes. Material changes will be noted in the repository's
+          release notes, and the date below will be updated.
         </p>
 
         <h2>Contact</h2>
@@ -281,7 +292,7 @@
           <a href="https://chromewebstore.google.com/detail/flowkite-ai-web-agent-aut/kacmblccfhnfcjfpeageldmmbkocafab/support" rel="noopener noreferrer">support tab</a> on the Chrome Web Store listing.
         </p>
 
-        <p class="doc__note">Last updated: August 22, 2026</p>
+        <p class="doc__note">Last updated: August 23, 2026</p>
 
         <div class="doc__actions">
           <a class="key" href="/">Back to the site</a>
