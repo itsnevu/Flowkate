@@ -7,8 +7,8 @@
     <title>Privacy Policy · Flowkite</title>
     <meta
       name="description"
-      content="Flowkite has no backend and no account. Your keys, history and settings stay in your browser; page context goes only to the model provider you configured, using your own key." />
-    <link rel="canonical" href="https://flowkite.vercel.app/privacy-policy/" />
+      content="Flowkite has no backend and no account. Your keys, history and settings stay in your browser; page context goes to the model provider you configured, using your own key, and nowhere else unless you switch on voice input or the outbound webhook." />
+    <link rel="canonical" href="https://www.flowkite.xyz/privacy-policy/" />
 
     <meta name="color-scheme" content="light" />
     <meta name="theme-color" content="#eef0f4" />
@@ -59,8 +59,8 @@
           <li><strong>Remembered preferences</strong>, described below</li>
         </ul>
         <p>
-          None of this is synced across your devices, and none of it leaves your machine except as described under "What
-          is sent to your LLM provider".
+          None of this is synced across your devices. It leaves your machine only as described under "What is sent to
+          your LLM provider", "Voice input" and "Outbound webhook" below. The last two are off until you turn them on.
         </p>
 
         <h2>Remembered preferences (Memory)</h2>
@@ -109,6 +109,59 @@
           model, so that text on a page is not able to act as an instruction to the agent.
         </p>
 
+        <h2>Voice input</h2>
+        <p>
+          The microphone button in the side panel records audio and sends it away to be transcribed. Nothing is captured
+          unless you press it.
+        </p>
+        <ul class="doc__list">
+          <li>Recording starts only on that button and stops when you press it again, or after two minutes.</li>
+          <li>
+            The audio is sent to the <strong>Gemini provider you configured</strong>, using your own API key, and
+            Google's privacy policy governs it from there. Speech-to-text requires a Gemini provider specifically, so
+            audio can go to Google even when your agents run on a different provider entirely.
+          </li>
+          <li>
+            Only the transcribed text comes back, and it is placed in the message box for you to edit or delete before
+            anything is sent.
+          </li>
+          <li>The recording is not written to disk and is not kept after transcription.</li>
+          <li>
+            Configure or disable it under <strong>Options → Models</strong>. Chrome asks for microphone permission the
+            first time, and you can revoke it in Chrome's site settings.
+          </li>
+        </ul>
+
+        <h2>Outbound webhook</h2>
+        <p>
+          Off by default. If you turn it on under <strong>Options → General</strong>, each finished task is POSTed to
+          the single URL you entered — and to no other address.
+        </p>
+        <p>What the request body contains:</p>
+        <ul class="doc__list">
+          <li>The <strong>task prompt</strong> as it was written, by you or by the schedule that ran it</li>
+          <li>The task's <strong>final message</strong>, which can quote what the agent read on a page</li>
+          <li>
+            Whether the run finished, failed or was cancelled, its start and finish times, and the schedule's name for
+            scheduled runs
+          </li>
+          <li>
+            The <strong>table an extraction task collected</strong>, but only if you additionally turn on "Include
+            collected tables" — a separate switch, because it sends the rows the agent read off the pages rather than
+            just a summary of them
+          </li>
+        </ul>
+        <p>
+          The URL must be HTTPS, unless it points at your own machine (<code>localhost</code>), because task results can
+          carry page content. You choose whether manual runs, scheduled runs, or both, trigger it. If you also enable
+          follow-ups, a reply from that URL can queue another task — the only party that can do so is the address you
+          typed in, and those runs decline sensitive actions automatically.
+        </p>
+        <p>
+          Every delivery is listed under <strong>Options → Privacy</strong>, so what left the machine is checkable
+          rather than something you take on trust.
+        </p>
+
         <h2>Browser access and permissions</h2>
         <p>
           Flowkite requests broad browser access because a web automation agent cannot work without it. Specifically:
@@ -140,6 +193,28 @@
           </li>
           <li>
             <strong><code>sidePanel</code></strong> — to show the chat interface.
+          </li>
+          <li>
+            <strong><code>tabGroups</code></strong> — to gather the tabs one task opened into a single labelled group,
+            so it is obvious which tabs the agent is responsible for.
+          </li>
+          <li>
+            <strong><code>contextMenus</code></strong> — to add the right-click entry that starts a task from selected
+            text.
+          </li>
+          <li>
+            <strong><code>alarms</code> and <code>notifications</code></strong> — to run the schedules you create under
+            <strong>Options → Schedules</strong> while the panel is closed, and to tell you when one finishes.
+            Unattended runs decline sensitive actions automatically.
+          </li>
+          <li>
+            <strong><code>downloads</code></strong> — to save a table the agent collected when you press Download CSV or
+            Download JSON. The file is built from data already on screen and handed to Chrome; nothing is fetched from
+            the network, and existing downloads are not read.
+          </li>
+          <li>
+            <strong>Microphone</strong> — requested only when you first use voice input, and never held open between
+            recordings. See "Voice input" above.
           </li>
           <li>
             <strong>Host permissions (<code>&lt;all_urls&gt;</code>)</strong> — Flowkite cannot know in advance which
@@ -196,8 +271,8 @@
 
         <h2>Changes to this Privacy Policy</h2>
         <p>
-          This policy may be updated as the extension changes. Material changes will be noted in the repository's
-          release notes, and the date below will be updated.
+          This policy may be updated as the extension changes. Material changes will be noted in the release notes on
+          the Chrome Web Store listing, and the date below will be updated.
         </p>
 
         <h2>Contact</h2>
@@ -206,7 +281,7 @@
           <a href="https://chromewebstore.google.com/detail/flowkite-ai-web-agent-aut/kacmblccfhnfcjfpeageldmmbkocafab/support" rel="noopener noreferrer">support tab</a> on the Chrome Web Store listing.
         </p>
 
-        <p class="doc__note">Last updated: August 11, 2026</p>
+        <p class="doc__note">Last updated: August 22, 2026</p>
 
         <div class="doc__actions">
           <a class="key" href="/">Back to the site</a>

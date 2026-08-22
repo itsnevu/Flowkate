@@ -125,10 +125,10 @@ Flowkite is not directed at children and is not intended for use by anyone under
 
 ## Changes to this Privacy Policy
 
-This policy may be updated as the extension changes. Material changes will be noted in the repository's release notes, and the date below will be updated.
+This policy may be updated as the extension changes. Material changes will be noted in the release notes on the Chrome Web Store listing, and the date below will be updated.
 
 ## Contact
 
 Questions or concerns? Reach us on [X](https://x.com/Flowkiteai), or through the support tab on the Chrome Web Store listing.
 
-Last Updated: August 21, 2026
+Last Updated: August 22, 2026
