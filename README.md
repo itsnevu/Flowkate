@@ -7,6 +7,8 @@
 [![Website](https://img.shields.io/badge/Website-flowkite.xyz-000000?style=for-the-badge&logo=googlechrome&logoColor=white)](https://flowkite.xyz)
 [![Chrome Web Store](https://img.shields.io/badge/Install-Chrome_Web_Store-000000?style=for-the-badge&logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/flowkite-ai-web-agent-aut/kacmblccfhnfcjfpeageldmmbkocafab)
 
+**English** · [Español](README-es.md) · [Türkçe](README-tr.md) · [繁體中文](README-zh-Hant.md) · [Português do Brasil](README-pt-BR.md)
+
 </div>
 
 ---
