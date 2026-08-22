@@ -4,7 +4,7 @@ This file provides guidance to AI coding assistants (e.g., Claude Code, GitHub C
 
 ## Project Overview
 
-Flowkite is a free AI web automation Chrome extension that runs multi-agent systems locally in the browser. The repository is private; the extension is distributed through the Chrome Web Store and as a zip on the landing page. It's a free alternative to OpenAI Operator with support for multiple LLM providers (OpenAI, Anthropic, Gemini, Ollama, etc.).
+Flowkite is a free AI web automation Chrome extension that runs multi-agent systems locally in the browser. The repository is public and Apache-2.0 licensed, with Issues and Discussions open; the extension is distributed through the Chrome Web Store and as a zip on the landing page. It's a free alternative to OpenAI Operator with support for multiple LLM providers (OpenAI, Anthropic, Gemini, Ollama, etc.).
 
 ## Development Commands
 
@@ -21,7 +21,10 @@ Flowkite is a free AI web automation Chrome extension that runs multi-agent syst
 
 **Testing**:
 
-- `pnpm e2e` - Run end-to-end tests (builds and zips first)
+- `pnpm e2e` - Run end-to-end tests. It does NOT build: the script is
+  `node tests/e2e/plan-gate.e2e.mjs`, which loads whatever is already in `dist/`.
+  Run `pnpm build` first or the run silently tests the previous build. Headful
+  Chrome by default, since an MV3 service worker does not start headless
 - `pnpm zip` - Create extension zip for distribution
 - `pnpm -F chrome-extension test` - Run unit tests (Vitest) for core extension
   - Targeted example: `pnpm -F chrome-extension test -- -t "Sanitizer"`
